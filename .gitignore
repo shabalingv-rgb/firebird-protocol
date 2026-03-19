@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Godot
+.godot/
+export.cfg
+export_presets.cfg
+
+# Temporary files
+tmp/
+temp/
+*.tmp
