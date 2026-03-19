@@ -1,23 +1,103 @@
 [gd_scene format=3 uid="uid://bhqq3awl7hoct"]
 
-[ext_resource type="Script" uid="uid://dy8ifwkjos0eo" path="res://scenes/main_menu/test_violation_btn.gd" id="1_avcq8"]
+[ext_resource type="Theme" uid="uid://7vufr44i5vp4" path="res://assets/themes/retro_theme.tres" id="1_3vgqe"]
+[ext_resource type="Script" uid="uid://laxgddnedisq" path="res://scenes/main_menu/main_menu.gd" id="2_w77py"]
 
-[node name="MainMenu_tscn" type="Node2D" unique_id=1525396192]
+[node name="MainMenu_tscn" type="Control" unique_id=1231158181]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_3vgqe")
+script = ExtResource("2_w77py")
 
-[node name="TestViolationBtn" type="Button" parent="." unique_id=15207356]
+[node name="Background" type="ColorRect" parent="." unique_id=204536117]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="NewGame" type="Button" parent="." unique_id=15207356]
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 100.0
-offset_top = 100.0
-offset_right = 300.0
-offset_bottom = 150.0
+offset_left = -476.0
+offset_top = -124.0
+offset_right = -76.0
+offset_bottom = -64.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Тест нарушения"
-script = ExtResource("1_avcq8")
+text = "НОВАЯ ИГРА"
 
-[connection signal="pressed" from="TestViolationBtn" to="TestViolationBtn" method="_on_pressed"]
-[connection signal="pressed" from="TestViolationBtn" to="TestViolationBtn" method="_on_test_violation_btn_pressed"]
+[node name="ContGame" type="Button" parent="." unique_id=328415327]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -476.0
+offset_top = -44.0
+offset_right = -76.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "ПРОДОЛЖИТЬ"
+
+[node name="OptGame" type="Button" parent="." unique_id=1829223132]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -476.0
+offset_top = 36.0
+offset_right = -76.0
+offset_bottom = 96.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "НАСТРОЙКИ"
+
+[node name="ExitGame" type="Button" parent="." unique_id=61328670]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -476.0
+offset_top = 116.0
+offset_right = -76.0
+offset_bottom = 176.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "ВЫХОД"
+
+[node name="TitleLabel" type="Label" parent="." unique_id=919231049]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 1
+offset_top = 50.0
+offset_right = 221.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+theme_override_font_sizes/font_size = 48
+text = "FIREBIRD PROTOCOL"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="NewGame" to="NewGame" method="_on_pressed"]
+[connection signal="pressed" from="NewGame" to="NewGame" method="_on_test_violation_btn_pressed"]
+[connection signal="pressed" from="ContGame" to="ContGame" method="_on_pressed"]
+[connection signal="pressed" from="ContGame" to="ContGame" method="_on_test_violation_btn_pressed"]
+[connection signal="pressed" from="OptGame" to="OptGame" method="_on_pressed"]
+[connection signal="pressed" from="OptGame" to="OptGame" method="_on_test_violation_btn_pressed"]
+[connection signal="pressed" from="ExitGame" to="ExitGame" method="_on_pressed"]
+[connection signal="pressed" from="ExitGame" to="ExitGame" method="_on_test_violation_btn_pressed"]
