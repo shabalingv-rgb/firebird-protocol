@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://cckuejacqg8c1"]
+
+[ext_resource type="Script" uid="uid://cplkbxydeo0cp" path="res://scenes/desktop/desktop.gd" id="1_75vvj"]
+
+[node name="Desktop" type="Control" unique_id=1994708423]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_75vvj")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1210441409]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.101960786, 0.101960786, 0.18039216, 1)
+
+[node name="DesktopIcons" type="Control" parent="." unique_id=1435794416]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="EmailIcon" type="Button" parent="DesktopIcons" unique_id=2026380193]
+layout_mode = 0
+offset_right = 58.0
+offset_bottom = 50.0
+text = "Почта"
+
+[node name="TerminalIcon" type="Button" parent="DesktopIcons" unique_id=381912034]
+layout_mode = 0
+offset_left = -3.0
+offset_top = 98.0
+offset_right = 87.0
+offset_bottom = 148.0
+text = "Терминал"
+
+[node name="SudokuIcon" type="Button" parent="DesktopIcons" unique_id=1594236972]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 216.0
+offset_right = 68.0
+offset_bottom = 266.0
+text = "Судоку"
+
+[node name="BrowserIcon" type="Button" parent="DesktopIcons" unique_id=185745649]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 329.0
+offset_right = 79.0
+offset_bottom = 379.0
+text = "Браузер"
+
+[node name="CalculatorIcon" type="Button" parent="DesktopIcons" unique_id=1909677202]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 446.0
+offset_right = 120.0
+offset_bottom = 496.0
+text = "Калькулятор"
+
+[node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ScreenOverlay" type="TextureRect" parent="." unique_id=564947875]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

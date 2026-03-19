@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://c5oteg4ow60e"]
+
+[node name="DayZeroTscn" type="Control" unique_id=1034043025]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1518123261]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="Label" type="Label" parent="." unique_id=1920099839]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="TextEdit" type="TextEdit" parent="." unique_id=778408521]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="Button" type="Button" parent="." unique_id=2136017919]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Проверить ответ"

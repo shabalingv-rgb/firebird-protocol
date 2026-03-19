@@ -25,7 +25,7 @@ func _on_new_game_pressed():
 	GameState.reset_violations()
 	GameState.current_day = 0
 	# Переход к сцене "Нулевого дня" (пока заглушка)
-	# get_tree().change_scene_to_file("res://scenes/tutorial/day_zero.tscn")
+	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
 
 func _on_continue_game_pressed():
 	print("Продолжение игры...")
