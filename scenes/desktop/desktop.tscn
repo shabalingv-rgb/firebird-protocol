@@ -2,6 +2,14 @@
 
 [ext_resource type="Script" uid="uid://cplkbxydeo0cp" path="res://scenes/desktop/desktop.gd" id="1_75vvj"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_75vvj"]
+bg_color = Color(0, 0.101960786, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 1, 0, 1)
+
 [node name="Desktop" type="Control" unique_id=1994708423]
 layout_mode = 3
 anchors_preset = 15
@@ -66,8 +74,20 @@ text = "Калькулятор"
 [node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
 visible = false
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 50.0
+offset_top = 500.0
+offset_right = 450.0
+offset_bottom = 580.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_75vvj")
+
+[node name="NotificationLabel" type="Label" parent="NotificationPopup" unique_id=2130256741]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 390.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+text = "Текст уведомления"
 
 [node name="ScreenOverlay" type="TextureRect" parent="." unique_id=564947875]
 layout_mode = 0
