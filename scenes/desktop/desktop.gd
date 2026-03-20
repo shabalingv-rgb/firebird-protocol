@@ -5,9 +5,9 @@ extends Control
 @onready var clock_label = $Taskbar/ClockLabel
 
 var game_time: Dictionary = {
-	"hour": 9,
-	"minute": 0,
-	"day": 1
+	"hour": 19,  # 7 вечера
+	"minute": 30,
+	"day": 0     # День 0 - это вечер перед работой
 }
 
 func _ready():
@@ -26,13 +26,23 @@ func _ready():
 	update_clock()
 	
 func update_clock():
-	# Форматируем время
+	if GameState.current_day == 0:
+		# В кафе время идёт медленнее (1 реальная секунда = 5 игровых минут)
+		game_time.minute += 1
+		if game_time.minute >= 60:
+			game_time.minute = 0
+			game_time.hour += 1
+	
 	var time_str = "%02d:%02d" % [game_time.hour, game_time.minute]
 	clock_label.text = time_str
 	
-	# Обновляем каждую секунду
 	await get_tree().create_timer(1.0).timeout
 	update_clock()
+	
+func start_work_day():
+	game_time.hour = 9
+	game_time.minute = 0
+	game_time.day = 1
 	
 func advance_game_time(hours: int):
 	"""Продвинуть игровое время на N часов"""
@@ -56,7 +66,7 @@ func show_notification(text: String):
 
 func _open_email():
 	print("Открытие почты...")
-	# get_tree().change_scene_to_file("res://scenes/email/email_client.tscn")
+	get_tree().change_scene_to_file("res://scenes/email/email_client.tscn")
 
 func _open_terminal():
 	print("Открытие терминала...")

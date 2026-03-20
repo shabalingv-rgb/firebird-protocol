@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bbhi23fpg4ux3"]
+
+[ext_resource type="Script" uid="uid://gvf7tm6miwj" path="res://scenes/email/email_client.gd" id="1_ps0rs"]
+
+[node name="EmailClient" type="Control" unique_id=644736021]
+layout_mode = 3
+anchors_preset = 0
+offset_top = 1.0
+offset_bottom = 1.0
+script = ExtResource("1_ps0rs")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1293584174]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 950.0
+offset_bottom = 600.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="EmailHeader" type="Panel" parent="." unique_id=2137021936]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 900.0
+offset_bottom = 600.0
+
+[node name="BackButton" type="Button" parent="EmailHeader" unique_id=795884728]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -1.0
+offset_right = 224.0
+offset_bottom = 30.0
+text = "← Назад к рабочему столу"
+
+[node name="SubjectLabel" type="Label" parent="EmailHeader" unique_id=1089938234]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 31.0
+offset_right = 279.0
+offset_bottom = 54.0
+text = "Приглашение на собеседование"
+
+[node name="DateLabel" type="Label" parent="EmailHeader" unique_id=2092721498]
+layout_mode = 0
+offset_left = 708.0
+offset_top = 35.0
+offset_right = 748.0
+offset_bottom = 58.0
+
+[node name="EmailBody" type="TextEdit" parent="." unique_id=876434661]
+layout_mode = 0
+offset_left = 107.0
+offset_top = 167.0
+offset_right = 607.0
+offset_bottom = 567.0
+text = "От: hr@nii-firebird.gov
+Тема: Приглашение на собеседование
+
+Уважаемый кандидат,
+
+Ваше резюме рассмотрено. Мы приглашаем Вас на 
+собеседование в НИИ \"Firebird\" на должность 
+младшего оператора баз данных.
+
+Для начала работы пройдите вводный инструктаж 
+по работе с системой.
+
+С уважением,
+Отдел кадров НИИ"
+
+[node name="EmailList" type="ItemList" parent="." unique_id=780786085]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
