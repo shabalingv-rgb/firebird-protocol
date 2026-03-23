@@ -31,7 +31,7 @@ offset_bottom = 548.0
 layout_mode = 0
 offset_left = 81.0
 offset_top = 567.0
-offset_right = 431.0
+offset_right = 931.0
 offset_bottom = 598.0
 
 [node name="CommandPrompt" type="Label" parent="." unique_id=1439481237]

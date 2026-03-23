@@ -54,6 +54,7 @@ func welcome_message():
 func _on_input_submitted(query: String):
 	if query.is_empty():
 		terminal_input.clear()
+		terminal_input.grab_focus()
 		return
 	
 	# Добавляем в историю
@@ -68,8 +69,14 @@ func _on_input_submitted(query: String):
 	
 	# Очищаем ввод
 	terminal_input.clear()
+	
+	# ⭐ Ждём следующий кадр и возвращаем фокус
+	await get_tree().process_frame
 	terminal_input.grab_focus()
-
+		
+func _focus_input():
+	terminal_input.grab_focus()
+	
 func process_query(query: String):
 	var normalized = query.strip_edges().to_upper()
 	
@@ -139,17 +146,52 @@ func execute_select(query: String):
 	var where_clause = ""
 	var where_index = query.to_upper().find("WHERE")
 	if where_index != -1:
-		where_clause = query.substr(where_index + 6).strip_edges()
+		# Проверяем, нет ли ORDER BY или GROUP BY после WHERE
+		var order_index = query.to_upper().find("ORDER BY", where_index)
+		var group_index = query.to_upper().find("GROUP BY", where_index)
+		
+		var end_index = query.length()
+		if order_index != -1 and order_index < end_index:
+			end_index = order_index
+		if group_index != -1 and group_index < end_index:
+			end_index = group_index
+		
+		where_clause = query.substr(where_index + 6, end_index - where_index - 6).strip_edges()
 	
 	# Фильтруем если есть WHERE
 	if not where_clause.is_empty():
 		data = apply_where_filter(data, where_clause)
 	
+	# Проверяем GROUP BY
+	var group_clause = ""
+	var group_index = query.to_upper().find("GROUP BY")
+	if group_index != -1:
+		var order_index = query.to_upper().find("ORDER BY", group_index)
+		if order_index != -1:
+			group_clause = query.substr(group_index + 9, order_index - group_index - 9).strip_edges()
+		else:
+			group_clause = query.substr(group_index + 9).strip_edges()
+		group_clause = group_clause.replace(";", "")
+		data = apply_group_by(data, group_clause)
+	
+	# Проверяем ORDER BY
+	var order_clause = ""
+	var order_index = query.to_upper().find("ORDER BY")
+	if order_index != -1:
+		order_clause = query.substr(order_index + 9).strip_edges()
+		order_clause = order_clause.replace(";", "")
+		data = apply_order_by(data, order_clause)
+	
+	# Проверяем агрегатные функции
+	if is_aggregate_query(query):
+		execute_aggregate(data, query)
+		return
+	
 	# Показываем результаты
 	display_results(data)
 	append_output("")
 	append_output("Строк: %d" % data.size(), Color.YELLOW)
-
+	
 func apply_where_filter(data: Array, where_clause: String) -> Array:
 	var filtered: Array = []
 	
@@ -252,11 +294,28 @@ func _show_help():
 	append_output("TABLES                       - показать таблицы")
 	append_output("CLEAR                        - очистить экран")
 	append_output("HELP                         - эта справка")
+	append_output("SELECT * FROM table ORDER BY col  - сортировка")
+	append_output("SELECT COUNT(*) FROM table        - количество")
+	append_output("SELECT SUM(salary) FROM table    - сумма")
+	append_output("SELECT AVG(salary) FROM table    - среднее")
+	append_output("SELECT MAX(salary) FROM table    - максимум")
+	append_output("SELECT MIN(salary) FROM table    - минимум")
+	append_output("SELECT DISTINCT col FROM table   - уникальные")
+	append_output("GROUP BY column                  - группировка")
 	append_output("═══════════════════════════════════════════════════")
 	append_output("")
 
 func append_output(text: String, color: Color = Color.WHITE):
 	terminal_output.append_text("[color=" + color.to_html() + "]" + text + "[/color]\n")
+	# Автопрокрутка вниз
+	scroll_to_bottom()
+	# Возвращаем фокус
+	terminal_input.grab_focus()
+	
+func scroll_to_bottom():
+	# Прокручиваем к последней строке
+	var line_count = terminal_output.get_line_count()
+	terminal_output.scroll_to_line(line_count - 1)
 	
 func pad_string(text: String, length: int) -> String:
 	"""Дополняет строку пробелами до нужной длины"""
@@ -266,3 +325,137 @@ func pad_string(text: String, length: int) -> String:
 
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
+	
+func apply_order_by(data: Array, order_clause: String) -> Array:
+	var parts = order_clause.split(" ")
+	if parts.size() < 1:
+		return data
+	
+	var column = parts[0].to_lower()
+	var ascending = true
+	
+	if parts.size() > 1:
+		if parts[1].to_upper() == "DESC":
+			ascending = false
+		elif parts[1].to_upper() == "ASC":
+			ascending = true
+	
+	# Сортировка
+	var sorted = data.duplicate(true)
+	sorted.sort_custom(func(a, b):
+		var val_a = a[column]
+		var val_b = b[column]
+		
+		if ascending:
+			return val_a < val_b
+		else:
+			return val_a > val_b
+	)
+	
+	return sorted
+	
+func is_aggregate_query(query: String) -> bool:
+	var upper_query = query.to_upper()
+	return upper_query.contains("COUNT(") or \
+		   upper_query.contains("SUM(") or \
+		   upper_query.contains("AVG(") or \
+		   upper_query.contains("MIN(") or \
+		   upper_query.contains("MAX(")
+		
+func execute_aggregate(data: Array, query: String):
+	var upper_query = query.to_upper()
+	
+	# COUNT(*)
+	if upper_query.contains("COUNT(*)"):
+		append_output("╔════════════════════╗", Color.CYAN)
+		append_output("║ COUNT              ║", Color.CYAN)
+		append_output("╠════════════════════╣", Color.CYAN)
+		append_output("║ %-18d ║" % data.size(), Color.GREEN)
+		append_output("╚════════════════════╝", Color.CYAN)
+		append_output("")
+		return
+	
+	# SUM(column)
+	var sum_start = upper_query.find("SUM(")
+	if sum_start != -1:
+		var sum_end = upper_query.find(")", sum_start)
+		var column = query.substr(sum_start + 5, sum_end - sum_start - 5).to_lower()
+		var total = 0.0
+		for row in data:
+			if row.has(column):
+				total += float(row[column])
+		append_output("SUM: %.2f" % total, Color.GREEN)
+		append_output("")
+		return
+	
+	# AVG(column)
+	var avg_start = upper_query.find("AVG(")
+	if avg_start != -1:
+		var avg_end = upper_query.find(")", avg_start)
+		var column = query.substr(avg_start + 5, avg_end - avg_start - 5).to_lower()
+		if data.size() > 0:
+			var total = 0.0
+			for row in data:
+				if row.has(column):
+					total += float(row[column])
+			append_output("AVG: %.2f" % (total / data.size()), Color.GREEN)
+		else:
+			append_output("AVG: 0", Color.YELLOW)
+		append_output("")
+		return
+	
+	# MAX(column)
+	var max_start = upper_query.find("MAX(")
+	if max_start != -1:
+		var max_end = upper_query.find(")", max_start)
+		var column = query.substr(max_start + 5, max_end - max_start - 5).to_lower()
+		var max_val = -999999999.0
+		for row in data:
+			if row.has(column):
+				max_val = max(max_val, float(row[column]))
+		append_output("MAX: %.2f" % max_val, Color.GREEN)
+		append_output("")
+		return
+	
+	# MIN(column)
+	var min_start = upper_query.find("MIN(")
+	if min_start != -1:
+		var min_end = upper_query.find(")", min_start)
+		var column = query.substr(min_start + 5, min_end - min_start - 5).to_lower()
+		var min_val = 999999999.0
+		for row in data:
+			if row.has(column):
+				min_val = min(min_val, float(row[column]))
+		append_output("MIN: %.2f" % min_val, Color.GREEN)
+		append_output("")
+		return
+		
+func apply_group_by(data: Array, group_clause: String) -> Array:
+	var grouped = {}
+	
+	for row in data:
+		if row.has(group_clause):
+			var key = str(row[group_clause])
+			if not grouped.has(key):
+				grouped[key] = []
+			grouped[key].append(row)
+	
+	# Возвращаем по одной записи на группу
+	var result = []
+	for key in grouped.keys():
+		result.append(grouped[key][0])
+	
+	return result
+	
+func apply_distinct(data: Array) -> Array:
+	var seen = {}
+	var result = []
+	
+	for row in data:
+		var key = str(row)
+		if not seen.has(key):
+			seen[key] = true
+			result.append(row)
+	
+	return result
+	
