@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://utjclwnwe0f"]
+
+[ext_resource type="Script" uid="uid://dxvtr7by6x8m3" path="res://scenes/terminal/terminal.gd" id="1_k5ahw"]
+
+[node name="Terminal" type="Control" unique_id=1750193804]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_k5ahw")
+
+[node name="Background" type="ColorRect" parent="." unique_id=802790205]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="TerminalOutput" type="RichTextLabel" parent="." unique_id=311203712]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 48.0
+offset_right = 930.0
+offset_bottom = 548.0
+
+[node name="TerminalInput" type="LineEdit" parent="." unique_id=1128146326]
+layout_mode = 0
+offset_left = 81.0
+offset_top = 567.0
+offset_right = 331.0
+offset_bottom = 598.0
+
+[node name="CommandPrompt" type="Label" parent="." unique_id=1439481237]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 567.0
+offset_right = 78.0
+offset_bottom = 590.0
+text = "SQL> "
+
+[node name="HelpButton" type="Button" parent="." unique_id=1594719745]
+layout_mode = 0
+offset_left = 1059.0
+offset_top = 15.0
+offset_right = 1136.0
+offset_bottom = 46.0
+text = "Помощь"
