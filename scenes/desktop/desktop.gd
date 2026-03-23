@@ -77,8 +77,8 @@ func _open_email():
 
 func _open_terminal():
 	print("Открытие терминала...")
-	# get_tree().change_scene_to_file("res://scenes/terminal/terminal.tscn")
-
+	get_tree().change_scene_to_file("res://scenes/terminal/terminal.tscn")
+	
 func _open_sudoku():
 	print("Запуск Sudoku...")
 	# Заглушка для пасхалки

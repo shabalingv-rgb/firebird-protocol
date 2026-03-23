@@ -28,11 +28,13 @@ var history_index: int = 0
 @onready var terminal_output = $TerminalOutput
 @onready var terminal_input = $TerminalInput
 @onready var help_button = $HelpButton
+@onready var back_button = $BackButton
 
 func _ready():
 	# Подключаем сигналы
 	terminal_input.text_submitted.connect(_on_input_submitted)
 	help_button.pressed.connect(_show_help)
+	back_button.pressed.connect(_on_back_pressed)
 	
 	# Приветственное сообщение
 	welcome_message()
@@ -261,3 +263,6 @@ func pad_string(text: String, length: int) -> String:
 	while text.length() < length:
 		text += " "
 	return text
+
+func _on_back_pressed():
+	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
