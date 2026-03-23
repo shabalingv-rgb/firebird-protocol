@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://b17rbddmxsmsm"]
+
+[ext_resource type="Script" uid="uid://8necusjxatdu" path="res://scenes/tutorial/day_zero.gd" id="1_nviv1"]
+
+[node name="DayZero" type="Control" unique_id=1402066448]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_nviv1")
+
+[node name="Background" type="ColorRect" parent="." unique_id=796641703]
+layout_mode = 0
+offset_left = 235.0
+offset_top = 35.0
+offset_right = 935.0
+offset_bottom = 535.0
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="TutorialPanel" type="Panel" parent="." unique_id=1149815417]
+layout_mode = 0
+offset_left = 254.0
+offset_top = 48.0
+offset_right = 294.0
+offset_bottom = 88.0
+
+[node name="TitleLabel" type="Label" parent="TutorialPanel" unique_id=1569787323]
+layout_mode = 0
+offset_left = 239.0
+offset_top = 8.0
+offset_right = 354.0
+offset_bottom = 31.0
+text = "Обучение SQL"
+
+[node name="InstructionLabel" type="Label" parent="TutorialPanel" unique_id=436149682]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 38.0
+offset_right = 596.0
+offset_bottom = 468.0
+text = "Теория"
+
+[node name="QueryInput" type="LineEdit" parent="TutorialPanel" unique_id=769899438]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 188.0
+offset_right = 484.5
+offset_bottom = 219.0
+
+[node name="CheckButton" type="Button" parent="TutorialPanel" unique_id=2021137794]
+layout_mode = 0
+offset_left = 258.0
+offset_top = 422.0
+offset_right = 356.0
+offset_bottom = 453.0
+text = "Проверить"
+
+[node name="FeedbackLabel" type="Label" parent="TutorialPanel" unique_id=761365536]
+layout_mode = 0
+offset_left = 33.0
+offset_top = 349.0
+offset_right = 197.0
+offset_bottom = 372.0
+text = "Результат проверки"
+
+[node name="NextButton" type="Button" parent="TutorialPanel" unique_id=1300153201]
+layout_mode = 0
+offset_left = 442.0
+offset_top = 420.0
+offset_right = 610.0
+offset_bottom = 451.0
+text = "Следующий вопрос"
+
+[node name="SkipButton" type="Button" parent="TutorialPanel" unique_id=1072933661]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 419.0
+offset_right = 140.0
+offset_bottom = 450.0
+text = "Пропустить"
+
+[node name="ProgressBar" type="ProgressBar" parent="." unique_id=96669250]
+layout_mode = 0
+offset_left = 511.0
+offset_top = 430.0
+offset_right = 611.0
+offset_bottom = 457.0

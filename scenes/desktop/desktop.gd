@@ -56,6 +56,13 @@ func on_new_day():
 	print("Начался новый день: ", game_time.day)
 	GameState.next_day()
 	# Здесь можно добавлять новые задания
+	
+	# Показываем уведомление ТОЛЬКО один раз
+	if not GameState.get_flag("email_notification_shown"):
+		await get_tree().create_timer(2.0).timeout
+		show_notification("📧 Новое письмо от HR НИИ")
+		GameState.set_flag("email_notification_shown", true)	
+	
 
 func show_notification(text: String):
 	notification_label.text = text
@@ -95,3 +102,11 @@ func complete_task(difficulty: String):
 	
 	# Автосохранение при коммите
 	GameState.save_game_state()
+
+	# Ограничиваем курсор (после того как будет маска)
+	# Input.set_mouse_mode(Input.MOUSE_MODE_CONFINED)
+	
+func _input(event):
+	if event is InputEventMouseMotion:
+		# Здесь можно добавить проверку границ рамки
+		pass

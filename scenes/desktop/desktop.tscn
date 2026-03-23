@@ -72,6 +72,7 @@ offset_bottom = 496.0
 text = "Калькулятор"
 
 [node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
+visible = false
 layout_mode = 0
 offset_left = 846.0
 offset_top = 512.0

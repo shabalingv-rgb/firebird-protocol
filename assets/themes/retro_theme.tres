@@ -1,7 +1,3 @@
 [gd_resource type="Theme" format=3 uid="uid://7vufr44i5vp4"]
 
-[ext_resource type="FontFile" uid="uid://22vjy0hqitr2" path="res://assets/fonts/ShareTechMono-Regular.ttf" id="1_8ysnc"]
-
 [resource]
-default_font = ExtResource("1_8ysnc")
-default_font_size = 24
