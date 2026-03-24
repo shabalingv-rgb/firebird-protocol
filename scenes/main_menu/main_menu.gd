@@ -21,12 +21,15 @@ func _process(delta):
 
 func _on_new_game_pressed():
 	print("Запуск новой игры...")
-	# Сброс нарушений для новой игры
 	GameState.reset_violations()
-	GameState.current_day = 0
-	# Переход к сцене "Нулевого дня" (пока заглушка)
+	GameState.current_day = 1
+	
+	# ⭐ Создаём письма с заданиями
+	QuestManager.issue_quests_for_day(1)
+	
+	# Переход на рабочий стол
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
-
+		
 func _on_continue_game_pressed():
 	print("Продолжение игры...")
 	# Проверка наличия сохранения

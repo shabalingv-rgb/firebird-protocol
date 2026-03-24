@@ -107,6 +107,15 @@ func process_query(query: String):
 		append_output("⚠️ ОШИБКА: Неизвестная команда", Color.RED)
 		append_output("Введите HELP для списка доступных команд")
 
+	# Проверяем выполнение задания
+	var quest_result = QuestManager.check_quest_completion([], query)
+	if quest_result.completed:
+		append_output("")
+		append_output("═══════════════════════════════════════", Color.YELLOW)
+		append_output(quest_result.message, Color.GREEN)
+		append_output("═══════════════════════════════════════", Color.YELLOW)
+		append_output("")
+
 func is_forbidden_command(query: String) -> bool:
 	var forbidden = ["DROP", "TRUNCATE", "ALTER", "CREATE", "GRANT", "REVOKE"]
 	for cmd in forbidden:
@@ -191,6 +200,15 @@ func execute_select(query: String):
 	display_results(data)
 	append_output("")
 	append_output("Строк: %d" % data.size(), Color.YELLOW)
+	
+		# Проверяем выполнение задания
+	var quest_result = QuestManager.check_quest_completion(data, query)
+	if quest_result.completed:
+		append_output("")
+		append_output("═══════════════════════════════════════", Color.YELLOW)
+		append_output(quest_result.message, Color.GREEN)
+		append_output("═══════════════════════════════════════", Color.YELLOW)
+		append_output("")
 	
 func apply_where_filter(data: Array, where_clause: String) -> Array:
 	var filtered: Array = []
