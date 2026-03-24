@@ -112,8 +112,15 @@ func is_query_similar(user_query: String, template: String) -> bool:
 	return norm_user == norm_template
 	
 func validate_result(query_data: Array, quest: Dictionary) -> bool:
+	print("  🔍 Валидация результата...")
+	print("  Получено строк: ", query_data.size())
+	print("  Ожидаемо строк: ", quest.expected_rows)
+	
 	# Проверяем количество строк
-	return query_data.size() >= quest.expected_rows
+	var result = query_data.size() >= quest.expected_rows
+	print("  Результат валидации: ", result)
+	
+	return result
 
 func complete_quest(quest_id: String):
 	completed_quests.append(quest_id)
@@ -123,23 +130,29 @@ func complete_quest(quest_id: String):
 			active_quests.remove_at(i)
 			break
 	
-	print("Задание выполнено: ", quest_id)
+	print("✅ Задание выполнено: ", quest_id)
 	
-	# Проверяем, все ли задания дня выполнены
+	# Проверяем все ли задания дня выполнены
 	if active_quests.is_empty():
 		on_day_completed()
 
 func on_day_completed():
-	print("День ", GameState.current_day, " завершён!")
-	GameState.advance_game_time(8) # 8 часов рабочего дня
-	# Здесь можно отправить новое письмо или перейти к следующему дню
+	print("🎉 День ", GameState.current_day, " завершён!")
+	GameState.advance_game_time(8)
+	
+	# Переходим к следующему дню
+	GameState.current_day += 1
+	
+	# Выдаём новые задания
+	if GameState.current_day <= 3:
+		issue_quests_for_day(GameState.current_day)
 
 func issue_quests_for_day(day: int):
 	print("📬 Выдаём задания на день ", day)
 	
 	for quest in quest_database:
 		if quest.day == day and not completed_quests.has(quest.id):
-			create_quest_email(quest)
+			create_quest_email(quest)  # ← Создаём письмо
 			active_quests.append(quest)
 
 func create_quest_email(quest: Dictionary):
@@ -177,3 +190,15 @@ ID задания: {id}
 	# Добавляем в систему почты
 	EmailSystem.add_email(email)
 	print("  📧 Создано письмо с заданием: ", quest.title)
+	
+func is_quest_completed(_quest_id: String) -> bool:
+	# Проверяем, выполнял ли игрок правильный SQL запрос
+	# Для этого можно хранить историю запросов
+	# Пока просто возвращаем true для теста
+	return true
+
+func get_quest_by_id(quest_id: String) -> Dictionary:
+	for quest in quest_database:
+		if quest.id == quest_id:
+			return quest
+	return {}

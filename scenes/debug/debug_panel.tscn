@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://csj43w6uxlvlm"]
+
+[ext_resource type="Script" uid="uid://rxpuw2atnvcp" path="res://scenes/debug/debug_panel.gd" id="1_0yojn"]
+
+[node name="DebugPanel" type="Control" unique_id=414908226]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_0yojn")
+
+[node name="Background" type="ColorRect" parent="." unique_id=405241228]
+layout_mode = 0
+offset_right = 250.0
+offset_bottom = 350.0
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1700714300]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 22.0
+offset_right = 217.0
+offset_bottom = 326.0
+
+[node name="DayLabel" type="Label" parent="." unique_id=749553210]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 22.0
+offset_right = 217.0
+offset_bottom = 45.0
+text = "DEBUG PANEL"
+
+[node name="HSeparator" type="HSeparator" parent="." unique_id=1537170627]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 49.0
+offset_right = 217.0
+offset_bottom = 53.0
+
+[node name="RoleLabel" type="Label" parent="." unique_id=787508271]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 57.0
+offset_right = 217.0
+offset_bottom = 80.0
+text = "Current Day: X"
+
+[node name="DaySlider" type="HSlider" parent="." unique_id=1790993566]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 84.0
+offset_right = 217.0
+offset_bottom = 100.0
+max_value = 30.0
+
+[node name="Label3" type="Label" parent="." unique_id=107131251]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 104.0
+offset_right = 217.0
+offset_bottom = 127.0
+text = "Role: Employee"
+
+[node name="RoleButton" type="OptionButton" parent="." unique_id=1183687933]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 131.0
+offset_right = 217.0
+offset_bottom = 151.0
+
+[node name="CompleteDayBtn" type="Button" parent="." unique_id=1257439043]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 155.0
+offset_right = 217.0
+offset_bottom = 186.0
+text = "Complete Current Day"
+
+[node name="SkipDayBtn" type="Button" parent="." unique_id=265491668]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 190.0
+offset_right = 217.0
+offset_bottom = 221.0
+text = "Skip to Next Day"
+
+[node name="AddEmailBtn" type="Button" parent="." unique_id=7112165]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 225.0
+offset_right = 217.0
+offset_bottom = 256.0
+text = "Add Test Email"
+
+[node name="ClearProgressBtn" type="Button" parent="." unique_id=1476591152]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 260.0
+offset_right = 217.0
+offset_bottom = 291.0
+text = "Clear All Progress"
+
+[node name="CloseBtn" type="Button" parent="." unique_id=70363836]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 295.0
+offset_right = 217.0
+offset_bottom = 326.0
+text = "Close Debug Panel"
