@@ -33,8 +33,8 @@ var quest_database: Array[Dictionary] = [
 	{
 		"id": "day3_find_suspicious",
 		"title": "Подозрительные записи",
-		"description": "Найдите сотрудников, у которых зарплата выше средней по отделу",
-		"sql_template": "SELECT e1.* FROM employees e1 WHERE e1.salary > (SELECT AVG(salary) FROM employees e2 WHERE e2.department = e1.department)",
+		"description": "Найдите всех сотрудников IT отдела с зарплатой выше 75000",
+		"sql_template": "SELECT * FROM employees WHERE department = 'IT' AND salary > 75000",
 		"expected_rows": 2,
 		"difficulty": "hard",
 		"day": 3,
@@ -123,8 +123,12 @@ func validate_result(query_data: Array, quest: Dictionary) -> bool:
 	return result
 
 func complete_quest(quest_id: String):
+	if completed_quests.has(quest_id):
+		return  # Уже выполнено
+	
 	completed_quests.append(quest_id)
 	
+	# Удаляем из активных
 	for i in range(active_quests.size()):
 		if active_quests[i].id == quest_id:
 			active_quests.remove_at(i)
@@ -132,16 +136,28 @@ func complete_quest(quest_id: String):
 	
 	print("✅ Задание выполнено: ", quest_id)
 	
-	# Проверяем все ли задания дня выполнены
-	if active_quests.is_empty():
+	# ⭐ ПРОВЕРЯЕМ все ли задания дня выполнены
+	if is_day_completed():
 		on_day_completed()
+		
+func is_day_completed() -> bool:
+	# Проверяем, есть ли ещё невыполненные задания для текущего дня
+	for quest in quest_database:
+		if quest.day == GameState.current_day and not completed_quests.has(quest.id):
+			return false
+	return true
+	
 
+		
 func on_day_completed():
 	print("🎉 День ", GameState.current_day, " завершён!")
-	GameState.advance_game_time(8)
+	
+	# ⭐ УБЕРИ advance_game_time() отсюда - это отдельная функция
+	# GameState.advance_game_time(8)
 	
 	# Переходим к следующему дню
 	GameState.current_day += 1
+	print("📅 Начался новый день: ", GameState.current_day)
 	
 	# Выдаём новые задания
 	if GameState.current_day <= 3:
@@ -150,10 +166,20 @@ func on_day_completed():
 func issue_quests_for_day(day: int):
 	print("📬 Выдаём задания на день ", day)
 	
+	# Очищаем старые активные задания
+	active_quests.clear()
+	
+	var quests_issued = 0
+	
 	for quest in quest_database:
 		if quest.day == day and not completed_quests.has(quest.id):
-			create_quest_email(quest)  # ← Создаём письмо
+			create_quest_email(quest)
 			active_quests.append(quest)
+			quests_issued += 1
+			print("  ✅ Задание: ", quest.title)
+			
+	if quests_issued == 0:
+		print("  ℹ️ Нет новых заданий для дня ", day)
 
 func create_quest_email(quest: Dictionary):
 	# Создаём письмо с заданием

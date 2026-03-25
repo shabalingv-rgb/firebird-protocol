@@ -110,3 +110,6 @@ func _input(event):
 	if event is InputEventMouseMotion:
 		# Здесь можно добавить проверку границ рамки
 		pass
+
+func show_new_day_notification(day: int):
+	show_notification("📬 Новые задания на день %d!" % day)

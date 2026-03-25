@@ -46,11 +46,23 @@ func _on_role_changed():
 
 func _on_complete_day():
 	print("✅ Debug: День ", GameState.current_day, " завершён!")
+	
+	# ⭐ Принудительно завершаем все текущие задания
+	for quest in QuestManager.active_quests:
+		if not QuestManager.completed_quests.has(quest.id):
+			QuestManager.completed_quests.append(quest.id)
+			print("  ⏭️ Пропущено задание: ", quest.title)
+	
+	# Очищаем
+	EmailSystem.inbox.clear()
+	QuestManager.active_quests.clear()
+	
 	GameState.advance_game_time(8)
 	GameState.current_day += 1
+	
 	QuestManager.issue_quests_for_day(GameState.current_day)
 	update_labels()
-
+	
 func _on_skip_day():
 	GameState.current_day += 1
 	update_labels()

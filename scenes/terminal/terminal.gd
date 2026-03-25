@@ -185,7 +185,14 @@ func execute_select(query: String):
 		else:
 			group_clause = query.substr(group_index + 9).strip_edges()
 		group_clause = group_clause.replace(";", "")
+		
+		print("🔍 GROUP BY: ", group_clause)
+		print("🔍 Data до GROUP BY: ", data.size(), " строк")
+		
 		data = apply_group_by(data, group_clause)
+		
+		print("🔍 Data после GROUP BY: ", data.size(), " строк")
+		print("🔍 Data: ", data)
 	
 	# Проверяем ORDER BY
 	var order_clause = ""
@@ -198,13 +205,16 @@ func execute_select(query: String):
 	# Проверяем агрегатные функции
 	if is_aggregate_query(query):
 		execute_aggregate(data, query)
-		return
+	
 	
 	# Показываем результаты
 	display_results(data)
 	append_output("")
 	append_output("Строк: %d" % data.size(), Color.YELLOW)
 	
+	# ⭐ ДОБАВЬ ЭТО:
+	print("📤 [ПЕРЕД QuestManager] data.size() = ", data.size())
+	print("📤 [ПЕРЕД QuestManager] data = ", data)
 	
 		# Проверяем выполнение задания
 	var quest_result = QuestManager.check_quest_completion(data, query)
@@ -454,22 +464,31 @@ func execute_aggregate(data: Array, query: String):
 		return
 		
 func apply_group_by(data: Array, group_clause: String) -> Array:
+	print("🔍 apply_group_by ВЫЗВАНА!")
+	print("  Group clause: ", group_clause)
+	print("  Входных данных: ", data.size(), " строк")
+	
 	var grouped = {}
 	
 	for row in data:
 		if row.has(group_clause):
 			var key = str(row[group_clause])
 			if not grouped.has(key):
-				grouped[key] = []
-			grouped[key].append(row)
+				grouped[key] = {
+					"count": 0,
+					"first_row": row.duplicate()
+				}
+			grouped[key]["count"] += 1
 	
-	# Возвращаем по одной записи на группу
+	# Возвращаем результат с COUNT
 	var result = []
 	for key in grouped.keys():
-		result.append(grouped[key][0])
+		var item = grouped[key]["first_row"].duplicate()
+		item["COUNT"] = grouped[key]["count"]
+		result.append(item)
 	
 	return result
-	
+		
 func apply_distinct(data: Array) -> Array:
 	var seen = {}
 	var result = []
