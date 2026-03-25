@@ -11,7 +11,7 @@ var quest_database: Array[Dictionary] = [
 		"title": "Найти высокооплачиваемых сотрудников",
 		"description": "Найдите всех сотрудников с зарплатой выше 80000",
 		"sql_template": "SELECT * FROM employees WHERE salary > 80000",
-		"expected_rows": 2,
+		"expected_rows": 1,
 		"difficulty": "easy",
 		"day": 1,
 		"story_flags": {

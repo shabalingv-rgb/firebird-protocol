@@ -1,5 +1,12 @@
 extends Node
 
+# ⭐ ДОБАВЬ ЭТО В НАЧАЛО ФАЙЛА:
+var game_time: Dictionary = {
+	"hour": 9,
+	"minute": 0,
+	"day": 1
+}
+
 # Сигналы для обновления UI (например, счетчика нарушений)
 signal security_violation_changed(count)
 signal day_changed(day)
@@ -86,3 +93,17 @@ func load_game_state():
 			story_flags = data.get("flags", {})
 			persistent_flags = data.get("persistent", {})
 			security_violation_changed.emit(security_violations)
+
+func advance_game_time(hours: int):
+	"""Продвинуть игровое время на N часов"""
+	game_time.hour += hours
+	while game_time.hour >= 24:
+		game_time.hour -= 24
+		game_time.day += 1
+		on_new_day()
+	
+	print("⏰ Время продвинуто на ", hours, " часов")
+	print("   Текущее время: ", game_time.hour, ":", game_time.minute)
+
+func on_new_day():
+	print("📅 Начался новый день: ", game_time.day)

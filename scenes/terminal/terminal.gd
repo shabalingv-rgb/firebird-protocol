@@ -124,6 +124,7 @@ func is_forbidden_command(query: String) -> bool:
 	return false
 
 func execute_select(query: String):
+
 	# Простой парсер SELECT
 	var parts = query.split(" ")
 	if parts.size() < 4:
@@ -150,6 +151,9 @@ func execute_select(query: String):
 	
 	# Получаем данные
 	var data = database[table_name]
+	
+	# ⭐ ДОБАВЬ СЮДА:
+	print("📊 Данные из БД: ", data.size(), " строк")
 	
 	# Проверяем WHERE
 	var where_clause = ""
@@ -200,6 +204,7 @@ func execute_select(query: String):
 	display_results(data)
 	append_output("")
 	append_output("Строк: %d" % data.size(), Color.YELLOW)
+	
 	
 		# Проверяем выполнение задания
 	var quest_result = QuestManager.check_quest_completion(data, query)
