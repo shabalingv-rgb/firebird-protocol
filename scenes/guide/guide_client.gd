@@ -8,6 +8,7 @@ extends Control
 @onready var prev_button = $NavigationButtons/PrevButton
 @onready var next_button = $NavigationButtons/NextButton
 @onready var try_button = $TryItButton
+@onready var close_button = $Header/CloseButton
 
 # Навигация
 var current_topic_id: String = ""
@@ -20,50 +21,60 @@ func _ready():
 	prev_button.pressed.connect(_on_prev_pressed)
 	next_button.pressed.connect(_on_next_pressed)
 	try_button.pressed.connect(_on_try_it_pressed)
+	close_button.pressed.connect(_on_close_pressed)
+	
+	# Фокус на поиск при открытии
+	search_bar.grab_focus()
 	
 	load_guide()
 	update_progress()
 	update_navigation_buttons()
+	
+	search_bar.placeholder_text = "🔍 Поиск по справке..."
+	
+func _input(event):
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_F and event.ctrl_or_meta_pressed:
+			search_bar.grab_focus()
+			search_bar.select_all()
+		elif event.keycode == KEY_ESCAPE:
+			_on_close_pressed()
 
 func load_guide():
 	categories_tree.clear()
 	
-	# Создаём корневые категории
-	var basics_root = categories_tree.create_item()
-	basics_root.set_text(0, "📚 Основы SQL")
-	basics_root.set_selectable(0, false)
+	# Словарь для групп
+	var categories = {}
 	
-	var firebird_root = categories_tree.create_item()
-	firebird_root.set_text(0, "🔥 Firebird SQL")
-	firebird_root.set_selectable(0, false)
-	
-	var mechanics_root = categories_tree.create_item()
-	mechanics_root.set_text(0, "🎮 Игровые механики")
-	mechanics_root.set_selectable(0, false)
-	
-	# Заполняем
+	# Собираем все разблокированные темы по категориям
 	for topic_id in GuideSystem.guide_database:
 		if GuideSystem.is_topic_unlocked(topic_id):
 			var topic = GuideSystem.guide_database[topic_id]
-			var parent = basics_root
+			var cat = topic.category
 			
-			if topic.category == "firebird_specific":
-				parent = firebird_root
-			elif topic.category == "game_mechanics":
-				parent = mechanics_root
-			elif topic.category == "filtering" or topic.category == "aggregates":
-				parent = basics_root
-			elif topic.category == "advanced":
-				parent = basics_root
-			
-			var item = categories_tree.create_item(parent)
+			if not categories.has(cat):
+				categories[cat] = []
+			categories[cat].append(topic_id)
+	
+	# Создаём дерево с категориями
+	for cat in categories.keys():
+		# Корневой элемент категории
+		var cat_root = categories_tree.create_item()
+		cat_root.set_text(0, get_category_text(cat))
+		cat_root.set_selectable(0, false)
+		cat_root.set_custom_color(0, Color(0.8, 0.8, 0.8))
+		
+		# Элементы категории
+		for topic_id in categories[cat]:
+			var topic = GuideSystem.guide_database[topic_id]
+			var item = categories_tree.create_item(cat_root)
 			item.set_text(0, topic.title)
 			item.set_metadata(0, topic_id)
 			
-			# Цвет для Firebird-специфики
+			# Подсветка Firebird-специфики
 			if topic.firebird_specific:
 				item.set_custom_color(0, Color(0, 0.8, 1))
-
+				
 func _on_category_selected():
 	var selected = categories_tree.get_selected()
 	if selected:
@@ -71,7 +82,14 @@ func _on_category_selected():
 		if topic_id:
 			show_article(topic_id)
 			GuideSystem.mark_as_read(topic_id)
-
+			
+			# ⭐ НЕ вызываем load_guide() здесь!
+			# Просто сбрасываем поиск
+			if not search_bar.text.is_empty():
+				#search_bar.text = ""
+				search_bar.placeholder_text = "🔍 Поиск по справке..."
+			
+			
 func show_article(topic_id: String):
 	# Сохраняем историю
 	if current_topic_id != topic_id:
@@ -214,13 +232,74 @@ func _on_search_changed(new_text: String):
 	
 	categories_tree.clear()
 	
+	var search_results_count = 0
+	
 	# Поиск по статьям
 	for topic_id in GuideSystem.guide_database:
 		if GuideSystem.is_topic_unlocked(topic_id):
 			var topic = GuideSystem.guide_database[topic_id]
-			if topic.title.to_lower().contains(new_text.to_lower()) or \
-			   topic.content.to_lower().contains(new_text.to_lower()):
-				
+			
+			# Ищем в заголовке, содержании и примере
+			var title_match = topic.title.to_lower().contains(new_text.to_lower())
+			var content_match = topic.content.to_lower().contains(new_text.to_lower())
+			var example_match = false
+			
+			if topic.has("example"):
+				example_match = topic.example.to_lower().contains(new_text.to_lower())
+			
+			if title_match or content_match or example_match:
+				# Создаём элемент с иконкой
 				var item = categories_tree.create_item()
-				item.set_text(0, topic.title)
+				var category_icon = get_category_icon(topic.category)
+				item.set_text(0, category_icon + " " + topic.title)
 				item.set_metadata(0, topic_id)
+				
+				# Подсветка Firebird-специфики
+				if topic.firebird_specific:
+					item.set_custom_color(0, Color(0, 0.8, 1))
+				
+				search_results_count += 1
+	
+	# Показываем количество результатов
+	if search_results_count > 0:
+		search_bar.placeholder_text = "Найдено: %d статей" % search_results_count
+	else:
+		search_bar.placeholder_text = "Ничего не найдено..."
+		
+func get_category_icon(category: String) -> String:
+	match category:
+		"basics":
+			return "📚"
+		"filtering":
+			return "🔍"
+		"aggregates":
+			return "📊"
+		"firebird_specific":
+			return "🔥"
+		"advanced":
+			return "🎓"
+		"game_mechanics":
+			return "🎮"
+		_:
+			return "📄"
+
+func get_category_text(category: String) -> String:
+	match category:
+		"basics":
+			return "📚 Основы SQL"
+		"filtering":
+			return "🔍 Фильтрация"
+		"aggregates":
+			return "📊 Агрегаты"
+		"firebird_specific":
+			return "🔥 Firebird"
+		"advanced":
+			return "🎓 Продвинутый"
+		"game_mechanics":
+			return "🎮 Игра"
+		_:
+			return "📄 Другое"
+			
+func _on_close_pressed():
+	print("📖 Закрытие справки...")
+	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")

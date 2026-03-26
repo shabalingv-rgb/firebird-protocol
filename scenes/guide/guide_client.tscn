@@ -35,12 +35,18 @@ offset_top = 56.0
 offset_right = 628.0
 offset_bottom = 87.0
 
-[node name="FilterButton" type="Button" parent="Header" unique_id=112874032]
-layout_mode = 0
-offset_left = 637.0
-offset_top = 55.0
-offset_right = 737.0
-offset_bottom = 85.0
+[node name="CloseButton" type="Button" parent="Header" unique_id=112874032]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -202.0
+offset_top = -31.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Назад к рабочему столу"
 
 [node name="ContentContainer" type="HSplitContainer" parent="." unique_id=1111715065]
 layout_mode = 1
