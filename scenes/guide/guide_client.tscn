@@ -1,0 +1,145 @@
+[gd_scene format=3 uid="uid://crhc4opmi5535"]
+
+[ext_resource type="Script" uid="uid://bywvvck1nr844" path="res://scenes/guide/guide_client.gd" id="1_vurmh"]
+
+[node name="GuideClient" type="Control" unique_id=76910476]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vurmh")
+
+[node name="Background" type="ColorRect" parent="." unique_id=880738736]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.101960786, 0, 1)
+
+[node name="Header" type="Panel" parent="." unique_id=1214566088]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+offset_bottom = 50.0
+grow_horizontal = 2
+
+[node name="SearchBar" type="LineEdit" parent="Header" unique_id=1299979103]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 56.0
+offset_right = 628.0
+offset_bottom = 87.0
+
+[node name="FilterButton" type="Button" parent="Header" unique_id=112874032]
+layout_mode = 0
+offset_left = 637.0
+offset_top = 55.0
+offset_right = 737.0
+offset_bottom = 85.0
+
+[node name="ContentContainer" type="HSplitContainer" parent="." unique_id=1111715065]
+layout_mode = 1
+offset_left = 30.0
+offset_top = 92.0
+offset_right = 330.0
+offset_bottom = 580.0
+
+[node name="Sidebar" type="VBoxContainer" parent="ContentContainer" unique_id=1130092438]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CategoriesTree" type="Tree" parent="ContentContainer/Sidebar" unique_id=846096579]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ProgressLabel" type="Label" parent="ContentContainer/Sidebar" unique_id=1417639572]
+layout_mode = 2
+
+[node name="UnlockedCount" type="Label" parent="ContentContainer/Sidebar" unique_id=659981844]
+layout_mode = 2
+vertical_alignment = 1
+
+[node name="Footer" type="Panel" parent="." unique_id=1291631321]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -48.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="FirebirdLogo" type="TextureRect" parent="Footer" unique_id=2035201270]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="MainContent" type="ScrollContainer" parent="." unique_id=1652295834]
+layout_mode = 1
+offset_left = 400.0
+offset_top = 204.0
+offset_right = 1129.0
+offset_bottom = 552.0
+
+[node name="ArticleTitle" type="Label" parent="MainContent" unique_id=1994816676]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="ArticleContent" type="RichTextLabel" parent="MainContent" unique_id=1700882796]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="CodeExample" type="RichTextLabel" parent="." unique_id=1236298723]
+layout_mode = 0
+offset_left = 400.0
+offset_top = 90.0
+offset_right = 1129.0
+offset_bottom = 197.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="NavigationButtons" type="HBoxContainer" parent="." unique_id=1743274656]
+layout_mode = 0
+offset_left = 982.0
+offset_top = 545.0
+offset_right = 1129.0
+offset_bottom = 576.0
+size_flags_horizontal = 10
+size_flags_vertical = 8
+
+[node name="PrevButton" type="Button" parent="NavigationButtons" unique_id=1054957632]
+layout_mode = 2
+text = "<Назад"
+
+[node name="NextButton" type="Button" parent="NavigationButtons" unique_id=508755349]
+layout_mode = 2
+text = "Вперёд>"
+
+[node name="TryItButton" type="Button" parent="." unique_id=1143895445]
+layout_mode = 0
+offset_left = 433.0
+offset_top = 547.0
+offset_right = 657.0
+offset_bottom = 578.0
+size_flags_horizontal = 2
+size_flags_vertical = 8
+text = "Попробовать в терминале"

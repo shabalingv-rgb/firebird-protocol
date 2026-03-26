@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameState="*uid://83ilcgee0xpc"
 QuestManager="*uid://qvhnca2clj38"
 EmailSystem="*uid://cje5bc56xghjs"
+GuideSystem="*uid://bjwcspsofnsfi"
 
 [physics]
 

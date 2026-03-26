@@ -3,6 +3,7 @@ extends Control
 @onready var notification_popup = $NotificationPopup
 @onready var notification_label = $NotificationPopup/NotificationLabel
 @onready var clock_label = $Taskbar/ClockLabel
+@onready var guide_icon = $DesktopIcons/GuideIcon
 
 var game_time: Dictionary = {
 	"hour": 19,  # 7 вечера
@@ -16,7 +17,7 @@ func _ready():
 	$DesktopIcons/TerminalIcon.pressed.connect(_open_terminal)
 	$DesktopIcons/SudokuIcon.pressed.connect(_open_sudoku)
 	$DesktopIcons/BrowserIcon.pressed.connect(_open_browser)
-	$DesktopIcons/CalculatorIcon.pressed.connect(_open_calculator)
+	$DesktopIcons/GuideIcon.pressed.connect(_open_guide)
 	
 	# Запуск обновления часов
 	await get_tree().create_timer(2.0).timeout
@@ -87,9 +88,9 @@ func _open_browser():
 	print("Открытие браузера...")
 	# Переход к туториалу
 
-func _open_calculator():
-	print("Запуск калькулятора...")
-	# Заглушка
+func _open_guide():
+	print("📖 Открытие справочника...")
+	get_tree().change_scene_to_file("res://scenes/guide/guide_client.tscn")
 
 func complete_task(difficulty: String):
 	match difficulty:

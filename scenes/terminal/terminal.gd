@@ -40,6 +40,12 @@ func _ready():
 	welcome_message()
 	terminal_input.grab_focus()
 
+	# ⭐ ДОБАВЬ ЭТО:
+	if not GameState.terminal_preset_query.is_empty():
+		$TerminalInput.text = GameState.terminal_preset_query
+		GameState.terminal_preset_query = ""  # Очищаем после использования
+		print("🔧 Загружен пример из справки: ", $TerminalInput.text)
+
 func welcome_message():
 	append_output("╔══════════════════════════════════════════════════════╗")
 	append_output("║  FIREBIRD SQL TERMINAL v5.0                          ║")

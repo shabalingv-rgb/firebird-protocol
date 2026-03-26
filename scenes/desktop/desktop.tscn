@@ -63,13 +63,13 @@ offset_right = 79.0
 offset_bottom = 379.0
 text = "Браузер"
 
-[node name="CalculatorIcon" type="Button" parent="DesktopIcons" unique_id=1909677202]
+[node name="GuideIcon" type="Button" parent="DesktopIcons" unique_id=1909677202]
 layout_mode = 0
-offset_left = 8.0
-offset_top = 446.0
-offset_right = 120.0
-offset_bottom = 496.0
-text = "Калькулятор"
+offset_left = -16.0
+offset_top = 444.0
+offset_right = 96.0
+offset_bottom = 494.0
+text = "Справка"
 
 [node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
 visible = false

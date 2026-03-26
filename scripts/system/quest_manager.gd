@@ -140,6 +140,9 @@ func complete_quest(quest_id: String):
 	if is_day_completed():
 		on_day_completed()
 		
+	# Разблокируем связанные темы справки
+	unlock_guide_topics_for_quest(quest_id)
+		
 func is_day_completed() -> bool:
 	# Проверяем, есть ли ещё невыполненные задания для текущего дня
 	for quest in quest_database:
@@ -228,3 +231,15 @@ func get_quest_by_id(quest_id: String) -> Dictionary:
 		if quest.id == quest_id:
 			return quest
 	return {}
+	
+func unlock_guide_topics_for_quest(quest_id: String):
+	match quest_id:
+		"day1_find_high_salary":
+			GuideSystem.unlock_topic("sql_basics_select")
+			GuideSystem.unlock_topic("sql_where_clause")
+			GuideSystem.unlock_topic("firebird_comparison_operators")
+		
+		"day2_count_by_department":
+			GuideSystem.unlock_topic("aggregate_functions")
+			GuideSystem.unlock_topic("group_by")
+			GuideSystem.unlock_topic("firebird_list_function")

@@ -1,11 +1,8 @@
 extends Node
 
-# ⭐ ДОБАВЬ ЭТО В НАЧАЛО ФАЙЛА:
-var game_time: Dictionary = {
-	"hour": 9,
-	"minute": 0,
-	"day": 1
-}
+var game_time: Dictionary = {"hour": 9, "minute": 0, "day": 1}
+var violations: int = 0
+var flags: Dictionary = {}
 
 # Сигналы для обновления UI (например, счетчика нарушений)
 signal security_violation_changed(count)
@@ -27,6 +24,9 @@ var story_flags: Dictionary = {}
 
 # Сохранение прогресса (флаги, которые влияют на следующие кампании)
 var persistent_flags: Dictionary = {}
+
+# ⭐ ДОБАВЬ ЭТО:
+var terminal_preset_query: String = ""
 
 func _ready():
 	# Инициализация при старте игры
