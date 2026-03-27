@@ -21,6 +21,11 @@ GameState="*uid://83ilcgee0xpc"
 QuestManager="*uid://qvhnca2clj38"
 EmailSystem="*uid://cje5bc56xghjs"
 GuideSystem="*uid://bjwcspsofnsfi"
+DatabaseManager="*uid://btdlaesgoipnl"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot-sqlite/plugin.cfg")
 
 [physics]
 
