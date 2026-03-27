@@ -1,10 +1,17 @@
 extends Control
 
 # ⭐ ОБЯЗАТЕЛЬНО в начале файла!
+@onready var subject_label = $EmailHeader/Subject
+@onready var sender_label = $EmailHeader/Sender
+@onready var date_label = $EmailHeader/DateLabel
 @onready var email_list = $EmailList
-@onready var subject_label = $EmailHeader/SubjectLabel
-@onready var body_label = $EmailBody
+@onready var reply_button = $EmailHeader/ReplyButton
+@onready var body_label = $Body
 @onready var back_button = $EmailHeader/BackButton
+
+var current_emails: Array = []
+var current_day_emails: Array = []
+var active_quest: Dictionary = {}
 
 func _ready():
 	# Подключаем сигналы
@@ -12,6 +19,8 @@ func _ready():
 		email_list.item_selected.connect(_on_email_selected)
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
+	# Подключаемся к сигналам БД
+	DatabaseManager.database_ready.connect(_on_database_ready)	
 	
 	# Проверяем, есть ли письма
 	if EmailSystem.inbox.size() == 0:
@@ -82,9 +91,9 @@ func add_report_button(quest_id: String):
 	btn.pressed.connect(func(): submit_quest_report(quest_id))
 	
 	# Добавляем кнопку под текстом письма
-	if $EmailBody is TextEdit:
+	if $Body is TextEdit:
 		# Если TextEdit, добавляем как дочерний элемент
-		$EmailBody.add_child(btn)
+		$Body.add_child(btn)
 	else:
 		# Если Label, добавляем рядом
 		add_child(btn)
@@ -108,3 +117,111 @@ func show_error_message(msg: String):
 
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
+	
+func _on_database_ready():
+	print("📧 Email Client: БД готова")
+	load_emails_for_day(1)  # Загружаем письма для дня 1	
+
+func load_emails_for_day(day_number: int):
+	"""Загрузка писем для конкретного дня"""
+	current_emails = DatabaseManager.get_emails_for_day(day_number)
+	current_day_emails = current_emails
+	
+	print("📬 Загружено писем для дня ", day_number, ": ", current_emails.size())
+	
+	# Отображаем письма
+	display_emails()
+
+func display_emails():
+	"""Отображение списка писем"""
+	# Очищаем текущий список
+	$EmailList.clear()
+	
+	for email in current_day_emails:
+		var list_item = email.subject
+		if not email.is_required:
+			list_item = "[Непрочитанное] " + list_item
+		$EmailList.add_item(list_item)
+		
+func _on_email_list_item_selected(index: int):
+	"""Выбор письма для чтения"""
+	if index >= 0 and index < current_day_emails.size():
+		var email = current_day_emails[index]
+		display_email(email)
+		
+		# Проверяем есть ли задание для этого письма
+		var quest = DatabaseManager.get_quest_for_email(email.id)
+		if quest and not quest.is_empty():
+			active_quest = quest
+			print("🎯 Активное задание: ", quest.title)
+			
+func display_email(email: Dictionary):
+	"""Отображение содержимого письма"""
+	subject_label.text = email.subject
+	sender_label.text = "От: " + email.sender
+	date_label.text = email.get("publish_date", "")
+	body_label.text = email.body
+	
+	# Показываем кнопку ответа если это задание
+	if active_quest and not active_quest.is_empty():
+		reply_button.visible = true
+		reply_button.text = "📤 Отправить отчёт"
+	else:
+		reply_button.visible = false
+		
+func _on_reply_button_pressed():
+	"""Отправка отчёта по заданию"""
+	if active_quest.is_empty():
+		return
+	
+	# Показываем диалог выбора варианта отчёта
+	show_report_dialog()
+
+
+func show_report_dialog():
+	"""Показ диалога выбора варианта отчёта"""
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "📤 Отправка отчёта"
+	
+	var vbox = VBoxContainer.new()
+	
+	var label = Label.new()
+	label.text = "Выберите вариант отчёта:"
+	vbox.add_child(label)
+	
+	var option_button = OptionButton.new()
+	option_button.add_item("Задание выполнено. Данные прилагаются.")
+	option_button.add_item("Обнаружены аномалии. Требуется проверка.")
+	option_button.add_item("Ничего подозрительного не найдено.")
+	vbox.add_child(option_button)
+	
+	dialog.add_child(vbox)
+	
+	dialog.confirmed.connect(func():
+		var selected_text = option_button.get_item_text(option_button.selected)
+		send_report(selected_text)
+	)
+	
+	add_child(dialog)
+	dialog.popup_centered()
+		
+func send_report(report_text: String):
+	"""Отправка отчёта"""
+	print("📤 Отправка отчёта: ", report_text)
+	
+	# Сохраняем выбор
+	if active_quest.has("id"):
+		DatabaseManager.save_player_choice(
+			active_quest.id,
+			"report_text",
+			report_text,
+			1  # day_id - потом заменим на актуальный
+		)
+	
+	# Здесь будет проверка SQL запроса
+	# Пока просто показываем успех
+	var success_dialog = AcceptDialog.new()
+	success_dialog.title = "✅ Успешно"
+	success_dialog.dialog_text = "Отчёт отправлен!"
+	add_child(success_dialog)
+	success_dialog.popup_centered()
