@@ -3,6 +3,7 @@ extends Node
 var game_time: Dictionary = {"hour": 9, "minute": 0, "day": 1}
 var violations: int = 0
 var flags: Dictionary = {}
+var current_quest: Dictionary = {}
 
 # Сигналы для обновления UI (например, счетчика нарушений)
 signal security_violation_changed(count)

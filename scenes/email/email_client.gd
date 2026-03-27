@@ -170,12 +170,15 @@ func display_email(email: Dictionary):
 		reply_button.visible = false
 		
 func _on_reply_button_pressed():
-	"""Отправка отчёта по заданию"""
+	"""Отправка отчёта - открываем терминал"""
 	if active_quest.is_empty():
 		return
 	
-	# Показываем диалог выбора варианта отчёта
-	show_report_dialog()
+	# Передаём задание в терминал
+	GameState.current_quest = active_quest
+	
+	# Открываем терминал
+	get_tree().change_scene_to_file("res://scenes/terminal/terminal.tscn")
 
 
 func show_report_dialog():

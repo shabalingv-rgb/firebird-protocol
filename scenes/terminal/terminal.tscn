@@ -26,6 +26,7 @@ offset_left = 30.0
 offset_top = 48.0
 offset_right = 930.0
 offset_bottom = 548.0
+bbcode_enabled = true
 
 [node name="TerminalInput" type="LineEdit" parent="." unique_id=1128146326]
 layout_mode = 0
