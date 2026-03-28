@@ -3,6 +3,7 @@ extends Control
 # Переменные для отслеживания состояния
 var current_day: int = 1
 var current_quest: Dictionary = {}
+var active_quest: Dictionary = {}  # ✅ ДОБАВЬ ЭТУ СТРОКУ
 var sql_command_history: Array = []
 var is_quest_active: bool = false
 
@@ -267,22 +268,21 @@ func display_result(data: Array):
 		
 func check_quest_completion(result_data: Array):
 	"""Проверка выполнения задания"""
-	if current_quest.is_empty():
+	if active_quest.is_empty():
 		return
 	
-	var expected_rows = current_quest.get("expected_rows", -1)
+	var expected_rows = active_quest.get("expected_rows", -1)
 	
 	if expected_rows >= 0 and result_data.size() == expected_rows:
 		terminal_output.text += "\n[color=green]✅ ЗАДАНИЕ ВЫПОЛНЕНО![/color]\n"
 		
-		# Сохраняем прогресс
-		# DatabaseManager.save_player_progress(...)
+		# ✅ ИСПРАВЛЕНО - передаём true (bool)
+		QuestManager.complete_quest(true)
 		
 		is_quest_active = false
 	else:
 		terminal_output.text += "\n[color=red]⚠️ Ожидается " + str(expected_rows) + " строк, получено " + str(result_data.size()) + "[/color]\n"
-
-
+		
 func track_sql_usage(command_name: String):
 	"""Отслеживание использования SQL команды"""
 	if DatabaseManager:

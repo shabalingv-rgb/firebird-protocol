@@ -22,12 +22,28 @@ func _ready():
 	# Подключаемся к сигналам БД
 	DatabaseManager.database_ready.connect(_on_database_ready)	
 	
+	print("📧 Email Client загружен")
+	
+	# Подключаемся к сигналам ТОЛЬКО если ещё не подключено
+	if DatabaseManager and not DatabaseManager.database_ready.is_connected(_on_database_ready):
+		DatabaseManager.database_ready.connect(_on_database_ready)
+		
+		# Если БД уже готова - загружаем сразу
+		if DatabaseManager.is_initialized:
+			load_emails_for_day(1)
+	else:
+		# Если БД ещё не готова - загружаем позже
+		load_emails_for_day(1)
+	
 	# Проверяем, есть ли письма
 	if EmailSystem.inbox.size() == 0:
 		print("⚠️ Входящих писем нет!")
 		subject_label.text = "Нет писем"
 		body_label.text = "Задания будут приходить по мере выполнения работы."
 		return
+	
+	# Загружаем письма для дня 1 (временно)
+	load_emails_for_day(1)
 	
 	refresh_email_list()
 	load_first_unread_email()
@@ -104,7 +120,12 @@ func submit_quest_report(quest_id: String):
 	
 	# Проверяем выполнение через QuestManager
 	if QuestManager.is_quest_completed(quest_id):
-		QuestManager.complete_quest(quest_id)
+		if QuestManager.active_quest and not QuestManager.active_quest.is_empty():
+			QuestManager.complete_quest(true)
+			show_success_message()
+		else:
+			show_error_message("Нет активного задания")
+			
 		show_success_message()
 	else:
 		show_error_message("Задание ещё не выполнено! Проверьте запрос в терминале.")
@@ -120,18 +141,38 @@ func _on_back_pressed():
 	
 func _on_database_ready():
 	print("📧 Email Client: БД готова")
-	load_emails_for_day(1)  # Загружаем письма для дня 1	
-
+	# Загружаем письма для текущего дня
+	if QuestManager:
+		load_emails_for_day(QuestManager.current_day)
+	else:
+		load_emails_for_day(1)
+		
 func load_emails_for_day(day_number: int):
 	"""Загрузка писем для конкретного дня"""
+	print("📬 Загрузка писем для дня ", day_number)
+	
+	if not DatabaseManager:
+		print("❌ DatabaseManager не доступен")
+		return
+	
+	# Проверяем кэш
+	print("📋 В кэше писем всего: ", DatabaseManager.cached_emails.size())
+	
 	current_emails = DatabaseManager.get_emails_for_day(day_number)
 	current_day_emails = current_emails
 	
-	print("📬 Загружено писем для дня ", day_number, ": ", current_emails.size())
+	print("📫 Загружено писем для дня ", day_number, ": ", current_emails.size())
 	
-	# Отображаем письма
-	display_emails()
-
+	# Выводим все письма для отладки
+	for email in current_emails:
+		print("   📧 Письмо: ", email.subject)
+	
+	if current_emails.is_empty():
+		print("⚠️ Писем нет для дня ", day_number)
+		show_empty_message()
+	else:
+		display_emails()
+				
 func display_emails():
 	"""Отображение списка писем"""
 	# Очищаем текущий список
@@ -157,29 +198,24 @@ func _on_email_list_item_selected(index: int):
 			
 func display_email(email: Dictionary):
 	"""Отображение содержимого письма"""
-	subject_label.text = email.subject
-	sender_label.text = "От: " + email.sender
-	date_label.text = email.get("publish_date", "")
-	body_label.text = email.body
+	$EmailHeader/Subject.text = email.subject
+	$EmailHeader/Sender.text = "От: " + email.sender
+	$EmailHeader/DateLabel.text = email.get("publish_date", "")
+	$Body.text = email.body
 	
 	# Показываем кнопку ответа если это задание
 	if active_quest and not active_quest.is_empty():
-		reply_button.visible = true
-		reply_button.text = "📤 Отправить отчёт"
+		$EmailHeader/ReplyButton.visible = true
+		$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
 	else:
-		reply_button.visible = false
-		
+		$EmailHeader/ReplyButton.visible = false
+
 func _on_reply_button_pressed():
-	"""Отправка отчёта - открываем терминал"""
+	"""Отправка отчёта"""
 	if active_quest.is_empty():
 		return
 	
-	# Передаём задание в терминал
-	GameState.current_quest = active_quest
-	
-	# Открываем терминал
-	get_tree().change_scene_to_file("res://scenes/terminal/terminal.tscn")
-
+	show_report_dialog()
 
 func show_report_dialog():
 	"""Показ диалога выбора варианта отчёта"""
@@ -208,23 +244,35 @@ func show_report_dialog():
 	add_child(dialog)
 	dialog.popup_centered()
 		
+
+
 func send_report(report_text: String):
 	"""Отправка отчёта"""
-	print("📤 Отправка отчёта: ", report_text)
+	print("📤 Отчёт отправлен: ", report_text)
 	
 	# Сохраняем выбор
-	if active_quest.has("id"):
-		DatabaseManager.save_player_choice(
-			active_quest.id,
-			"report_text",
-			report_text,
-			1  # day_id - потом заменим на актуальный
-		)
+	DatabaseManager.save_player_choice(
+		active_quest.id,
+		"report_text",
+		report_text,
+		QuestManager.current_day
+	)
 	
-	# Здесь будет проверка SQL запроса
-	# Пока просто показываем успех
-	var success_dialog = AcceptDialog.new()
-	success_dialog.title = "✅ Успешно"
-	success_dialog.dialog_text = "Отчёт отправлен!"
-	add_child(success_dialog)
-	success_dialog.popup_centered()
+	# Проверяем текст отчёта на "подозрительный"
+	if "аномалии" in report_text.to_lower() or "ошибки" in report_text.to_lower():
+		# Игрок сообщил о проблемах - это может повлиять на сюжет
+		QuestManager.set_story_flag("reported_anomaly")
+	
+	# Показываем успех
+	var dialog = AcceptDialog.new()
+	dialog.title = "✅ Успешно"
+	dialog.dialog_text = "Отчёт отправлен руководству!"
+	add_child(dialog)
+	dialog.popup_centered()
+
+func show_empty_message():
+	"""Показ сообщения что писем нет"""
+	$EmailHeader/EmailList.clear()
+	$EmailHeader/Subject.text = "Нет писем"
+	$EmailHeader/Sender.text = "Отправитель: "
+	$Body.text = "Задания будут приходить по мере выполнения работы."

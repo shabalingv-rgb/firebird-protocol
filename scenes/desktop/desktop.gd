@@ -18,6 +18,7 @@ func _ready():
 	$DesktopIcons/SudokuIcon.pressed.connect(_open_sudoku)
 	$DesktopIcons/BrowserIcon.pressed.connect(_open_browser)
 	$DesktopIcons/GuideIcon.pressed.connect(_open_guide)
+	$DesktopIcons/EndDay.pressed.connect(_on_finish_day_button_pressed)
 	
 	# Запуск обновления часов
 	await get_tree().create_timer(2.0).timeout
@@ -114,3 +115,9 @@ func _input(event):
 
 func show_new_day_notification(day: int):
 	show_notification("📬 Новые задания на день %d!" % day)
+	
+func _on_finish_day_button_pressed():
+	"""Завершение рабочего дня"""
+	if QuestManager:
+		QuestManager.next_day()
+		print("🌙 День завершён, следующий: ", QuestManager.current_day)

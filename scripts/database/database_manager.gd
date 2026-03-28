@@ -6,6 +6,15 @@ const SQL_IMPORT_PATH := "res://scripts/database/game_content_sqlite.sql"
 var db: SQLite
 var db_connected: bool = false
 var is_initialized: bool = false
+# Кэшированные данные
+var cached_days: Array = []
+var cached_emails: Array = []
+var cached_quests: Array = []
+var cached_news: Array = []
+var cached_dossiers: Array = []
+var cached_events: Array = []
+var cached_endings: Array = []
+var cached_sql_commands: Array = []
 
 signal database_ready()
 
@@ -91,8 +100,17 @@ func import_content_from_sql():
 	var sql_content = file.get_as_text()
 	file.close()
 	
+	print("📄 Файл прочитан: ", sql_content.length(), " символов")
+	
 	var commands = parse_sql_commands(sql_content)
 	print("🔧 Найдено команд: ", commands.size())
+	
+	# Считаем INSERT в emails
+	var email_inserts = 0
+	for cmd in commands:
+		if "INSERT INTO emails" in cmd:
+			email_inserts += 1
+	print("📧 INSERT в emails: ", email_inserts)
 	
 	var success_count = 0
 	var error_count = 0
@@ -104,7 +122,6 @@ func import_content_from_sql():
 			success_count += 1
 		else:
 			error_count += 1
-			# Сохраняем команду с ошибкой для вывода
 			if command.length() > 100:
 				error_commands.append(command.substr(0, 100) + "...")
 			else:
@@ -112,13 +129,16 @@ func import_content_from_sql():
 	
 	print("✅ Импорт завершён: ", success_count, " успешно, ", error_count, " ошибок")
 	
-	# Выводим ошибки
 	if error_count > 0:
 		print("\n❌ Ошибочные команды:")
-		for i in range(error_commands.size()):
+		for i in range(min(5, error_commands.size())):  # Показываем первые 5
 			print("  ", i+1, ". ", error_commands[i])
 		print("")
-
+	
+	# ✅ Загружаем в кэш после импорта
+	print("📦 Начинаем загрузку в кэш...")
+	load_content_to_cache()
+	
 func parse_sql_commands(sql_content: String) -> Array[String]:
 	var commands: Array[String] = []
 	var current_command = ""
@@ -145,3 +165,77 @@ func close_database():
 		db.close_db()
 		db_connected = false
 		print("🔒 БД закрыта")
+
+# ============================================
+# МЕТОДЫ ДЛЯ ПОЛУЧЕНИЯ ДАННЫХ
+# ============================================
+
+func get_emails_for_day(day_id: int) -> Array:
+	"""Получить письма для дня из кэша"""
+	var result: Array = []
+	for email in cached_emails:
+		if email.day_id == day_id:
+			result.append(email)
+	return result
+	
+func get_quest_for_email(email_id: int) -> Dictionary:
+	"""Получить задание для письма из кэша"""
+	for quest in cached_quests:
+		if quest.email_id == email_id:
+			return quest
+	return {}
+	
+func get_random_event_for_day(day: int) -> Dictionary:
+	"""Получить случайное событие из кэша"""
+	for event in cached_events:
+		if day >= event.min_day and day <= event.max_day:
+			if randf() < event.trigger_chance:
+				return event
+	return {}
+
+func load_content_to_cache():
+	"""Загрузка данных в кэш"""
+	print("📦 Загрузка в кэш...")
+	
+	# Проверяем что БД подключена
+	if not db or not db_connected:
+		print("❌ БД не подключена!")
+		return
+	
+	# Дни
+	print("   📅 Загрузка дней...")
+	var days_result = db.query("SELECT * FROM game_days ORDER BY day_number")
+	print("   📅 Результат: ", days_result, " тип: ", typeof(days_result))
+	if days_result and typeof(days_result) == TYPE_ARRAY:
+		cached_days = days_result
+		print("   📅 Дней: ", cached_days.size())
+	else:
+		print("   ⚠️ Дней не загружено")
+	
+	# Письма
+	print("   📧 Загрузка писем...")
+	var emails_result = db.query("SELECT * FROM emails ORDER BY day_id, sort_order")
+	print("   📧 Результат: ", emails_result, " тип: ", typeof(emails_result))
+	if emails_result and typeof(emails_result) == TYPE_ARRAY:
+		cached_emails = emails_result
+		print("   📧 Писем: ", cached_emails.size())
+		
+		# Проверяем письма для дня 1
+		var day1_emails = 0
+		for email in cached_emails:
+			if email.day_id == 1:
+				day1_emails += 1
+		print("   📧 Писем для дня 1: ", day1_emails)
+	else:
+		print("   ⚠️ Писем не загружено")
+	
+	# Задания
+	print("   🎯 Загрузка заданий...")
+	var quests_result = db.query("SELECT * FROM quests ORDER BY id")
+	if quests_result and typeof(quests_result) == TYPE_ARRAY:
+		cached_quests = quests_result
+		print("   🎯 Заданий: ", cached_quests.size())
+	else:
+		print("   ⚠️ Заданий не загружено")
+	
+	print("✅ Кэш загружен")

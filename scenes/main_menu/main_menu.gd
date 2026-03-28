@@ -27,12 +27,10 @@ func _process(delta):
 			modulate.a = flicker
 
 func _on_new_game_pressed():
-	GameState.reset_violations()
-	GameState.current_day = 1  # ← Должно быть 1, не 0
+	QuestManager.reset_progress()
+	QuestManager.start_day(1)  # ✅ Это должно быть!
 	
-	# Выдаём задания
-	QuestManager.issue_quests_for_day(1)
-	
+	# Переход на рабочий стол
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
 			
 func _on_continue_game_pressed():
