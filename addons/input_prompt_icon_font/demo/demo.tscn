@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://2ouvpeoea5qi"]
+[gd_scene format=3 uid="uid://2ouvpeoea5qi"]
 
 [ext_resource type="FontFile" uid="uid://qalmecrbkxyp" path="res://addons/input_prompt_icon_font/icon.ttf" id="1_qak8n"]
-[ext_resource type="Script" path="res://addons/input_prompt_icon_font/demo/demo.gd" id="1_uoib6"]
+[ext_resource type="Script" uid="uid://bklm203wcwl66" path="res://addons/input_prompt_icon_font/demo/demo.gd" id="1_uoib6"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_uoib6"]
 font = ExtResource("1_qak8n")
@@ -13,7 +13,7 @@ outline_color = Color(0.298039, 0.470588, 0.858824, 1)
 [sub_resource type="LabelSettings" id="LabelSettings_gtxo8"]
 font_size = 32
 
-[node name="Example" type="Control" node_paths=PackedStringArray("template", "container")]
+[node name="Example" type="Control" unique_id=332097297 node_paths=PackedStringArray("template", "container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,27 +26,27 @@ script = ExtResource("1_uoib6")
 template = NodePath("Template")
 container = NodePath("VBox/ScrollContainer/MarginContainer/HFlowContainer")
 
-[node name="Template" type="HBoxContainer" parent="."]
+[node name="Template" type="HBoxContainer" parent="." unique_id=1177093217]
 visible = false
-layout_mode = 2
+layout_mode = 0
 offset_left = 20.0
 offset_top = 85.0
 offset_right = 202.0
 offset_bottom = 149.0
 
-[node name="Icon" type="Label" parent="Template"]
+[node name="Icon" type="Label" parent="Template" unique_id=2109014930]
 layout_mode = 2
 text = "xbox_button_a"
 label_settings = SubResource("LabelSettings_uoib6")
 
-[node name="Label" type="Label" parent="Template"]
+[node name="Label" type="Label" parent="Template" unique_id=775195107]
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "xbox_button_a"
 label_settings = SubResource("LabelSettings_g3wju")
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="VBox" type="VBoxContainer" parent="." unique_id=54468933]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -55,82 +55,82 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 0
 
-[node name="Spacer" type="Control" parent="VBox"]
+[node name="Spacer" type="Control" parent="VBox" unique_id=1808224646]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBox"]
+[node name="HBoxContainer" type="HBoxContainer" parent="VBox" unique_id=833834966]
 layout_mode = 2
 
-[node name="Spacer" type="Control" parent="VBox/HBoxContainer"]
+[node name="Spacer" type="Control" parent="VBox/HBoxContainer" unique_id=1849696038]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="VBox/HBoxContainer"]
+[node name="Label" type="Label" parent="VBox/HBoxContainer" unique_id=1107507133]
 layout_mode = 2
 text = "icon size:"
 label_settings = SubResource("LabelSettings_gtxo8")
 
-[node name="SpinBox" type="SpinBox" parent="VBox/HBoxContainer"]
+[node name="SpinBox" type="SpinBox" parent="VBox/HBoxContainer" unique_id=1341742029]
 layout_mode = 2
 min_value = 8.0
 max_value = 256.0
 value = 32.0
 
-[node name="Spacer4" type="Control" parent="VBox/HBoxContainer"]
+[node name="Spacer4" type="Control" parent="VBox/HBoxContainer" unique_id=1059408898]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="VBox/HBoxContainer"]
+[node name="Label2" type="Label" parent="VBox/HBoxContainer" unique_id=301064532]
 layout_mode = 2
 text = "icon outline size:"
 label_settings = SubResource("LabelSettings_gtxo8")
 
-[node name="SpinBox2" type="SpinBox" parent="VBox/HBoxContainer"]
+[node name="SpinBox2" type="SpinBox" parent="VBox/HBoxContainer" unique_id=1791648570]
 layout_mode = 2
 value = 32.0
 
-[node name="Spacer3" type="Control" parent="VBox/HBoxContainer"]
+[node name="Spacer3" type="Control" parent="VBox/HBoxContainer" unique_id=164853134]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label3" type="Label" parent="VBox/HBoxContainer"]
+[node name="Label3" type="Label" parent="VBox/HBoxContainer" unique_id=903081324]
 layout_mode = 2
 text = "icon color:"
 label_settings = SubResource("LabelSettings_gtxo8")
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="VBox/HBoxContainer"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="VBox/HBoxContainer" unique_id=965260998]
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 color = Color(1, 1, 1, 1)
 
-[node name="Spacer2" type="Control" parent="VBox/HBoxContainer"]
+[node name="Spacer2" type="Control" parent="VBox/HBoxContainer" unique_id=845964777]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label4" type="Label" parent="VBox/HBoxContainer"]
+[node name="Label4" type="Label" parent="VBox/HBoxContainer" unique_id=1912148475]
 layout_mode = 2
 text = "icon outline color:"
 label_settings = SubResource("LabelSettings_gtxo8")
 
-[node name="ColorPickerButton2" type="ColorPickerButton" parent="VBox/HBoxContainer"]
+[node name="ColorPickerButton2" type="ColorPickerButton" parent="VBox/HBoxContainer" unique_id=1050791961]
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 color = Color(1, 1, 1, 1)
 
-[node name="Spacer5" type="Control" parent="VBox/HBoxContainer"]
+[node name="Spacer5" type="Control" parent="VBox/HBoxContainer" unique_id=1600836013]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Spacer2" type="Control" parent="VBox"]
+[node name="Spacer2" type="Control" parent="VBox" unique_id=1328079868]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBox"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBox" unique_id=1352462481]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="VBox/ScrollContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="VBox/ScrollContainer" unique_id=1381789462]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -139,14 +139,14 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="HFlowContainer" type="HFlowContainer" parent="VBox/ScrollContainer/MarginContainer"]
+[node name="HFlowContainer" type="HFlowContainer" parent="VBox/ScrollContainer/MarginContainer" unique_id=615860739]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 10
 
-[node name="Spacer3" type="Control" parent="VBox"]
+[node name="Spacer3" type="Control" parent="VBox" unique_id=416658238]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 

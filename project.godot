@@ -23,9 +23,13 @@ EmailSystem="*uid://cje5bc56xghjs"
 GuideSystem="*uid://bjwcspsofnsfi"
 DatabaseManager="*uid://btdlaesgoipnl"
 
+[dotnet]
+
+project/assembly_name="firebird-protocol"
+
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot-sqlite/plugin.cfg")
+enabled=PackedStringArray()
 
 [physics]
 
