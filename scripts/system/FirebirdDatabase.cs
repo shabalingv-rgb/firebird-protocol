@@ -4,6 +4,10 @@ using System;
 using System.Collections.Generic;  // Для Dictionary
 using System.Threading.Tasks;
 
+string dbPath = ProjectSettings.GlobalizePath("res://game_content.fdb");
+string libPath = "/Library/Frameworks/Firebird.framework/Versions/A/libraries/libfbclient.dylib";
+
+
 public partial class FirebirdDatabase : Node
 {
     [Signal]
@@ -38,13 +42,14 @@ public partial class FirebirdDatabase : Node
         GD.Print("📋 Инициализация Firebird Embedded...");
         
         // Строка подключения для Embedded
-        _connectionString = @"
+        _database = @"
             User=SYSDBA;
             Password=masterkey;
-            Database=/путь/к/game_content.fdb;
+            Database={dbPath};
             DataSource=localhost;
             ServerType=0;
             Charset=UTF8";
+            Client Library={libPath}";
         
         // Для Embedded ServerType=0
         // Database должен указывать на .fdb файл
@@ -117,13 +122,54 @@ public partial class FirebirdDatabase : Node
     }
     
     private void ImportContent()
+{
+    GD.Print("📥 Импорт контента...");
+    
+    // Проверяем есть ли данные
+    var checkResult = ExecuteQuery("SELECT COUNT(*) as cnt FROM game_days");
+    if (checkResult.Count > 0 && Convert.ToInt32(checkResult[0]["cnt"]) > 0)
     {
-        GD.Print("📥 Импорт контента...");
-        // Здесь парсинг SQL файла и импорт
-        // Аналогично тому что было в SQLite версии
-        
+        GD.Print("✅ Данные уже существуют");
         LoadContentToCache();
+        return;
     }
+    
+    // Читаем SQL файл
+    string sqlPath = ProjectSettings.GlobalizePath("res://scripts/database/game_content_firebird.sql");
+    if (File.Exists(sqlPath))
+    {
+        string sqlContent = File.ReadAllText(sqlPath);
+        string[] commands = sqlContent.Split(new[] { ";\n", ";\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+        
+        int successCount = 0;
+        int errorCount = 0;
+        
+        foreach (var command in commands)
+        {
+            if (command.Trim().Length > 0 && !command.Trim().StartsWith("--"))
+            {
+                try
+                {
+                    ExecuteNonQuery(command);
+                    successCount++;
+                }
+                catch (Exception e)
+                {
+                    errorCount++;
+                    GD.PrintErr("⚠️ Ошибка: ", e.Message);
+                }
+            }
+        }
+        
+        GD.Print("✅ Импорт завершён: ", successCount, " успешно, ", errorCount, " ошибок");
+    }
+    else
+    {
+        GD.PrintErr("❌ SQL файл не найден: ", sqlPath);
+    }
+    
+    LoadContentToCache();
+}
     
     private void LoadContentToCache()
     {
@@ -214,3 +260,4 @@ public partial class FirebirdDatabase : Node
         _connection?.Dispose();
     }
 }
+
