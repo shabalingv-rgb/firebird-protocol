@@ -33,6 +33,9 @@ func _ready():
 		# Ждём немного пока БД инициализируется
 		await get_tree().create_timer(0.5).timeout
 		load_progress()
+		
+	print("Список сигналов БД: ", DatabaseManager.get_signal_list())
+
 
 
 func start_day(day_number: int):
@@ -52,12 +55,21 @@ func load_quests_for_day(day_number: int):
 	var emails = DatabaseManager.GetEmailsForDay(day_number)
 	
 	for email in emails:
-		var quest = DatabaseManager.GetEmailsForDay(email.id)
+		# Пытаемся взять ID или id (Firebird любит заглавные)
+		var email_id = email.get("ID", email.get("id", -1))
+		
+		#Внимание: Тут должен вызываться метод получения ЗАДАНИЯ
+		var quest = DatabaseManager.GetQuestForEmail(email_id)
+		
 		if quest and not quest.is_empty():
-			if quest.get("is_required", true):
+			#Проверяем заголовок задания (опять же учиытваем регистр)
+			var is_required = quest.get("IS_REQUIRED", quest.get("is_required", true))
+			var title = quest.get("TITLE", quest.get("title", "Без названия"))
+			
+			if is_required:
 				active_quest = quest
 				quest_started.emit(quest)
-				print("🎯 Активное задание: ", quest.title)
+				print("🎯 Активное задание: ", title)
 				return
 	
 	print("ℹ️ Нет обязательных заданий на день ", day_number)

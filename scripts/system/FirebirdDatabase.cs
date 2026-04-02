@@ -265,15 +265,18 @@ public partial class FirebirdDatabase : Node
     public GArray GetEmailsForDay(int dayId)
     {
         var result = new GArray();
-
         foreach (var item in CachedEmails)
         {
             GDictionary email = (GDictionary)item; 
-            if (email.ContainsKey("day_id") && email["day_id"].AsInt32() == dayId)
+            int emailDayId = -1;
+            if (email.ContainsKey("DAY_ID")) emailDayId = email["DAY_ID"].AsInt32();
+            else if (email.ContainsKey("day_id")) emailDayId = email["day_id"].AsInt32();
+
+            if (emailDayId == dayId)
             {
                 result.Add(email);
-            
             }
+
         }
         return result;
     }

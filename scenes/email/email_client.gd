@@ -56,9 +56,9 @@ func refresh_email_list():
 	
 	for i in range(EmailSystem.inbox.size()):
 		var email = EmailSystem.inbox[i]
-		var time = email.get("time", "Неизвестно")
-		var sender = email.get("from", "Unknown")
-		var subject = email.subject
+		var time = email.get("TIME", "Неизвестно")
+		var sender = email.get("FROM", "Unknown")
+		var subject = email.get("SUBJECT", "Без темы")
 		
 		var display_text = "%s\n%s\n%s" % [time, sender, subject]
 		
@@ -76,7 +76,11 @@ func _on_email_selected(index):
 
 func load_first_unread_email():
 	for email in EmailSystem.inbox:
-		if not email.read:
+		# Используем .get() для првоерки статуса 'READ' (или 'read')
+		# Если ключа нет, по умолчанию возвращаем false
+		var is_read = email.get("READ", email.get("read", false))
+		
+		if not is_read:
 			show_email(email)
 			return
 	
@@ -85,8 +89,9 @@ func load_first_unread_email():
 		show_email(EmailSystem.inbox[-1])
 
 func show_email(email: Dictionary):
-	subject_label.text = email.subject
-	body_label.text = email.body
+	subject_label.text = email.get("SUBJECT", "Без темы")
+	sender_label.text = email.get("SENDER", "Неизвестно")
+	body_label.text = email.get("BODY", "")
 	EmailSystem.mark_as_read(email)
 	
 	# Обновляем список (чтобы показать что прочитано)
@@ -148,6 +153,9 @@ func _on_database_ready():
 		load_emails_for_day(1)
 		
 func load_emails_for_day(day_number: int):
+	var all_emails = DatabaseManager.CachedEmails
+	print("DEBUG: Первое письмо из кэша: ", all_emails[0] if all_emails.size() > 0 else "Пусто")
+	
 	"""Загрузка писем для конкретного дня"""
 	print("📬 Загрузка писем для дня ", day_number)
 	
@@ -165,7 +173,15 @@ func load_emails_for_day(day_number: int):
 	
 	# Выводим все письма для отладки
 	for email in current_emails:
-		print("   📧 Письмо: ", email.subject)
+		var subject = email.get("SUBJECT", email.get("subject", "Без темы"))
+		print("   📧 Письмо: ", subject)
+	
+	# В конце функции, когда current_day_emails запослен:
+	EmailSystem.inbox.clear() # чищаем старое
+	for email in current_day_emails:
+		EmailSystem.inbox.append(email) #обавляем новые из базы
+		
+	print("✅ Письма перенесены в EmailSystem. Текущий размер: ", EmailSystem.inbox.size())
 	
 	if current_emails.is_empty():
 		print("⚠️ Писем нет для дня ", day_number)
@@ -179,9 +195,16 @@ func display_emails():
 	$EmailList.clear()
 	
 	for email in current_day_emails:
-		var list_item = email.subject
-		if not email.is_required:
-			list_item = "[Непрочитанное] " + list_item
+		# 1. Достаем тему (SUBJECT)
+		var list_item = email.get("SUBJECT", "Без темы")
+		
+		# 2. Достаем флаг обязательности (IS_REQUIRED)
+		# В Firebird это число (1 или 2), поэтому проверяем ==1
+		var is_required = email.get("IS_REQUIRED", 1) == 1
+		
+		if not is_required:
+			list_item = "[Необязательное] " + list_item
+			
 		$EmailList.add_item(list_item)
 		
 func _on_email_list_item_selected(index: int):

@@ -93,11 +93,11 @@ theme_override_font_sizes/font_size = 48
 text = "FIREBIRD PROTOCOL"
 horizontal_alignment = 1
 
-[connection signal="pressed" from="NewGame" to="NewGame" method="_on_test_violation_btn_pressed"]
 [connection signal="pressed" from="NewGame" to="NewGame" method="_on_pressed"]
-[connection signal="pressed" from="ContGame" to="ContGame" method="_on_test_violation_btn_pressed"]
+[connection signal="pressed" from="NewGame" to="NewGame" method="_on_test_violation_btn_pressed"]
 [connection signal="pressed" from="ContGame" to="ContGame" method="_on_pressed"]
-[connection signal="pressed" from="OptGame" to="OptGame" method="_on_test_violation_btn_pressed"]
+[connection signal="pressed" from="ContGame" to="ContGame" method="_on_test_violation_btn_pressed"]
 [connection signal="pressed" from="OptGame" to="OptGame" method="_on_pressed"]
-[connection signal="pressed" from="ExitGame" to="ExitGame" method="_on_test_violation_btn_pressed"]
+[connection signal="pressed" from="OptGame" to="OptGame" method="_on_test_violation_btn_pressed"]
 [connection signal="pressed" from="ExitGame" to="ExitGame" method="_on_pressed"]
+[connection signal="pressed" from="ExitGame" to="ExitGame" method="_on_test_violation_btn_pressed"]
