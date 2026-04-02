@@ -21,7 +21,7 @@ public partial class FirebirdDatabase : Node
     private FbConnection _connection;
     private string _database;
     private bool _isConnected = false;
-    private bool _isInitialized = false;
+    public bool IsInitialized { get; private set; } = false;
     
     public GArray CachedDays { get; private set; } = new();
     public GArray CachedEmails { get; private set; } = new();
@@ -97,7 +97,7 @@ public partial class FirebirdDatabase : Node
             CreateTables();
             ImportContent();
             
-            _isInitialized = true;
+            IsInitialized = true;
             EmitSignal(SignalName.DatabaseReady);
             GD.Print("✅ БД готова к работе");
         }
@@ -131,11 +131,17 @@ public partial class FirebirdDatabase : Node
         GD.Print("📥 Проверка контента...");
         
         var checkResult = ExecuteQuery("SELECT COUNT(*) AS \"cnt\" FROM game_days");
-        if (checkResult.Count > 0 && checkResult[0]["cnt"].AsInt32() > 0)
+        if (checkResult.Count > 0)
         {
-            GD.Print("✅ Данные уже существуют: ", checkResult[0]["cnt"], " записей");
-            LoadContentToCache();
-            return;
+            // Сначала извлекаем первый элемент как словарь
+            GDictionary firstRow = (GDictionary)checkResult[0];
+            if (firstRow["cnt"].AsInt32() > 0)
+            {
+                GD.Print("✅ Данные уже существуют: ", firstRow["cnt"].AsInt32(), " записей");
+                LoadContentToCache();
+                return;
+            }
+            
         }
         
         string sqlPath = ProjectSettings.GlobalizePath("res://scripts/database/game_content_firebird.sql");
@@ -191,9 +197,9 @@ public partial class FirebirdDatabase : Node
         GD.Print("✅ Кэш загружен");
     }
     
-    private List<Dictionary> ExecuteQuery(string sql)
+    private GArray ExecuteQuery(string sql)
     {
-        var result = new List<Dictionary>();
+        var result = new GArray();
         
         try
         {
@@ -260,52 +266,59 @@ public partial class FirebirdDatabase : Node
     {
         var result = new GArray();
 
-        foreach (var email in CachedEmails)
+        foreach (var item in CachedEmails)
         {
+            GDictionary email = (GDictionary)item; 
             if (email.ContainsKey("day_id") && email["day_id"].AsInt32() == dayId)
             {
                 result.Add(email);
+            
             }
         }
         return result;
     }
     
-    public Dictionary GetQuestForEmail(int emailId)
+    public GDictionary GetQuestForEmail(int emailId)
     {
-        foreach (var quest in CachedQuests)
+        foreach (var item in CachedQuests)
         {
-            if (quest.ContainsKey("email_id") && Convert.ToInt32(quest["email_id"]) == emailId)
-            {
+            GDictionary quest = (GDictionary)item;
+            if (quest.ContainsKey("email_id") && quest["email_id"].AsInt32() == emailId)
                 return quest;
-            }
+            
         }
-        return new Dictionary();
+        return new GDictionary();
     }
     
     public GDictionary LoadPlayerProgress(int saveSlot = 1)
     {
-        var result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
+        GArray result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
         
         if (result.Count > 0)
         {
-            var progress = result[0];
-            GD.Print("💾 Прогресс загружен: день=", progress.ContainsKey("current_day") ? progress["current_day"] : "1");
-            return progress;
+            GDictionary progressData = (GDictionary)result[0];
+            string day = progressData.ContainsKey("current_day")
+                ? progressData["current_day"].ToString()
+                : "1";
+
+            GD.Print("💾 Прогресс загружен: день={day}");
+
+            return progressData;
         }
         
         GD.Print("💾 Прогресс по умолчанию");
-        return new GDictionary
-        {
-            { "save_slot", saveSlot },
-            { "player_role", "employee" },
-            { "current_day", 1 },
-            { "violations", 0 },
-            { "trust_level", 50 },
-            { "flags_unlocked", "{}" },
-            { "quests_completed", "[]" },
-            { "endings_unlocked", "[]" },
-            { "total_playtime_minutes", 0 }
-        };
+        GDictionary defaultProgress = new GDictionary();
+        defaultProgress["save_slot"] = saveSlot;
+        defaultProgress["player_role"] = "employee";
+        defaultProgress["current_day"] = 1;
+        defaultProgress["violations"] = 0;
+        defaultProgress["trust_level"] = 50;
+        defaultProgress["flags_unlocked"] = "{}";
+        defaultProgress["quests_completed"] = "[]";
+        defaultProgress["endings_unlocked"] = "[]";
+        defaultProgress["total_playtime_minutes"] = 0;
+        
+        return defaultProgress;
     }
     
     public void SavePlayerProgress(string role, int day, int violations, Dictionary flags, Dictionary quests)
@@ -353,16 +366,16 @@ public partial class FirebirdDatabase : Node
     
     public Dictionary GetRandomEventForDay(int day)
     {
-        var result = ExecuteQuery($"SELECT * FROM random_events WHERE min_day <= {day} AND max_day >= {day}");
+        GArray result = ExecuteQuery($"SELECT * FROM random_events WHERE min_day <= {day} AND max_day >= {day}");
         
         if (result.Count > 0)
         {
             var rand = new Random();
             int index = rand.Next(result.Count);
-            return result[index];
+            return (GDictionary)result[index];
         }
         
-        return new Dictionary();
+        return new GDictionary();
     }
     
     public override void _ExitTree()

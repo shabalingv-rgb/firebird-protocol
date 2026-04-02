@@ -20,16 +20,16 @@ func _ready():
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
 	# Подключаемся к сигналам БД
-	DatabaseManager.database_ready.connect(_on_database_ready)	
+	DatabaseManager.DatabaseReady.connect(_on_database_ready)	
 	
 	print("📧 Email Client загружен")
 	
 	# Подключаемся к сигналам ТОЛЬКО если ещё не подключено
-	if DatabaseManager and not DatabaseManager.database_ready.is_connected(_on_database_ready):
+	if DatabaseManager and not DatabaseManager.DatabaseReady.is_connected(_on_database_ready):
 		DatabaseManager.database_ready.connect(_on_database_ready)
 		
 		# Если БД уже готова - загружаем сразу
-		if DatabaseManager.is_initialized:
+		if DatabaseManager.IsInitialized:
 			load_emails_for_day(1)
 	else:
 		# Если БД ещё не готова - загружаем позже
@@ -156,9 +156,9 @@ func load_emails_for_day(day_number: int):
 		return
 	
 	# Проверяем кэш
-	print("📋 В кэше писем всего: ", DatabaseManager.cached_emails.size())
+	print("📋 В кэше писем всего: ", DatabaseManager.CachedEmails.size())
 	
-	current_emails = DatabaseManager.get_emails_for_day(day_number)
+	current_emails = DatabaseManager.GetEmailsForDay(day_number)
 	current_day_emails = current_emails
 	
 	print("📫 Загружено писем для дня ", day_number, ": ", current_emails.size())
