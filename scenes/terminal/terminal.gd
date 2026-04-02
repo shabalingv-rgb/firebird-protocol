@@ -19,15 +19,24 @@ var mock_tables: Dictionary = {}
 func _ready():
 	# Подключаемся к сигналам БД
 	if DatabaseManager:
-		DatabaseManager.database_ready.connect(_on_database_ready)
+		DatabaseManager.DatabaseReady.connect(_on_database_ready)
 	
 	# Настройка терминала
 	terminal_input.text = ""
 	terminal_input.grab_focus()
+	terminal_output.scroll_following = true
 	
 	welcome_message()
 	load_mock_tables()
+	
+	$BackButton.pressed.connect(_on_back_pressed)
+	$HelpButton.pressed.connect(_on_help_pressed)
 
+func _on_back_pressed():
+	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn") 
+	
+func  _on_help_pressed():
+	get_tree().change_scene_to_file("res://scenes/guide/guide_client.tscn")
 
 func _on_database_ready():
 	print("💻 Terminal: БД готова")
@@ -84,6 +93,13 @@ func load_mock_tables():
 		{"id": 2, "name": "Аналитика данных", "budget": 200000, "status": "active"}
 	]
 
+func scroll_to_bottom():
+	#ДАём движку время пересчитать размер текста
+	await  get_tree().process_frame
+	await  get_tree().process_frame
+	await  get_tree().process_frame
+	terminal_output.scroll_to_line(terminal_output.get_line_count())
+	
 
 func load_active_quest():
 	"""Загрузка активного задания из БД"""
@@ -109,17 +125,32 @@ func show_quest_notification(quest: Dictionary):
 
 
 func execute_command(command: String):
-	"""Выполнение SQL команды"""
+	var cmd_raw = command.strip_edges()
+	if cmd_raw.is_empty(): return
+	
+	terminal_output.text += "\nSQL> " + cmd_raw + "\n"
+	
+	# Разбиваем команду на части для умного HELP
+	var parts = cmd_raw.split(" ", false) # false значит "не убирать пустые", но при этом лучше true
+	var first_word = parts[0].to_upper() if parts.size() > 0 else ""
+	
+	if first_word == "HELP":
+		if parts.size() > 1:
+			var subject = parts[1].strip_edges().to_upper()
+			show_help_for_subject(subject)
+		else :
+			show_help()
+		terminal_input.text = "" # Очищаем ввод
+		scroll_to_bottom() # Вызываем прокрутку здесь
+		return
+		
 	if command.strip_edges().is_empty():
 		return
 	
-	# Добавляем в историю
-	sql_command_history.append(command)
+	#Добавляем в историю
+		sql_command_history.append(command)
 	
-	# Отображаем команду
-	terminal_output.text += "\nSQL> " + command + "\n"
-	
-	# Обработка специальных команд
+	 #Обработка специальных команд
 	if command.to_upper().begins_with("HELP"):
 		show_help()
 		return
@@ -131,20 +162,39 @@ func execute_command(command: String):
 		return
 	
 	# Выполнение SQL запроса
-	var result = execute_sql(command)
-	
+	var result = execute_sql(cmd_raw)
 	if result.success:
 		display_result(result.data)
-		
-		# Проверяем если это задание
-		if is_quest_active:
-			check_quest_completion(result.data)
 	else:
-		terminal_output.text += "[color=red]⚠️ ОШИБКА:[/color] " + result.error + "\n"
-	
-	# Прокрутка вниз
-	terminal_output.scroll_vertical = terminal_output.get_line_count()
+		terminal_output.text += "[color=red]⚠️ ОШИБКА:[/color] " + str(result.error) + "\n"
+		
+	terminal_input.text = ""
+		
+	scroll_to_bottom() # Вызываем прокрутку здесь
 
+
+func show_help_for_subject(subject: String):
+	terminal_output.text += "\n [color=cyan] 🔍 СПРАВКА ПО ОБЪЕКТУ: " + subject + "[/color]\n"
+	
+	match subject:
+		"EMPLOYEES":
+			terminal_output.text += "Таблица сотрудников НИИ.\nКолонки: ID (int), NAME (str), DEPARTMENT (str), SALARY (int)\n"
+		"EMAILS":
+			terminal_output.text += "Архив входящей почты.\nКолонки: ID, SENDER, SUBJECT, BODY, DAY_ID\n"
+		"SELECT":
+			terminal_output.text += "Синтаксис: SELECT [колонки] FROM [таблица] WHERE [условие]\nПример: SELECT * FROM employees WHERE salary > 50000\n"
+		_:
+			#Если игрок ввел что-то неизвестное, пробуем поискать это в БД
+			var check_db = DatabaseManager.ExecuteQuery("SELECT 1 FROM RDB$RELATIONS_NAME = '" + subject + "'")
+			if check_db and check_db.size() >0:
+				terminal_output.text += "Это существующая таблица в базе данных.\n"
+			else:
+				terminal_output.text += "Информация по запросу '" + subject + "' не найдена.\n"
+				
+		# Прокрутка вниз
+	scroll_to_bottom()
+
+	
 
 func show_help():
 	"""Показ справки по командам"""
@@ -178,20 +228,25 @@ func show_tables():
 
 
 func execute_sql(command: String) -> Dictionary:
-	"""Выполнение SQL запроса (эмуляция)"""
+	"""Выполнение реального SQL запроса через Firebird"""
 	var cmd_upper = command.to_upper().strip_edges()
 	
-	# Простая эмуляция SELECT
-	if cmd_upper.begins_with("SELECT"):
-		return execute_select(command)
-	elif cmd_upper.begins_with("INSERT"):
-		return execute_insert(command)
-	elif cmd_upper.begins_with("UPDATE"):
-		return execute_update(command)
-	elif cmd_upper.begins_with("DELETE"):
-		return execute_delete(command)
-	else:
-		return {"success": false, "error": "Неподдерживаемая команда"}
+	# Сначала записываем использованные команды для статистики/ачивок
+	for word in ["SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "DROP"]:
+		if cmd_upper.begins_with(word):
+			track_sql_usage(word)
+			break
+
+	#Отправляем запрос в настоящий Firebird через наш С# менеджер
+	var result_data = DatabaseManager.ExecuteQuery(command)
+
+	#Если результат null значит в C# произошла ошибка (исключение)
+	if result_data == null:
+		# Получаем тектс ошибки прямо из движка Firebird через наш новый метод
+		var err_text = DatabaseManager.GetLastError()
+		return {"success": false, "error": err_text}
+	
+	return {"success": true, "data": result_data}
 
 
 func execute_select(command: String) -> Dictionary:
@@ -243,25 +298,28 @@ func execute_delete(_command: String) -> Dictionary:
 
 
 func display_result(data: Array):
-	"""Отображение результатов запроса"""
 	if data.is_empty():
-		terminal_output.text += "[color=yellow]Строк: 0[/color]\n"
+		terminal_output.text += "[color=gray]Запрос выполнен. Строк: 0[/color]\n"
 		return
 	
-	# Получаем колонки
+	# Получаем список колонок из первой строки
 	var columns = data[0].keys()
 	
-	# Заголовок
+	# Формируем заголовок с разделителем
 	var header = ""
+	var separator = ""
 	for col in columns:
-		header += str(col) + " | "
-	terminal_output.text += "[color=green]" + header + "[/color]\n"
+		header += "%-15s | " % str(col) #Выравнивание по левому краю
+		separator += "-----------------"
+		
+	terminal_output.text += "[color=cyan]" + header + "[/color]\n"
+	terminal_output.text += "[color=gray]" + separator + "[/solor]\n"
 	
-	# Данные
+	# Выводим строки данных
 	for row in data:
 		var line = ""
 		for col in columns:
-			line += str(row.get(col, "")) + " | "
+			line += "%-15s | " % str(row.get(col, "NULL"))
 		terminal_output.text += line + "\n"
 	
 	terminal_output.text += "[color=yellow]Строк: " + str(data.size()) + "[/color]\n"
@@ -271,22 +329,26 @@ func check_quest_completion(result_data: Array):
 	if active_quest.is_empty():
 		return
 	
-	var expected_rows = active_quest.get("expected_rows", -1)
+	var expected_rows = active_quest.get("EXPECTED_ROWS", active_quest.get("expected_rows", -1))
 	
+	# 1. Простейшая проверка по количеству строк
 	if expected_rows >= 0 and result_data.size() == expected_rows:
-		terminal_output.text += "\n[color=green]✅ ЗАДАНИЕ ВЫПОЛНЕНО![/color]\n"
+		terminal_output.text += "\n[color=green]✅ СИСТЕМА: Зпрос принят. Данные соответсвуют ожидаемым.[/color]\n"
 		
-		# ✅ ИСПРАВЛЕНО - передаём true (bool)
+		# 2. Передаём сигнал в QuestManager
 		QuestManager.complete_quest(true)
 		
+		# 3. Деактивируем задание, что бы не срабатывало на каждый SELECT
+		active_quest = {}
 		is_quest_active = false
 	else:
-		terminal_output.text += "\n[color=red]⚠️ Ожидается " + str(expected_rows) + " строк, получено " + str(result_data.size()) + "[/color]\n"
+		terminal_output.text += "\n[color=yellow]⚠️ СИСТЕМА: Получено " + str(result_data.size()) + " строк. Ожидалось " + str(expected_rows) + ".[/color]\n"
 		
 func track_sql_usage(command_name: String):
 	"""Отслеживание использования SQL команды"""
 	if DatabaseManager:
-		DatabaseManager.track_sql_usage(command_name, current_day)
+		# Используем TrackSqlUsage (с большой буквы)
+		DatabaseManager.TrackSqlUsage(command_name, current_day)
 
 
 func set_day(day: int):

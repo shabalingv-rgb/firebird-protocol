@@ -132,6 +132,14 @@ CREATE TABLE endings (
     is_secret SMALLINT DEFAULT 0
 );
 
+-- Таблица: employees
+CREATE TABLE employees (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(100),
+    department VARCHAR(50),
+    salary INTEGER
+);
+
 -- ============================================
 -- ИНДЕКСЫ
 -- ============================================
@@ -166,5 +174,10 @@ INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type,
 -- Задания (пример)
 INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES 
 (1, 1, 'Ознакомление с базой', 'Выполните запрос для получения списка сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM');
+
+-- Сотрудники (пример)
+INSERT INTO employees (id, name, department, salary) VALUES (1, 'Иванов Иван', 'IT', 75000);
+INSERT INTO employees (id, name, department, salary) VALUES (2, 'Петрова Мария', 'HR', 65000);
+INSERT INTO employees (id, name, department, salary) VALUES (3, 'Сидоров Алексей', 'IT', 80000);
 
 COMMIT;
