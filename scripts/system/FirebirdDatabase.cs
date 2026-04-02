@@ -1,11 +1,13 @@
-using Godot;
-using FirebirdSql.Data.FirebirdClient;  // ✅ Правильное пространство
+using FirebirdSql.Data.FirebirdClient;
 using System;
-using System.Collections.Generic;  // Для Dictionary
-using System.Threading.Tasks;
-
-string dbPath = ProjectSettings.GlobalizePath("res://game_content.fdb");
-string libPath = "/Library/Frameworks/Firebird.framework/Versions/A/libraries/libfbclient.dylib";
+using System.Collections.Generic;
+using Godot;
+using Godot.Collections;
+using System.IO;
+using System.Threading.Tasks.Dataflow;
+using GDictionary = Godot.Collections.Dictionary;
+using GArray = Godot.Collections.Array;
+using Microsoft.VisualBasic;
 
 
 public partial class FirebirdDatabase : Node
@@ -17,19 +19,17 @@ public partial class FirebirdDatabase : Node
     public delegate void ContentLoadedEventHandler();
     
     private FbConnection _connection;
+    private string _database;
     private bool _isConnected = false;
     private bool _isInitialized = false;
     
-    // Кэшированные данные
-    public List<Dictionary<string, object>> CachedDays { get; private set; } = new();
-    public List<Dictionary<string, object>> CachedEmails { get; private set; } = new();
-    public List<Dictionary<string, object>> CachedQuests { get; private set; } = new();
-    public List<Dictionary<string, object>> CachedNews { get; private set; } = new();
-    public List<Dictionary<string, object>> CachedDossiers { get; private set; } = new();
-    public List<Dictionary<string, object>> CachedEvents { get; private set; } = new();
-    public List<Dictionary<string, object>> CachedEndings { get; private set; } = new();
-    
-    private string _connectionString;
+    public GArray CachedDays { get; private set; } = new();
+    public GArray CachedEmails { get; private set; } = new();
+    public GArray CachedQuests { get; private set; } = new();
+    public GArray CachedNews { get; private set; } = new();
+    public GArray CachedDossiers { get; private set; } = new();
+    public GArray CachedEvents { get; private set; } = new();
+    public GArray CachedEndings { get; private set; } = new();
     
     public override void _Ready()
     {
@@ -41,19 +41,27 @@ public partial class FirebirdDatabase : Node
     {
         GD.Print("📋 Инициализация Firebird Embedded...");
         
-        // Строка подключения для Embedded
-        _database = @"
-            User=SYSDBA;
-            Password=masterkey;
-            Database={dbPath};
-            DataSource=localhost;
-            ServerType=0;
-            Charset=UTF8";
-            Client Library={libPath}";
+        // Получаем абсолютный путь к БД
+        string dbPath = ProjectSettings.GlobalizePath("res://game_content.fdb");
+        //string libPath = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libfbclient.dylib";
         
-        // Для Embedded ServerType=0
-        // Database должен указывать на .fdb файл
+        // Пробуем разнве варианты строки подключения
+        GD.Print("📂 Путь к БД: ", dbPath);
+
+        //Вариант 1: Простая строка (попробуем сначала)
+        _database = $"Database=localhost:{dbPath};User=SYSDBA;Password=masterkey;ServerType=0;Dialect=3;";
+
+
+        GD.Print("🔑 Строка подключения: ", _database);
+
+        // Проверяем что файл существует
+        if (!File.Exists(dbPath))
+        {
+            GD.PrintErr("❌ Файл БД не найден: ", dbPath);
+            return;
+        }
         
+        GD.Print("✅ Файл БД найден, подключаемся...");
         ConnectDatabase();
     }
     
@@ -61,7 +69,26 @@ public partial class FirebirdDatabase : Node
     {
         try
         {
-            _connection = new FbConnection(_connectionString);
+            GD.Print("🔌 Попытка подключения...");
+            GD.Print("🔑 Connection string: ", _database);
+            GD.Print($"Попытка подключения: {_database}");
+
+            // Создаем путь к временной папке внутри проекта
+            string tempPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "fb_temp");
+
+            // Создаем папку, если её нет
+            if (!System.IO.Directory.Exists(tempPath))
+            {
+                System.IO.Directory.CreateDirectory(tempPath);
+            }
+
+            // Указываем Firebird использовать эту папку для локов
+            //System.Environment.SetEnvironmentVariable("FIREBIRD_LOCK", tempPath);
+            //System.Environment.SetEnvironmentVariable("FIREBIRD_TMP", tempPath);
+
+            GD.Print($"Установлена временная папка Firebird: {tempPath}");
+
+            _connection = new FbConnection(_database);
             _connection.Open();
             _isConnected = true;
             
@@ -77,99 +104,75 @@ public partial class FirebirdDatabase : Node
         catch (Exception e)
         {
             GD.PrintErr("❌ Ошибка подключения: ", e.Message);
+            GD.PrintErr("Stack: ", e.StackTrace);
+            GD.PrintErr("Inner Exception: ", e.InnerException?.Message);
         }
     }
     
     private void CreateTables()
     {
-        GD.Print("📋 Создание таблиц...");
-        
-        var tables = new[]
+        // Запрос к системному каталогу Firebird, что бы проверить наличие таблицы GAME_DAYS
+        var check = ExecuteQuery("SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'GAME_DAYS'");
+
+        if (check.Count == 0)
         {
-            @"CREATE TABLE IF NOT EXISTS game_days (
-                id INTEGER PRIMARY KEY,
-                role VARCHAR(20) NOT NULL,
-                day_number INTEGER NOT NULL,
-                title VARCHAR(100),
-                description VARCHAR(500),
-                is_playable INTEGER DEFAULT 1,
-                alternative_activity VARCHAR(50),
-                UNIQUE(role, day_number)
-            )",
-            
-            @"CREATE TABLE IF NOT EXISTS emails (
-                id INTEGER PRIMARY KEY,
-                day_id INTEGER,
-                sender VARCHAR(100) NOT NULL,
-                sender_email VARCHAR(100),
-                subject VARCHAR(200) NOT NULL,
-                body VARCHAR(5000) NOT NULL,
-                email_type VARCHAR(20),
-                is_required INTEGER DEFAULT 1,
-                sort_order INTEGER DEFAULT 0,
-                unlock_condition VARCHAR(100)
-            )",
-            
-            // ... остальные таблицы
-        };
-        
-        foreach (var tableSql in tables)
+            GD.Print("🛠 Нужно создать структуру таблиц...");
+
+        }
+        else
         {
-            ExecuteNonQuery(tableSql);
+           GD.Print("📋 Таблицы уже созданы в БД"); 
         }
         
-        GD.Print("✅ Таблицы созданы");
     }
     
     private void ImportContent()
-{
-    GD.Print("📥 Импорт контента...");
-    
-    // Проверяем есть ли данные
-    var checkResult = ExecuteQuery("SELECT COUNT(*) as cnt FROM game_days");
-    if (checkResult.Count > 0 && Convert.ToInt32(checkResult[0]["cnt"]) > 0)
     {
-        GD.Print("✅ Данные уже существуют");
-        LoadContentToCache();
-        return;
-    }
-    
-    // Читаем SQL файл
-    string sqlPath = ProjectSettings.GlobalizePath("res://scripts/database/game_content_firebird.sql");
-    if (File.Exists(sqlPath))
-    {
-        string sqlContent = File.ReadAllText(sqlPath);
-        string[] commands = sqlContent.Split(new[] { ";\n", ";\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+        GD.Print("📥 Проверка контента...");
         
-        int successCount = 0;
-        int errorCount = 0;
-        
-        foreach (var command in commands)
+        var checkResult = ExecuteQuery("SELECT COUNT(*) AS \"cnt\" FROM game_days");
+        if (checkResult.Count > 0 && checkResult[0]["cnt"].AsInt32() > 0)
         {
-            if (command.Trim().Length > 0 && !command.Trim().StartsWith("--"))
-            {
-                try
-                {
-                    ExecuteNonQuery(command);
-                    successCount++;
-                }
-                catch (Exception e)
-                {
-                    errorCount++;
-                    GD.PrintErr("⚠️ Ошибка: ", e.Message);
-                }
-            }
+            GD.Print("✅ Данные уже существуют: ", checkResult[0]["cnt"], " записей");
+            LoadContentToCache();
+            return;
         }
         
-        GD.Print("✅ Импорт завершён: ", successCount, " успешно, ", errorCount, " ошибок");
+        string sqlPath = ProjectSettings.GlobalizePath("res://scripts/database/game_content_firebird.sql");
+        if (File.Exists(sqlPath))
+        {
+            string sqlContent = File.ReadAllText(sqlPath);
+            string[] commands = sqlContent.Split(new[] { ";\n", ";\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            
+            int successCount = 0;
+            int errorCount = 0;
+            
+            foreach (var command in commands)
+            {
+                if (command.Trim().Length > 0 && !command.Trim().StartsWith("--"))
+                {
+                    try
+                    {
+                        ExecuteNonQuery(command);
+                        successCount++;
+                    }
+                    catch (Exception e)
+                    {
+                        errorCount++;
+                        GD.PrintErr("⚠️ Ошибка: ", e.Message);
+                    }
+                }
+            }
+            
+            GD.Print("✅ Импорт завершён: ", successCount, " успешно, ", errorCount, " ошибок");
+        }
+        else
+        {
+            GD.PrintErr("❌ SQL файл не найден: ", sqlPath);
+        }
+        
+        LoadContentToCache();
     }
-    else
-    {
-        GD.PrintErr("❌ SQL файл не найден: ", sqlPath);
-    }
-    
-    LoadContentToCache();
-}
     
     private void LoadContentToCache()
     {
@@ -188,21 +191,46 @@ public partial class FirebirdDatabase : Node
         GD.Print("✅ Кэш загружен");
     }
     
-    private List<Dictionary<string, object>> ExecuteQuery(string sql)
+    private List<Dictionary> ExecuteQuery(string sql)
     {
-        var result = new List<Dictionary<string, object>>();
-    
+        var result = new List<Dictionary>();
+        
         try
         {
             using var command = new FbCommand(sql, _connection);
             using var reader = command.ExecuteReader();
-        
+            
             while (reader.Read())
             {
-                var row = new Dictionary<string, object>();
+                var row = new GDictionary();
                 for (int i = 0; i < reader.FieldCount; i++)
                 {
-                    row[reader.GetName(i)] = reader.GetValue(i);
+                    object val = reader.GetValue(i);
+                    string name = reader.GetName(i);
+
+                    if (val == null || val == DBNull.Value)
+                    {
+                        row[name] = new Variant();
+                    }
+                    else if (val is DateTime dt)
+                    {
+                        // Godot любит строки или метри времени для дат 
+                        row[name] = dt.ToString("yyyy-MM-dd HH:mm:ss");
+                    }
+                    else if (val is int || val is long || val is short)
+                    {
+                        row[name] = Convert.ToInt64(val);
+                    }
+                    else if (val is float || val is double || val is decimal)
+                    {
+                        row[name] = Convert.ToDouble(val);
+                    }
+                    else
+                    {
+                        // Для всего остального используем ToStrinf()
+                        row[name] = val.ToString(); 
+                    }
+                    
                 }
                 result.Add(row);
             }
@@ -211,7 +239,7 @@ public partial class FirebirdDatabase : Node
         {
             GD.PrintErr("❌ Ошибка запроса: ", e.Message);
         }
-    
+        
         return result;
     }
     
@@ -228,13 +256,13 @@ public partial class FirebirdDatabase : Node
         }
     }
     
-    // Методы для GDScript
-    public List<Dictionary<string, object>> GetEmailsForDay(int dayId)
+    public GArray GetEmailsForDay(int dayId)
     {
-        var result = new List<Dictionary<string, object>>();
+        var result = new GArray();
+
         foreach (var email in CachedEmails)
         {
-            if (email.ContainsKey("day_id") && Convert.ToInt32(email["day_id"]) == dayId)
+            if (email.ContainsKey("day_id") && email["day_id"].AsInt32() == dayId)
             {
                 result.Add(email);
             }
@@ -242,7 +270,7 @@ public partial class FirebirdDatabase : Node
         return result;
     }
     
-    public Dictionary<string, object> GetQuestForEmail(int emailId)
+    public Dictionary GetQuestForEmail(int emailId)
     {
         foreach (var quest in CachedQuests)
         {
@@ -251,7 +279,90 @@ public partial class FirebirdDatabase : Node
                 return quest;
             }
         }
-        return new Dictionary<string, object>();
+        return new Dictionary();
+    }
+    
+    public GDictionary LoadPlayerProgress(int saveSlot = 1)
+    {
+        var result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
+        
+        if (result.Count > 0)
+        {
+            var progress = result[0];
+            GD.Print("💾 Прогресс загружен: день=", progress.ContainsKey("current_day") ? progress["current_day"] : "1");
+            return progress;
+        }
+        
+        GD.Print("💾 Прогресс по умолчанию");
+        return new GDictionary
+        {
+            { "save_slot", saveSlot },
+            { "player_role", "employee" },
+            { "current_day", 1 },
+            { "violations", 0 },
+            { "trust_level", 50 },
+            { "flags_unlocked", "{}" },
+            { "quests_completed", "[]" },
+            { "endings_unlocked", "[]" },
+            { "total_playtime_minutes", 0 }
+        };
+    }
+    
+    public void SavePlayerProgress(string role, int day, int violations, Dictionary flags, Dictionary quests)
+    {
+        try
+        {
+            string flagsJson = System.Text.Json.JsonSerializer.Serialize(flags);
+            string questsJson = System.Text.Json.JsonSerializer.Serialize(quests);
+            
+            string sql = $@"
+                INSERT INTO player_progress (save_slot, user_role, current_day, violations, flags_unlocked, quests_completed, last_saved)
+                VALUES (1, '{role}', {day}, {violations}, '{flagsJson}', '{questsJson}', CURRENT_TIMESTAMP)
+                ON CONFLICT (save_slot) DO UPDATE SET
+                    user_role = '{role}',
+                    current_day = {day},
+                    violations = {violations},
+                    flags_unlocked = '{flagsJson}',
+                    quests_completed = '{questsJson}',
+                    last_saved = CURRENT_TIMESTAMP";
+            
+            ExecuteNonQuery(sql);
+            GD.Print("💾 Прогресс сохранён: день=", day);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr("❌ Ошибка сохранения: ", e.Message);
+        }
+    }
+    
+    public void TrackSqlUsage(string commandName, int day)
+    {
+        try
+        {
+            string sql = $@"
+                UPDATE sql_commands 
+                SET times_used = times_used + 1, last_used_day = {day}
+                WHERE command_name = '{commandName}'";
+            
+            ExecuteNonQuery(sql);
+        }
+        catch (Exception)
+        {
+        }
+    }
+    
+    public Dictionary GetRandomEventForDay(int day)
+    {
+        var result = ExecuteQuery($"SELECT * FROM random_events WHERE min_day <= {day} AND max_day >= {day}");
+        
+        if (result.Count > 0)
+        {
+            var rand = new Random();
+            int index = rand.Next(result.Count);
+            return result[index];
+        }
+        
+        return new Dictionary();
     }
     
     public override void _ExitTree()
@@ -260,4 +371,3 @@ public partial class FirebirdDatabase : Node
         _connection?.Dispose();
     }
 }
-

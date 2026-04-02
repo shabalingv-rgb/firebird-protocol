@@ -8,8 +8,10 @@ signal day_completed(day_number: int)
 signal violation_added(count: int, reason: String)
 #signal role_completed(role: String)
 
+@onready var db = get_node("/root/DatabaseManager")
+
 # Текущее состояние
-var current_role: String = "employee"
+var player_role: String = "employee"
 var current_day: int = 1
 var active_quest: Dictionary = {}
 var violations: int = 0
@@ -25,8 +27,11 @@ const TRUST_DECREASE_PER_VIOLATION := 10
 func _ready():
 	print("📋 Quest Manager загружен")
 	
+	# Временно убираем проверку is_initialized
 	# Загружаем прогресс если есть
-	if DatabaseManager and DatabaseManager.is_initialized:
+	if DatabaseManager:
+		# Ждём немного пока БД инициализируется
+		await get_tree().create_timer(0.5).timeout
 		load_progress()
 
 
@@ -44,10 +49,10 @@ func start_day(day_number: int):
 
 func load_quests_for_day(day_number: int):
 	"""Загрузка заданий для дня"""
-	var emails = DatabaseManager.get_emails_for_day(day_number)
+	var emails = DatabaseManager.GetEmailsForDay(day_number)
 	
 	for email in emails:
-		var quest = DatabaseManager.get_quest_for_email(email.id)
+		var quest = DatabaseManager.GetEmailsForDay(email.id)
 		if quest and not quest.is_empty():
 			if quest.get("is_required", true):
 				active_quest = quest
@@ -102,11 +107,11 @@ func complete_quest(success: bool):
 func check_day_completion():
 	"""Проверка завершены ли все задания дня"""
 	# Получаем все обязательные задания дня
-	var emails = DatabaseManager.get_emails_for_day(current_day)
+	var emails = DatabaseManager.GetEmailsForDay(current_day)
 	var required_quests = []
 	
 	for email in emails:
-		var quest = DatabaseManager.get_quest_for_email(email.id)
+		var quest = DatabaseManager.GetQuestForEmail(email.id)
 		if quest and quest.get("is_required", true):
 			required_quests.append(quest.id)
 	
@@ -164,8 +169,8 @@ func save_progress():
 	if not DatabaseManager:
 		return
 	
-	DatabaseManager.save_player_progress(
-		current_role,
+	DatabaseManager.SavePlayerProgress(
+		player_role,
 		current_day,
 		violations,
 		story_flags,
@@ -175,26 +180,47 @@ func save_progress():
 	print("💾 Прогресс сохранён")
 
 
+
 func load_progress():
+	# 1. Получаем данные из C# (ОБЯЗАТЕЛЬНО сохраняем в переменную progress)
+	var progress = db.LoadPlayerProgress(1)
+	
 	"""Загрузка прогресса"""
-	if not DatabaseManager:
+	# Используем переменную db, которую мы объявили через @onready
+	if not db:
+		print("❌ DatabaseManager не найден!")
 		return
 	
-	var progress = DatabaseManager.load_player_progress()
+
 	
-	current_role = progress.get("current_role", "employee")
-	current_day = progress.get("current_day", 1)
-	violations = progress.get("violations", 0)
-	trust_level = progress.get("trust_level", 50)
-	story_flags = progress.get("flags_unlocked", {})
-	completed_quests = progress.get("quests_completed", [])
+	if progress == null:
+		print("⚠️ База вернула пустой результат")
+		return
+
+	# 2. Извлекаем простые значения
+	player_role = progress.get("player_role", "employee")
+	current_day = int(progress.get("current_day", 1))
+	violations = int(progress.get("violations", 0))
+	trust_level = int(progress.get("trust_level", 50))
+	
+	# 3. Превращаем JSON-строки из базы в объекты GDScript (Dict и Array)
+	var raw_flags = progress.get("flags_unlocked", "{}")
+	if raw_flags is String:
+		story_flags = JSON.parse_string(raw_flags)
+	else:
+		story_flags = raw_flags
+		
+	var raw_quests = progress.get("quests_completed", "[]")
+	if raw_quests is String:
+		completed_quests = JSON.parse_string(raw_quests)
+	else:
+		completed_quests = raw_quests
 	
 	print("💾 Прогресс загружен: День ", current_day, ", Нарушения: ", violations)
 
-
 func reset_progress():
 	"""Сброс прогресса"""
-	current_role = "employee"
+	player_role = "employee"
 	current_day = 1
 	active_quest = {}
 	violations = 0
@@ -207,7 +233,7 @@ func reset_progress():
 
 func check_random_events():
 	"""Проверка случайных событий"""
-	var event = DatabaseManager.get_random_event_for_day(current_day)
+	var event = DatabaseManager.GetRandomEventForDay(current_day)
 	
 	if event and not event.is_empty():
 		print("🎲 Случайное событие: ", event.event_name)
@@ -219,7 +245,7 @@ func get_quest_status() -> Dictionary:
 	"""Получение статуса заданий"""
 	return {
 		"current_day": current_day,
-		"current_role": current_role,
+		"player_role": player_role,
 		"active_quest": active_quest,
 		"violations": violations,
 		"trust_level": trust_level,

@@ -12,7 +12,7 @@ config_version=5
 
 config/name="firebird-protocol"
 run/main_scene="uid://bhqq3awl7hoct"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
@@ -21,7 +21,7 @@ GameState="*uid://83ilcgee0xpc"
 QuestManager="*uid://qvhnca2clj38"
 EmailSystem="*uid://cje5bc56xghjs"
 GuideSystem="*uid://bjwcspsofnsfi"
-DatabaseManager="*uid://btdlaesgoipnl"
+DatabaseManager="*uid://h85iqknxq553"
 
 [dotnet]
 
