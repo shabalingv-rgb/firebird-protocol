@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://utjclwnwe0f"]
 
 [ext_resource type="Script" uid="uid://dxvtr7by6x8m3" path="res://scenes/terminal/terminal.gd" id="1_k5ahw"]
+[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_2y7k8"]
 
 [node name="Terminal" type="Control" unique_id=1750193804]
 layout_mode = 3
@@ -16,43 +17,61 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0.101960786, 0, 1)
 
-[node name="TerminalOutput" type="RichTextLabel" parent="." unique_id=311203712]
-layout_mode = 0
-offset_left = 30.0
-offset_top = 48.0
-offset_right = 930.0
-offset_bottom = 548.0
-bbcode_enabled = true
-
 [node name="TerminalInput" type="LineEdit" parent="." unique_id=1128146326]
 layout_mode = 0
-offset_left = 81.0
-offset_top = 567.0
-offset_right = 931.0
-offset_bottom = 598.0
+offset_left = 103.0
+offset_top = 585.0
+offset_right = 1136.0
+offset_bottom = 616.0
 
 [node name="CommandPrompt" type="Label" parent="." unique_id=1439481237]
 layout_mode = 0
-offset_left = 34.0
-offset_top = 567.0
-offset_right = 78.0
-offset_bottom = 590.0
+offset_left = 27.0
+offset_top = 594.0
+offset_right = 107.0
+offset_bottom = 617.0
+theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "SQL> "
 
 [node name="HelpButton" type="Button" parent="." unique_id=1594719745]
 layout_mode = 0
-offset_left = 1059.0
-offset_top = 15.0
-offset_right = 1136.0
-offset_bottom = 46.0
+offset_left = 1047.0
+offset_top = -2.0
+offset_right = 1151.0
+offset_bottom = 29.0
+theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Помощь"
 
 [node name="BackButton" type="Button" parent="." unique_id=1809079149]
 layout_mode = 0
-offset_right = 77.0
+offset_left = 12.0
+offset_right = 100.0
 offset_bottom = 31.0
+theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Назад"
+
+[node name="TerminalScroll" type="ScrollContainer" parent="." unique_id=1352724077]
+layout_mode = 0
+offset_left = 33.0
+offset_top = 47.0
+offset_right = 1134.0
+offset_bottom = 569.0
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 2
+
+[node name="TerminalOutput" type="RichTextLabel" parent="TerminalScroll" unique_id=311203712]
+clip_contents = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_fonts/normal_font = ExtResource("2_2y7k8")
+theme_override_font_sizes/normal_font_size = 12
+bbcode_enabled = true
+scroll_following = true
+autowrap_mode = 0
+autowrap_trim_flags = 0

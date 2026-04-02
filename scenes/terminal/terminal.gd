@@ -8,8 +8,9 @@ var sql_command_history: Array = []
 var is_quest_active: bool = false
 
 # Ссылки на узлы UI
-@onready var terminal_output = $TerminalOutput
+@onready var terminal_output = $TerminalScroll/TerminalOutput
 @onready var terminal_input = $TerminalInput
+@onready var terminal_scroll = $TerminalScroll
 #@onready var timer_label = $TimerLabel  # Если есть таймер
 
 # Эмуляция таблиц Firebird SQL
@@ -299,31 +300,44 @@ func execute_delete(_command: String) -> Dictionary:
 
 func display_result(data: Array):
 	if data.is_empty():
-		terminal_output.text += "[color=gray]Запрос выполнен. Строк: 0[/color]\n"
+		terminal_output.append_text("[color=gray]Запрос выполнен. Строк: 0[/color]\n")
 		return
 	
-	# Получаем список колонок из первой строки
+	# 1. Получаем колонки правильно (из первого элемента массива)
 	var columns = data[0].keys()
 	
-	# Формируем заголовок с разделителем
-	var header = ""
-	var separator = ""
+	# 2. Считаем ширину колонок
+	var col_widths = {}
 	for col in columns:
-		header += "%-15s | " % str(col) #Выравнивание по левому краю
-		separator += "-----------------"
-		
-	terminal_output.text += "[color=cyan]" + header + "[/color]\n"
-	terminal_output.text += "[color=gray]" + separator + "[/solor]\n"
+		var max_w = str(col).length()
+		for row in data:
+			var val_text = str(row.get(col, "NULL"))
+			if val_text.length() > max_w:
+				max_w = val_text.length()
+		col_widths[col] = max_w
+
+	# 3. Рисуем шапку
+	var header = " "
+	var separator = "+"
+	for col in columns:
+		header += str(col).to_upper().rpad(col_widths[col]) + " | "
+		separator += "-".repeat(col_widths[col] + 1) + "+"
 	
-	# Выводим строки данных
+	terminal_output.append_text("[color=cyan]" + separator + "[/color]\n")
+	terminal_output.append_text("[color=cyan]" + header + "[/color]\n")
+	terminal_output.append_text("[color=cyan]" + separator + "[/color]\n")
+	
+	# 4. Выводим данные
 	for row in data:
-		var line = ""
+		var line = " "
 		for col in columns:
-			line += "%-15s | " % str(row.get(col, "NULL"))
-		terminal_output.text += line + "\n"
-	
-	terminal_output.text += "[color=yellow]Строк: " + str(data.size()) + "[/color]\n"
+			var value = str(row.get(col, "NULL"))
+			line += value.rpad(col_widths[col]) + " | "
+		terminal_output.append_text(line + "\n")
 		
+	terminal_output.append_text("[color=cyan]" + separator + "[/color]\n")
+	terminal_output.append_text("[color=yellow]Всего строк: " + str(data.size()) + "[/color]\n")
+	
 func check_quest_completion(result_data: Array):
 	"""Проверка выполнения задания"""
 	if active_quest.is_empty():
