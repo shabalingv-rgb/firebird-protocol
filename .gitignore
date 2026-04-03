@@ -5,6 +5,7 @@
 
 # Godot
 .godot/
+.mono/
 export.cfg
 export_presets.cfg
 
@@ -12,3 +13,8 @@ export_presets.cfg
 tmp/
 temp/
 *.tmp
+*.sln
+*.csproj
+.vs/
+bin/
+obj/
