@@ -10,7 +10,7 @@ func _ready():
 	$OptGame.pressed.connect(_on_settings_pressed)
 	$ExitGame.pressed.connect(_on_exit_pressed)
 	
-		# Создаём debug панель если её нет
+	# Создаём debug панель если её нет
 	if not has_node("DebugPanel"):
 		var debug_scene = preload("res://scenes/debug/debug_panel.tscn")
 		var debug_panel = debug_scene.instantiate()
@@ -35,11 +35,10 @@ func _on_new_game_pressed():
 			
 func _on_continue_game_pressed():
 	print("Продолжение игры...")
-	# Проверка наличия сохранения
 	if FileAccess.file_exists("user://save_state.json"):
 		GameState.load_game_state()
 		print("Загрузка с дня: ", GameState.current_day)
-		# Переход к последней сцене
+		get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
 	else:
 		print("Сохранение не найдено!")
 

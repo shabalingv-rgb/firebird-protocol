@@ -25,7 +25,10 @@ DatabaseManager="*uid://h85iqknxq553"
 
 [display]
 
-window/stretch/mode="viewport"
+window/size/viewport_width=2304
+window/size/viewport_height=1296
+window/stretch/mode="canvas_items"
+window/stretch/scale=2.0
 
 [dotnet]
 

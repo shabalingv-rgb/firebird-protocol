@@ -14,37 +14,32 @@ var current_day_emails: Array = []
 var active_quest: Dictionary = {}
 
 func _ready():
-	# Подключаем сигналы
 	if email_list:
 		email_list.item_selected.connect(_on_email_selected)
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
-	# Подключаемся к сигналам БД
-	DatabaseManager.DatabaseReady.connect(_on_database_ready)	
-	
+
 	print("📧 Email Client загружен")
-	
-	# Подключаемся к сигналам ТОЛЬКО если ещё не подключено
+
 	if DatabaseManager and not DatabaseManager.DatabaseReady.is_connected(_on_database_ready):
-		DatabaseManager.database_ready.connect(_on_database_ready)
-		
-		# Если БД уже готова - загружаем сразу
-		if DatabaseManager.IsInitialized:
-			load_emails_for_day(1)
+		DatabaseManager.DatabaseReady.connect(_on_database_ready)
+
+	var day := 1
+	if QuestManager:
+		day = QuestManager.current_day
+
+	if DatabaseManager and DatabaseManager.IsInitialized:
+		load_emails_for_day(day)
 	else:
-		# Если БД ещё не готова - загружаем позже
-		load_emails_for_day(1)
-	
-	# Проверяем, есть ли письма
-	if EmailSystem.inbox.size() == 0:
+		# БД поднимется позже — _on_database_ready вызовет load_emails_for_day
+		pass
+
+	if EmailSystem.inbox.is_empty():
 		print("⚠️ Входящих писем нет!")
 		subject_label.text = "Нет писем"
 		body_label.text = "Задания будут приходить по мере выполнения работы."
 		return
-	
-	# Загружаем письма для дня 1 (временно)
-	load_emails_for_day(1)
-	
+
 	refresh_email_list()
 	load_first_unread_email()
 
@@ -98,8 +93,9 @@ func show_email(email: Dictionary):
 	refresh_email_list()
 	
 	# Добавляем кнопку "Отправить отчёт" если это письмо с заданием
-	if email.has("quest_id"):
-		add_report_button(email.quest_id)
+	if email.get("quest_id", null) != null or email.get("QUEST_ID", null) != null:
+		var qid = email.get("QUEST_ID", email.get("quest_id", ""))
+		add_report_button(str(qid))
 
 func add_report_button(quest_id: String):
 	# Удаляем старую кнопку если есть
@@ -122,16 +118,12 @@ func add_report_button(quest_id: String):
 
 func submit_quest_report(quest_id: String):
 	print("📤 Отправка отчёта по заданию: ", quest_id)
-	
-	# Проверяем выполнение через QuestManager
 	if QuestManager.is_quest_completed(quest_id):
 		if QuestManager.active_quest and not QuestManager.active_quest.is_empty():
 			QuestManager.complete_quest(true)
 			show_success_message()
 		else:
 			show_error_message("Нет активного задания")
-			
-		show_success_message()
 	else:
 		show_error_message("Задание ещё не выполнено! Проверьте запрос в терминале.")
 
@@ -153,10 +145,9 @@ func _on_database_ready():
 		load_emails_for_day(1)
 		
 func load_emails_for_day(day_number: int):
-	var all_emails = DatabaseManager.CachedEmails
-	print("DEBUG: Первое письмо из кэша: ", all_emails[0] if all_emails.size() > 0 else "Пусто")
-	
 	"""Загрузка писем для конкретного дня"""
+	if DatabaseManager and DatabaseManager.CachedEmails.size() > 0:
+		print("DEBUG: писем в кэше БД: ", DatabaseManager.CachedEmails.size())
 	print("📬 Загрузка писем для дня ", day_number)
 	
 	if not DatabaseManager:
@@ -191,40 +182,35 @@ func load_emails_for_day(day_number: int):
 				
 func display_emails():
 	"""Отображение списка писем"""
-	# Очищаем текущий список
 	$EmailList.clear()
-	
+	var idx := 0
 	for email in current_day_emails:
-		# 1. Достаем тему (SUBJECT)
-		var list_item = email.get("SUBJECT", "Без темы")
-		
-		# 2. Достаем флаг обязательности (IS_REQUIRED)
-		# В Firebird это число (1 или 2), поэтому проверяем ==1
-		var is_required = email.get("IS_REQUIRED", 1) == 1
-		
+		var list_item = str(email.get("SUBJECT", email.get("subject", "Без темы")))
+		var is_required = int(email.get("IS_REQUIRED", email.get("is_required", 1))) == 1
 		if not is_required:
 			list_item = "[Необязательное] " + list_item
-			
 		$EmailList.add_item(list_item)
+		$EmailList.set_item_metadata(idx, idx)
+		idx += 1
 		
 func _on_email_list_item_selected(index: int):
 	"""Выбор письма для чтения"""
 	if index >= 0 and index < current_day_emails.size():
 		var email = current_day_emails[index]
 		display_email(email)
-		
-		# Проверяем есть ли задание для этого письма
-		var quest = DatabaseManager.get_quest_for_email(email.id)
+		var eid = email.get("ID", email.get("id", -1))
+		var quest = DatabaseManager.GetQuestForEmail(int(eid))
 		if quest and not quest.is_empty():
 			active_quest = quest
-			print("🎯 Активное задание: ", quest.title)
+			var qt = quest.get("TITLE", quest.get("title", ""))
+			print("🎯 Активное задание: ", qt)
 			
 func display_email(email: Dictionary):
 	"""Отображение содержимого письма"""
-	$EmailHeader/Subject.text = email.subject
-	$EmailHeader/Sender.text = "От: " + email.sender
-	$EmailHeader/DateLabel.text = email.get("publish_date", "")
-	$Body.text = email.body
+	$EmailHeader/Subject.text = str(email.get("SUBJECT", email.get("subject", "")))
+	$EmailHeader/Sender.text = "От: " + str(email.get("SENDER", email.get("sender", "")))
+	$EmailHeader/DateLabel.text = str(email.get("PUBLISH_DATE", email.get("publish_date", "")))
+	$Body.text = str(email.get("BODY", email.get("body", "")))
 	
 	# Показываем кнопку ответа если это задание
 	if active_quest and not active_quest.is_empty():
@@ -272,14 +258,8 @@ func show_report_dialog():
 func send_report(report_text: String):
 	"""Отправка отчёта"""
 	print("📤 Отчёт отправлен: ", report_text)
-	
-	# Сохраняем выбор
-	DatabaseManager.save_player_choice(
-		active_quest.id,
-		"report_text",
-		report_text,
-		QuestManager.current_day
-	)
+	var qid = int(active_quest.get("ID", active_quest.get("id", 0)))
+	DatabaseManager.SavePlayerChoice(qid, "report_text", report_text, QuestManager.current_day)
 	
 	# Проверяем текст отчёта на "подозрительный"
 	if "аномалии" in report_text.to_lower() or "ошибки" in report_text.to_lower():

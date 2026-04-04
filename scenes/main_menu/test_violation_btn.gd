@@ -1,4 +1,5 @@
 extends Button
+
 func _on_test_violation_btn_pressed():
 	GameState.add_violation()
 	print("Нарушений: ", GameState.security_violations)
@@ -7,4 +8,4 @@ func _on_test_violation_btn_pressed():
 
 
 func _on_pressed() -> void:
-	pass # Replace with function body.
+	_on_test_violation_btn_pressed()

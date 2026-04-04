@@ -8,8 +8,7 @@ signal day_completed(day_number: int)
 signal violation_added(count: int, reason: String)
 #signal role_completed(role: String)
 
-@onready var db = get_node("/root/DatabaseManager")
-
+# Autoload DatabaseManager = C# FirebirdDatabase (см. project.godot → Autoload)
 # Текущее состояние
 var player_role: String = "employee"
 var current_day: int = 1
@@ -33,9 +32,6 @@ func _ready():
 		# Ждём немного пока БД инициализируется
 		await get_tree().create_timer(0.5).timeout
 		load_progress()
-		
-	print("Список сигналов БД: ", DatabaseManager.get_signal_list())
-
 
 
 func start_day(day_number: int):
@@ -96,14 +92,16 @@ func complete_quest(success: bool):
 		return
 	
 	if success:
-		print("✅ Задание выполнено: ", active_quest.title)
-		
-		# Добавляем в completed
-		completed_quests.append(active_quest.id)
+		var qtitle = active_quest.get("TITLE", active_quest.get("title", ""))
+		print("✅ Задание выполнено: ", qtitle)
+		# ID из БД может прийти как ID или id (Firebird / драйвер)
+		var qid = active_quest.get("ID", active_quest.get("id", -1))
+		completed_quests.append(qid)
 		
 		# Сохраняем story flags
-		if active_quest.has("story_flags_set"):
-			var flags = active_quest.story_flags_set.split(",")
+		var raw_sf = active_quest.get("STORY_FLAGS_SET", active_quest.get("story_flags_set", ""))
+		if str(raw_sf).length() > 0:
+			var flags = str(raw_sf).split(",")
 			for flag in flags:
 				story_flags[flag.strip_edges()] = true
 		
@@ -123,9 +121,14 @@ func check_day_completion():
 	var required_quests = []
 	
 	for email in emails:
-		var quest = DatabaseManager.GetQuestForEmail(email.id)
-		if quest and quest.get("is_required", true):
-			required_quests.append(quest.id)
+		var eid = email.get("ID", email.get("id", -1))
+		var quest = DatabaseManager.GetQuestForEmail(int(eid))
+		if quest == null or quest.is_empty():
+			continue
+		var req = quest.get("IS_REQUIRED", quest.get("is_required", true))
+		if req:
+			var qid = quest.get("ID", quest.get("id", -1))
+			required_quests.append(qid)
 	
 	# Проверяем все ли выполнены
 	var all_completed = true
@@ -194,35 +197,29 @@ func save_progress():
 
 
 func load_progress():
-	# 1. Получаем данные из C# (ОБЯЗАТЕЛЬНО сохраняем в переменную progress)
-	var progress = db.LoadPlayerProgress(1)
-	
-	"""Загрузка прогресса"""
-	# Используем переменную db, которую мы объявили через @onready
-	if not db:
+	"""Загрузка прогресса из C# (столбцы БД могут быть в разном регистре)."""
+	if not DatabaseManager:
 		print("❌ DatabaseManager не найден!")
 		return
-	
 
-	
+	var progress = DatabaseManager.LoadPlayerProgress(1)
+
 	if progress == null:
 		print("⚠️ База вернула пустой результат")
 		return
 
-	# 2. Извлекаем простые значения
-	player_role = progress.get("player_role", "employee")
-	current_day = int(progress.get("current_day", 1))
-	violations = int(progress.get("violations", 0))
-	trust_level = int(progress.get("trust_level", 50))
+	player_role = str(progress.get("USER_ROLE", progress.get("player_role", "employee")))
+	current_day = int(progress.get("CURRENT_DAY", progress.get("current_day", 1)))
+	violations = int(progress.get("VIOLATIONS", progress.get("violations", 0)))
+	trust_level = int(progress.get("TRUST_LEVEL", progress.get("trust_level", 50)))
 	
-	# 3. Превращаем JSON-строки из базы в объекты GDScript (Dict и Array)
-	var raw_flags = progress.get("flags_unlocked", "{}")
+	var raw_flags = progress.get("FLAGS_UNLOCKED", progress.get("flags_unlocked", "{}"))
 	if raw_flags is String:
 		story_flags = JSON.parse_string(raw_flags)
 	else:
 		story_flags = raw_flags
 		
-	var raw_quests = progress.get("quests_completed", "[]")
+	var raw_quests = progress.get("QUESTS_COMPLETED", progress.get("quests_completed", "[]"))
 	if raw_quests is String:
 		completed_quests = JSON.parse_string(raw_quests)
 	else:
@@ -248,7 +245,8 @@ func check_random_events():
 	var event = DatabaseManager.GetRandomEventForDay(current_day)
 	
 	if event and not event.is_empty():
-		print("🎲 Случайное событие: ", event.event_name)
+		var ename = event.get("EVENT_NAME", event.get("event_name", ""))
+		print("🎲 Случайное событие: ", ename)
 		# Здесь будет обработка события
 		# show_event_dialog(event)
 
@@ -264,6 +262,15 @@ func get_quest_status() -> Dictionary:
 		"completed_quests": completed_quests.size(),
 		"story_flags": story_flags.size()
 	}
+
+
+func is_quest_completed(quest_id: Variant) -> bool:
+	"""Проверка, отмечено ли задание выполненным (для кнопки отчёта в почте)."""
+	var want = str(quest_id)
+	for q in completed_quests:
+		if str(q) == want:
+			return true
+	return false
 
 
 func has_story_flag(flag_name: String) -> bool:
