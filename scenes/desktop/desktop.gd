@@ -83,7 +83,7 @@ func _open_terminal():
 	
 func _open_sudoku():
 	print("Запуск Sudoku...")
-	# Заглушка для пасхалки
+	get_tree().change_scene_to_file("res://scenes/sudoku/sudoku.tscn")
 
 func _open_browser():
 	print("Открытие браузера...")

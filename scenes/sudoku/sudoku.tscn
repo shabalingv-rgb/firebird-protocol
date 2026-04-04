@@ -1,0 +1,114 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8sudoku_scene01"]
+
+[ext_resource type="Script" path="res://scenes/sudoku/sudoku.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_font"]
+
+[node name="Sudoku" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.101961, 0.101961, 0.180392, 1)
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 20.0
+offset_right = -32.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="TopBar" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BackButton" type="Button" parent="MainVBox/TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 40)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "Назад к рабочему столу"
+
+[node name="TopSpacer" type="Control" parent="MainVBox/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleLabel" type="Label" parent="MainVBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Судоку"
+horizontal_alignment = 1
+
+[node name="DifficultyRow" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="EasyButton" type="Button" parent="MainVBox/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+toggle_mode = true
+button_pressed = true
+text = "Лёгкий"
+
+[node name="MediumButton" type="Button" parent="MainVBox/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+toggle_mode = true
+text = "Средний"
+
+[node name="HardButton" type="Button" parent="MainVBox/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+toggle_mode = true
+text = "Сложный"
+
+[node name="NewGameButton" type="Button" parent="MainVBox/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+text = "Новая партия"
+
+[node name="BoardGrid" type="GridContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 9
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+
+[node name="NumberPad" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 6
+
+[node name="StatusLabel" type="Label" parent="MainVBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+text = "Загрузка…"
+horizontal_alignment = 1
+autowrap_mode = 2
