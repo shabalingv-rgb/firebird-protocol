@@ -27,14 +27,18 @@ func _input(event):
 		visible = not visible
 
 func update_labels():
-	day_label.text = "Current Day: %d" % GameState.current_day
+	var d := QuestManager.current_day if QuestManager else GameState.current_day
+	day_label.text = "Current Day: %d" % d
 	role_label.text = "Role: " + current_role.capitalize()
-	day_slider.value = GameState.current_day
+	day_slider.value = d
 
 func _on_day_changed(value):
-	GameState.current_day = int(value)
+	var v := int(value)
+	if QuestManager:
+		QuestManager.current_day = v
+	GameState.current_day = v
 	update_labels()
-	print("📅 Debug: День изменён на ", GameState.current_day)
+	print("📅 Debug: День изменён на ", v)
 
 func _on_role_changed():
 	# Циклически переключаем роли
@@ -45,28 +49,25 @@ func _on_role_changed():
 	print("🎭 Debug: Роль изменена на ", current_role)
 
 func _on_complete_day():
-	print("✅ Debug: День ", GameState.current_day, " завершён!")
-	
-	# ⭐ Принудительно завершаем все текущие задания
-	for quest in QuestManager.active_quests:
-		if not QuestManager.completed_quests.has(quest.id):
-			QuestManager.completed_quests.append(quest.id)
-			print("  ⏭️ Пропущено задание: ", quest.title)
-	
-	# Очищаем
+	var d := QuestManager.current_day if QuestManager else 1
+	print("✅ Debug: День ", d, " завершён!")
+	if QuestManager and QuestManager.active_quest and not QuestManager.active_quest.is_empty():
+		var qid = QuestManager.active_quest.get("ID", QuestManager.active_quest.get("id", -1))
+		if qid != -1 and not QuestManager.completed_quests.has(qid):
+			QuestManager.completed_quests.append(qid)
+		QuestManager.active_quest = {}
 	EmailSystem.inbox.clear()
-	QuestManager.active_quests.clear()
-	
 	GameState.advance_game_time(8)
-	GameState.current_day += 1
-	
-	QuestManager.issue_quests_for_day(GameState.current_day)
+	if QuestManager:
+		QuestManager.next_day()
 	update_labels()
 	
 func _on_skip_day():
+	if QuestManager:
+		QuestManager.current_day += 1
 	GameState.current_day += 1
 	update_labels()
-	print("⏭️ Debug: Пропуск до дня ", GameState.current_day)
+	print("⏭️ Debug: Пропуск до дня ", QuestManager.current_day if QuestManager else GameState.current_day)
 
 func _on_add_email():
 	var test_email = {
@@ -83,8 +84,8 @@ func _on_clear_progress():
 	GameState.reset_violations()
 	GameState.current_day = 1
 	EmailSystem.inbox.clear()
-	QuestManager.active_quests.clear()
-	QuestManager.completed_quests.clear()
+	if QuestManager:
+		QuestManager.reset_progress()
 	print("🗑️ Debug: Прогресс сброшен")
 
 func _on_close():

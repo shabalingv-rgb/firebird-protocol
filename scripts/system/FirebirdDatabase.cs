@@ -1,22 +1,20 @@
 using FirebirdSql.Data.FirebirdClient;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 using Godot;
 using Godot.Collections;
-using System.IO;
-using System.Threading.Tasks.Dataflow;
 using GDictionary = Godot.Collections.Dictionary;
 using GArray = Godot.Collections.Array;
-using Microsoft.VisualBasic;
-using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Transactions;
 
 
 public partial class FirebirdDatabase : Node
 {
+	// Один раз компилируем шаблон — при повторных вызовах инициализации не тратим время на разбор regex
+	private static readonly Regex SqlLineComments = new(@"--[^\r\n]*", RegexOptions.Compiled);
+
 	[Signal]
 	public delegate void DatabaseReadyEventHandler();
 
@@ -47,82 +45,86 @@ public partial class FirebirdDatabase : Node
 	}
 
 	private void InitializeDatabase()
-{
-	GD.Print("📋 Инициализация Firebird...");
-
-	string dbPath = ProjectSettings.GlobalizePath("res://game_content.fdb");
-	_database = $"Database=localhost:{dbPath};User=SYSDBA;Password=masterkey;ServerType=0;Dialect=3;";
-
-	if (!File.Exists(dbPath))
 	{
-		GD.Print("🛠 База не найдена, создаю новую...");
-		try
+		GD.Print("📋 Инициализация Firebird...");
+
+		string dbPath = ProjectSettings.GlobalizePath("res://game_content.fdb");
+		_database = $"Database=localhost:{dbPath};User=SYSDBA;Password=masterkey;ServerType=0;Dialect=3;";
+
+		if (!File.Exists(dbPath))
 		{
-			// 1. Создаем пустой файл базы
-			FbConnection.CreateDatabase(_database);
-			GD.Print("✅ Файл базы создан.");
-		   // 2. Читаем SQL-скрипт
-			string sqlPath = "res://scripts/database/game_content_firebird.sql";
-			if (!Godot.FileAccess.FileExists(sqlPath))
+			GD.Print("🛠 База не найдена, создаю новую...");
+			try
 			{
-				GD.PrintErr("❌ SQL-скрипт не найден по пути: " + sqlPath);
-				return;
+				// 1. Создаем пустой файл базы
+				FbConnection.CreateDatabase(_database);
+				GD.Print("✅ Файл базы создан.");
+				// 2. Читаем SQL-скрипт
+				string sqlPath = "res://scripts/database/game_content_firebird.sql";
+				if (!Godot.FileAccess.FileExists(sqlPath))
+				{
+					GD.PrintErr("❌ SQL-скрипт не найден по пути: " + sqlPath);
+					return;
+				}
+
+				using var sqlFile = Godot.FileAccess.Open(sqlPath, Godot.FileAccess.ModeFlags.Read);
+				string fullSql = sqlFile.GetAsText();
+
+				// 3. Очищаем SQL от комментариев и разбиваем на команды
+				string cleanSql = SqlLineComments.Replace(fullSql, "");
+				var allCommands = SplitSqlStatements(cleanSql);
+				using (var connection = new FbConnection(_database))
+				{
+					connection.Open();
+
+					// ЭТАП А: Создание таблиц (DDL)
+					using (var trans = connection.BeginTransaction())
+					{
+						foreach (var cmdText in allCommands)
+						{
+							if (cmdText.StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
+							{
+								using var cmd = new FbCommand(cmdText, connection, trans);
+								cmd.ExecuteNonQuery();
+							}
+						}
+						trans.Commit();
+						GD.Print("✅ Структура таблиц создана.");
+					}
+					// ЭТАП Б: Загрузка данных (DML)
+					using (var trans = connection.BeginTransaction())
+					{
+						foreach (var cmdText in allCommands)
+						{
+							if (cmdText.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
+							{
+								using var cmd = new FbCommand(cmdText, connection, trans);
+								cmd.ExecuteNonQuery();
+							}
+						}
+						trans.Commit();
+						GD.Print("✅ Начальные данные загружены.");
+					}
+				}
 			}
-
-			using var sqlFile = Godot.FileAccess.Open(sqlPath, Godot.FileAccess.ModeFlags.Read);
-			string fullSql = sqlFile.GetAsText();
-
-			// 3. Очищаем SQL от комментариев и разбиваем на команды
-			string cleanSql = Regex.Replace(fullSql, @"--.*", ""); 
-			var allCommands = cleanSql.Split(';', StringSplitOptions.RemoveEmptyEntries)
-									  .Select(c => c.Trim())
-									  .Where(c => !string.IsNullOrWhiteSpace(c))
-									  .ToList();
-			using (var connection = new FbConnection(_database))
+			catch (Exception ex)
 			{
-				connection.Open();
-
-				// ЭТАП А: Создание таблиц (DDL)
-				using (var trans = connection.BeginTransaction())
-				{
-					foreach (var cmdText in allCommands)
-					{
-						if (cmdText.StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
-						{
-							using var cmd = new FbCommand(cmdText, connection, trans);
-							cmd.ExecuteNonQuery();
-						}
-					}
-					trans.Commit();
-					GD.Print("✅ Структура таблиц создана.");
-				}
-				// ЭТАП Б: Загрузка данных (DML)
-				using (var trans = connection.BeginTransaction())
-				{
-					foreach (var cmdText in allCommands)
-					{
-						if (cmdText.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-						{
-							using var cmd = new FbCommand(cmdText, connection, trans);
-							cmd.ExecuteNonQuery();
-						}
-					}
-					trans.Commit();
-					GD.Print("✅ Начальные данные загружены.");
-				}
+				GD.PrintErr($"❌ Критическая ошибка при инициализации: {ex.Message}");
 			}
 		}
-		catch (Exception ex)
-		{
-			GD.PrintErr($"❌ Критическая ошибка при инициализации: {ex.Message}");
-			// Вот этот блок catch и исправляет вашу ошибку CS1524
-		}
+
+		GD.Print("🔌 Подключение к базе...");
+		ConnectDatabase();
 	}
 
-	GD.Print("🔌 Подключение к базе...");
-	ConnectDatabase();
-}
-						   
+	/// <summary>Разбивает скрипт на отдельные команды (как при первичной инициализации, так при импорте).</summary>
+	private static List<string> SplitSqlStatements(string sql)
+	{
+		return sql.Split(';', StringSplitOptions.RemoveEmptyEntries)
+			.Select(c => c.Trim())
+			.Where(c => !string.IsNullOrWhiteSpace(c))
+			.ToList();
+	}
 
 	private void ConnectDatabase()
 	{
@@ -175,12 +177,15 @@ public partial class FirebirdDatabase : Node
 			GD.PrintErr("Stack: ", e.StackTrace);
 			GD.PrintErr("Inner Exception: ", e.InnerException?.Message);
 		}
-		using (var cmd = new FbCommand("SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'", _connection))
-		{
-			var count = cmd.ExecuteScalar();
-			GD.Print($"Найдено таблиц с таким именем: {count}");
-		}
 
+		if (_isConnected && _connection != null)
+		{
+			using (var cmd = new FbCommand("SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'", _connection))
+			{
+				var count = cmd.ExecuteScalar();
+				GD.Print($"Найдено таблиц с таким именем: {count}");
+			}
+		}
 	}
 
 	private void CreateTables()
@@ -229,23 +234,22 @@ public partial class FirebirdDatabase : Node
 
 		GD.Print("🛠 Игровые таблицы не найдены. Начинаю импорт...");
 
-
-
 		string sqlPath = ProjectSettings.GlobalizePath("res://scripts/database/game_content_firebird.sql");
-		if (File.Exists(sqlPath)) return;
+		if (!File.Exists(sqlPath))
+		{
+			GD.PrintErr("❌ SQL не найден: " + sqlPath);
+			return;
+		}
 
-		string sqlContent = File.ReadAllText(sqlPath);
-
-		string[] commands = sqlContent.Split(';');
+		string sqlContent = File.ReadAllText(sqlPath).Replace("\r", "");
+		var commands = SplitSqlStatements(SqlLineComments.Replace(sqlContent, ""));
 
 		using (var transaction = _connection.BeginTransaction())
 		{
-			sqlContent = sqlContent.Replace("\r", ""); // Очистка от спецсимволов переноса
-
 			foreach (var cmdText in commands)
 			{
 				string cleanCmd = cmdText.Trim();
-				if (string.IsNullOrWhiteSpace(cleanCmd) || cleanCmd.StartsWith("--")) continue;
+				if (string.IsNullOrWhiteSpace(cleanCmd)) continue;
 
 				try
 				{
@@ -286,7 +290,8 @@ public partial class FirebirdDatabase : Node
 		GD.Print("✅ Кэш загружен");
 	}
 
-	private GArray ExecuteQuery(string sql)
+	/// <summary>Выполнить SELECT из GDScript (терминал). При ошибке возвращает null — смотри GetLastError().</summary>
+	public GArray ExecuteQuery(string sql)
 	{
 		_lastError = ""; // Сбрасываем ошибку перед новым запросом
 		var result = new GArray();
@@ -396,7 +401,7 @@ public partial class FirebirdDatabase : Node
 				? progressData["current_day"].ToString()
 				: "1";
 
-			GD.Print("💾 Прогресс загружен: день={day}");
+			GD.Print($"💾 Прогресс загружен: день={day}");
 
 			return progressData;
 		}
@@ -422,24 +427,75 @@ public partial class FirebirdDatabase : Node
 		{
 			string flagsJson = System.Text.Json.JsonSerializer.Serialize(flags);
 			string questsJson = System.Text.Json.JsonSerializer.Serialize(quests);
+			const int saveSlot = 1;
 
-			string sql = $@"
-                INSERT INTO player_progress (save_slot, user_role, current_day, violations, flags_unlocked, quests_completed, last_saved)
-                VALUES (1, '{role}', {day}, {violations}, '{flagsJson}', '{questsJson}', CURRENT_TIMESTAMP)
-                ON CONFLICT (save_slot) DO UPDATE SET
-                    user_role = '{role}',
-                    current_day = {day},
-                    violations = {violations},
-                    flags_unlocked = '{flagsJson}',
-                    quests_completed = '{questsJson}',
-					last_saved = CURRENT_TIMESTAMP";
+			// Firebird не поддерживает ON CONFLICT — используем параметры (безопасно для кавычек в JSON) и UPDATE/INSERT
+			const string updateSql = @"
+				UPDATE player_progress SET
+					user_role = @role,
+					current_day = @day,
+					violations = @violations,
+					flags_unlocked = @flagsJson,
+					quests_completed = @questsJson,
+					last_saved = CURRENT_TIMESTAMP
+				WHERE save_slot = @saveSlot";
 
-			ExecuteNonQuery(sql);
+			using (var cmd = new FbCommand(updateSql, _connection))
+			{
+				cmd.Parameters.Add("@role", FbDbType.VarChar).Value = role ?? "";
+				cmd.Parameters.Add("@day", FbDbType.Integer).Value = day;
+				cmd.Parameters.Add("@violations", FbDbType.Integer).Value = violations;
+				cmd.Parameters.Add("@flagsJson", FbDbType.VarChar).Value = flagsJson ?? "{}";
+				cmd.Parameters.Add("@questsJson", FbDbType.VarChar).Value = questsJson ?? "[]";
+				cmd.Parameters.Add("@saveSlot", FbDbType.Integer).Value = saveSlot;
+				int updated = cmd.ExecuteNonQuery();
+				if (updated == 0)
+				{
+					const string insertSql = @"
+						INSERT INTO player_progress (save_slot, user_role, current_day, violations, flags_unlocked, quests_completed, last_saved)
+						VALUES (@saveSlot, @role, @day, @violations, @flagsJson, @questsJson, CURRENT_TIMESTAMP)";
+					using var ins = new FbCommand(insertSql, _connection);
+					ins.Parameters.Add("@saveSlot", FbDbType.Integer).Value = saveSlot;
+					ins.Parameters.Add("@role", FbDbType.VarChar).Value = role ?? "";
+					ins.Parameters.Add("@day", FbDbType.Integer).Value = day;
+					ins.Parameters.Add("@violations", FbDbType.Integer).Value = violations;
+					ins.Parameters.Add("@flagsJson", FbDbType.VarChar).Value = flagsJson ?? "{}";
+					ins.Parameters.Add("@questsJson", FbDbType.VarChar).Value = questsJson ?? "[]";
+					ins.ExecuteNonQuery();
+				}
+			}
+
 			GD.Print("💾 Прогресс сохранён: день=", day);
 		}
 		catch (Exception e)
 		{
 			GD.PrintErr("❌ Ошибка сохранения: ", e.Message);
+		}
+	}
+
+	/// <summary>Сохранить выбор игрока (отчёт из почты и т.д.).</summary>
+	public void SavePlayerChoice(int questId, string choiceType, string choiceValue, int dayId)
+	{
+		if (_connection == null || !_isConnected)
+		{
+			GD.PrintErr("SavePlayerChoice: нет подключения к БД");
+			return;
+		}
+		try
+		{
+			const string sql = @"
+				INSERT INTO player_choices (quest_id, choice_type, choice_value, day_id)
+				VALUES (@q, @ct, @cv, @d)";
+			using var cmd = new FbCommand(sql, _connection);
+			cmd.Parameters.Add("@q", FbDbType.Integer).Value = questId;
+			cmd.Parameters.Add("@ct", FbDbType.VarChar).Value = choiceType ?? "";
+			cmd.Parameters.Add("@cv", FbDbType.VarChar).Value = choiceValue ?? "";
+			cmd.Parameters.Add("@d", FbDbType.Integer).Value = dayId;
+			cmd.ExecuteNonQuery();
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ SavePlayerChoice: {e.Message}");
 		}
 	}
 
@@ -452,21 +508,12 @@ public partial class FirebirdDatabase : Node
 			// 1. Приводим к верхнему регистру, как в SQL-стандарте
 			string cmd = commandName.Trim().ToUpper();
 
-			// 2. Используем UPDATE OR INSERT (MERGE)
-			// Это фишка Firebird:  если записи нет - создаст, если есть - обновит  
-			string sql = $@"
-                UPDATE OR INSERT INTO sql_commands (command_name, times_used, last_used_day)
-                VALUES ('{cmd}', 1, {day})
-				MATCHING (command_name)";
-
-			// 3. Для UPDATE нам нужно инкрементировать, поэтому чуть усложним: 
-			// Если запись уже была, нам нужно именно прибавить 1 к timen_used
 			string sqlAdvanced = $@"
                 EXECUTE BLOCK AS BEGIN
                     IF (EXISTS (SELECT 1 FROM sql_commands WHERE command_name = '{cmd}')) THEN 
                         UPDATE sql_commands
                         SET times_used = times_used + 1, last_used_day = {day}
-                        WHERE command_name = '{day}';
+                        WHERE command_name = '{cmd}';
                     ELSE 
                         INSERT INTO sql_commands (command_name, times_used, last_used_day)
                         VALUES ('{cmd}', 1, {day});

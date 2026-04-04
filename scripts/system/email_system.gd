@@ -13,15 +13,17 @@ func add_email(email: Dictionary):
 func get_unread_count() -> int:
 	var count = 0
 	for email in inbox:
-		if not email.read:
+		# Поле «прочитано» может называться read или is_read
+		if not email.get("read", email.get("is_read", false)):
 			count += 1
 	return count
 
 func get_email_by_id(email_id: String) -> Dictionary:
 	for email in inbox:
-		if email.get("quest_id") == email_id:
+		var eid = email.get("id", email.get("ID", ""))
+		if str(eid) == str(email_id) or str(email.get("quest_id", "")) == str(email_id):
 			return email
 	return {}
 
 func mark_as_read(email: Dictionary):
-	email.read = true
+	email["read"] = true

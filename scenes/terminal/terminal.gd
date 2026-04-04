@@ -103,26 +103,40 @@ func scroll_to_bottom():
 	
 
 func load_active_quest():
-	"""Загрузка активного задания из БД"""
-	# Получаем задание для текущего дня
-	var emails = DatabaseManager.get_emails_for_day(current_day)
-	
+	"""Синхронизация с QuestManager (там уже выбрано обязательное задание дня) или загрузка из БД."""
+	if QuestManager and not QuestManager.active_quest.is_empty():
+		active_quest = QuestManager.active_quest
+		current_quest = active_quest
+		is_quest_active = true
+		show_quest_notification(active_quest)
+		return
+	if not DatabaseManager:
+		return
+	var emails = DatabaseManager.GetEmailsForDay(current_day)
 	for email in emails:
-		var quest = DatabaseManager.get_quest_for_email(email.id)
+		var eid = email.get("ID", email.get("id", -1))
+		var quest = DatabaseManager.GetQuestForEmail(int(eid))
 		if quest and not quest.is_empty():
 			current_quest = quest
+			active_quest = quest
+			if QuestManager:
+				QuestManager.active_quest = quest
 			is_quest_active = true
-			print("🎯 Активное задание: ", quest.title)
+			var qt = quest.get("TITLE", quest.get("title", ""))
+			print("🎯 Активное задание: ", qt)
 			show_quest_notification(quest)
 			break
 
 
 func show_quest_notification(quest: Dictionary):
 	"""Показ уведомления о задании"""
+	var title = quest.get("TITLE", quest.get("title", ""))
+	var desc = quest.get("DESCRIPTION", quest.get("description", ""))
+	var exp_rows = quest.get("EXPECTED_ROWS", quest.get("expected_rows", -1))
 	terminal_output.text += "\n[color=yellow]📋 НОВОЕ ЗАДАНИЕ[/color]\n"
-	terminal_output.text += "[color=yellow]Название:[/color] " + quest.title + "\n"
-	terminal_output.text += "[color=yellow]Описание:[/color] " + quest.description + "\n"
-	terminal_output.text += "[color=yellow]Ожидаемый результат:[/color] " + str(quest.expected_rows) + " строк\n\n"
+	terminal_output.text += "[color=yellow]Название:[/color] " + str(title) + "\n"
+	terminal_output.text += "[color=yellow]Описание:[/color] " + str(desc) + "\n"
+	terminal_output.text += "[color=yellow]Ожидаемый результат:[/color] " + str(exp_rows) + " строк\n\n"
 
 
 func execute_command(command: String):
@@ -147,11 +161,10 @@ func execute_command(command: String):
 		
 	if command.strip_edges().is_empty():
 		return
-	
-	#Добавляем в историю
-		sql_command_history.append(command)
-	
-	 #Обработка специальных команд
+
+	sql_command_history.append(command)
+
+	# Обработка специальных команд
 	if command.to_upper().begins_with("HELP"):
 		show_help()
 		return
@@ -166,6 +179,8 @@ func execute_command(command: String):
 	var result = execute_sql(cmd_raw)
 	if result.success:
 		display_result(result.data)
+		if cmd_raw.to_upper().strip_edges().begins_with("SELECT"):
+			check_quest_completion(result.data)
 	else:
 		terminal_output.text += "[color=red]⚠️ ОШИБКА:[/color] " + str(result.error) + "\n"
 		
@@ -185,12 +200,14 @@ func show_help_for_subject(subject: String):
 		"SELECT":
 			terminal_output.text += "Синтаксис: SELECT [колонки] FROM [таблица] WHERE [условие]\nПример: SELECT * FROM employees WHERE salary > 50000\n"
 		_:
-			#Если игрок ввел что-то неизвестное, пробуем поискать это в БД
-			var check_db = DatabaseManager.ExecuteQuery("SELECT 1 FROM RDB$RELATIONS_NAME = '" + subject + "'")
-			if check_db and check_db.size() >0:
+			# Проверка имени таблицы в системном каталоге Firebird (экранируем кавычки в имени)
+			var safe = str(subject).replace("'", "''")
+			var check_db = DatabaseManager.ExecuteQuery(
+				"SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = '" + safe + "'")
+			if check_db != null and check_db.size() > 0:
 				terminal_output.text += "Это существующая таблица в базе данных.\n"
 			else:
-				terminal_output.text += "Информация по запросу '" + subject + "' не найдена.\n"
+				terminal_output.text += "Информация по запросу '" + str(subject) + "' не найдена.\n"
 				
 		# Прокрутка вниз
 	scroll_to_bottom()
@@ -347,13 +364,11 @@ func check_quest_completion(result_data: Array):
 	
 	# 1. Простейшая проверка по количеству строк
 	if expected_rows >= 0 and result_data.size() == expected_rows:
-		terminal_output.text += "\n[color=green]✅ СИСТЕМА: Зпрос принят. Данные соответсвуют ожидаемым.[/color]\n"
-		
-		# 2. Передаём сигнал в QuestManager
+		terminal_output.text += "\n[color=green]✅ СИСТЕМА: Запрос принят. Данные соответствуют ожидаемым.[/color]\n"
 		QuestManager.complete_quest(true)
-		
-		# 3. Деактивируем задание, что бы не срабатывало на каждый SELECT
 		active_quest = {}
+		if QuestManager:
+			QuestManager.active_quest = {}
 		is_quest_active = false
 	else:
 		terminal_output.text += "\n[color=yellow]⚠️ СИСТЕМА: Получено " + str(result_data.size()) + " строк. Ожидалось " + str(expected_rows) + ".[/color]\n"

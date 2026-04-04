@@ -1,7 +1,6 @@
 extends Node
-## Обёртка для C# FirebirdDatabase
-
-# Просто перенаправляем вызовы к C# классу
+## Устаревшая заглушка: в игре используй autoload **DatabaseManager** (C# `FirebirdDatabase`).
+## Этот скрипт в сцену класть не нужно — см. `project.godot` → Autoload.
 
 func get_emails_for_day(day_id: int) -> Array:
 	if has_node("/root/DatabaseManager"):
