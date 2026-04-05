@@ -12,7 +12,6 @@ const DESKTOP_SCENE := "res://scenes/desktop/desktop.tscn"
 const GRID_SIZE := 81
 
 @onready var _back_button: Button = $MainVBox/TopBar/BackButton
-@onready var _title_label: Label = $MainVBox/TitleLabel
 @onready var _easy_button: Button = $MainVBox/DifficultyRow/EasyButton
 @onready var _medium_button: Button = $MainVBox/DifficultyRow/MediumButton
 @onready var _hard_button: Button = $MainVBox/DifficultyRow/HardButton
