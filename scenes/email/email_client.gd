@@ -6,12 +6,27 @@ extends Control
 @onready var date_label = $EmailHeader/DateLabel
 @onready var email_list = $EmailList
 @onready var reply_button = $EmailHeader/ReplyButton
-@onready var body_label = $Body
-@onready var back_button = $EmailHeader/BackButton
+@onready var body_label = $EmailBody
+@onready var back_button = $BackButton
 
 var current_emails: Array = []
 var current_day_emails: Array = []
 var active_quest: Dictionary = {}
+
+# Вспомогательная функция для получения значения из C# словаря (регистронезависимо)
+func get_dict_value(data: Dictionary, key: String, default = null):
+	"""Получение значения из словаря с игнорированием регистра ключей"""
+	# Сначала пробуем как есть
+	if data.has(key):
+		return data[key]
+	
+	# Потом ищем без учёта регистра
+	var key_lower = key.to_lower()
+	for k in data.keys():
+		if str(k).to_lower() == key_lower:
+			return data[k]
+	
+	return default
 
 func _ready():
 	if email_list:
@@ -37,7 +52,6 @@ func _ready():
 	if EmailSystem.inbox.is_empty():
 		print("⚠️ Входящих писем нет!")
 		subject_label.text = "Нет писем"
-		body_label.text = "Задания будут приходить по мере выполнения работы."
 		return
 
 	refresh_email_list()
@@ -108,9 +122,9 @@ func add_report_button(quest_id: String):
 	btn.pressed.connect(func(): submit_quest_report(quest_id))
 	
 	# Добавляем кнопку под текстом письма
-	if $Body is TextEdit:
+	if $EmailBody is TextEdit:
 		# Если TextEdit, добавляем как дочерний элемент
-		$Body.add_child(btn)
+		$EmailBody.add_child(btn)
 	else:
 		# Если Label, добавляем рядом
 		add_child(btn)
@@ -145,41 +159,71 @@ func _on_database_ready():
 		load_emails_for_day(1)
 		
 func load_emails_for_day(day_number: int):
-	"""Загрузка писем для конкретного дня"""
-	if DatabaseManager and DatabaseManager.CachedEmails.size() > 0:
-		print("DEBUG: писем в кэше БД: ", DatabaseManager.CachedEmails.size())
+	"""Загрузка писем для конкретного дня из кэша Firebird"""
 	print("📬 Загрузка писем для дня ", day_number)
 	
 	if not DatabaseManager:
 		print("❌ DatabaseManager не доступен")
 		return
 	
-	# Проверяем кэш
-	print("📋 В кэше писем всего: ", DatabaseManager.CachedEmails.size())
+	# ✅ Используем C# метод из FirebirdDatabase.cs
+	var emails_data = DatabaseManager.GetEmailsForDay(day_number)
 	
-	current_emails = DatabaseManager.GetEmailsForDay(day_number)
+	print("📋 В кэше всего писем: ", DatabaseManager.CachedEmails.size())
+	print("📫 Писем для дня ", day_number, ": ", emails_data.size())
+	
+	# Конвертируем C# Dictionary в GDScript Dictionary
+	current_emails = []
+	for email_data in emails_data:
+		var gd_email = {}
+		# Копируем все поля с нижним регистром ключей для удобства
+		for key in email_data.keys():
+			var normalized_key = str(key).to_lower()
+			gd_email[normalized_key] = email_data[key]
+		# Отладочный вывод для каждого письма
+		print("🔍 Ключи в письме: ", gd_email.keys())
+		print("📧 subject = ", gd_email.get("subject", "[НЕ НАЙДЕНО]"))
+		current_emails.append(gd_email)
+	
 	current_day_emails = current_emails
 	
-	print("📫 Загружено писем для дня ", day_number, ": ", current_emails.size())
-	
-	# Выводим все письма для отладки
+	# Отладочный вывод
 	for email in current_emails:
-		var subject = email.get("SUBJECT", email.get("subject", "Без темы"))
-		print("   📧 Письмо: ", subject)
-	
-	# В конце функции, когда current_day_emails запослен:
-	EmailSystem.inbox.clear() # чищаем старое
-	for email in current_day_emails:
-		EmailSystem.inbox.append(email) #обавляем новые из базы
-		
-	print("✅ Письма перенесены в EmailSystem. Текущий размер: ", EmailSystem.inbox.size())
+		print("📧 Письмо: ", email.get("subject", "Без темы"))
 	
 	if current_emails.is_empty():
 		print("⚠️ Писем нет для дня ", day_number)
 		show_empty_message()
 	else:
-		display_emails()
-				
+		display_emails_list()  # Показываем список в UI
+
+func display_emails_list():
+	#Отображение списка писем в EmailList
+	email_list.clear()
+
+	for i in range(current_emails.size()):
+		var email = current_emails[i]
+		var subject = email.get("SUBJECT", email.get("subject", "Без темы"))
+		var sender = email.get("SENDER", email.get("sender", "Неизвестно"))
+		var email_type = email.get("email_type", "info")
+
+		#Иконка в зависимости от типа
+		var icon = ""
+		match email_type:
+			"quest": icon = "🎯 "
+			"info": icon = "📄 "
+			"warning": icon = "⚠️ "
+
+		#Добавляем в список (храним индекс для поиска)
+		email_list.add_item(icon + subject + " - " + sender)
+		email_list.set_item_metadata(i, i) #Сохраняем индекс
+
+	#Авто-выбор первого письма
+	if current_emails.size() > 0:
+		email_list.select(0)
+		display_email_content(0)
+	
+
 func display_emails():
 	"""Отображение списка писем"""
 	$EmailList.clear()
@@ -194,28 +238,32 @@ func display_emails():
 		idx += 1
 		
 func _on_email_list_item_selected(index: int):
-	"""Выбор письма для чтения"""
-	if index >= 0 and index < current_day_emails.size():
-		var email = current_day_emails[index]
-		display_email(email)
-		var eid = email.get("ID", email.get("id", -1))
-		var quest = DatabaseManager.GetQuestForEmail(int(eid))
-		if quest and not quest.is_empty():
-			active_quest = quest
-			var qt = quest.get("TITLE", quest.get("title", ""))
-			print("🎯 Активное задание: ", qt)
+	"""При клике на письмо в списке"""
+	display_email_content(index)
+
 			
-func display_email(email: Dictionary):
-	"""Отображение содержимого письма"""
-	$EmailHeader/Subject.text = str(email.get("SUBJECT", email.get("subject", "")))
-	$EmailHeader/Sender.text = "От: " + str(email.get("SENDER", email.get("sender", "")))
-	$EmailHeader/DateLabel.text = str(email.get("PUBLISH_DATE", email.get("publish_date", "")))
-	$Body.text = str(email.get("BODY", email.get("body", "")))
+func display_email_content(index: int):
+	"""Отображение содержимого выбранного письма"""
+	if index < 0 or index >= current_emails.size():
+		return
+
+	var email = current_emails[index]
+
+	#Заполняем UI
+	$EmailHeader/Subject.text = email.get("subject", "")
+	$EmailHeader/Sender.text = "От: " + email.get("sender", "")
+	$EmailHeader/DateLabel.text = email.get("publish_date", "")
+	$EmailBody.text = email.get("body", "")
 	
 	# Показываем кнопку ответа если это задание
-	if active_quest and not active_quest.is_empty():
+	var email_type = email.get("email_type", "")
+	if email_type == "quest":
 		$EmailHeader/ReplyButton.visible = true
 		$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
+
+		#агружаем связанне задание
+		var email_id = int(email.get("id", 0))
+		load_quest_for_email(email_id)
 	else:
 		$EmailHeader/ReplyButton.visible = false
 
@@ -278,4 +326,18 @@ func show_empty_message():
 	$EmailHeader/EmailList.clear()
 	$EmailHeader/Subject.text = "Нет писем"
 	$EmailHeader/Sender.text = "Отправитель: "
-	$Body.text = "Задания будут приходить по мере выполнения работы."
+	$EmailBody.text = "Задания будут приходить по мере выполнения работы."
+
+func load_quest_for_email(email_id: int):
+	"""Загрузка задания для письма"""
+	var quest_data = DatabaseManager.GetQuestForEmail(email_id)
+
+	if quest_data and quest_data.Count > 0:
+		active_quest = {}
+		#Конвертируем C# Dictionary
+		for key in quest_data.Keys():
+			active_quest[key] = quest_data[key]
+
+		print("🎯 ЗЗадание загружено: ", active_quest.get("title", ""))
+	else:
+		print("⚠️ Задание не найдено для email_id=", email_id)

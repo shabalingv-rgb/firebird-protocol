@@ -12,11 +12,13 @@ const DESKTOP_SCENE := "res://scenes/desktop/desktop.tscn"
 const GRID_SIZE := 81
 
 @onready var _back_button: Button = $MainVBox/TopBar/BackButton
+@onready var _hint_button: Button = $MainVBox/TopBar/HintButton
 @onready var _easy_button: Button = $MainVBox/DifficultyRow/EasyButton
 @onready var _medium_button: Button = $MainVBox/DifficultyRow/MediumButton
 @onready var _hard_button: Button = $MainVBox/DifficultyRow/HardButton
 @onready var _new_game_button: Button = $MainVBox/DifficultyRow/NewGameButton
-@onready var _board_grid: GridContainer = $MainVBox/BoardGrid
+@onready var _board_grid: GridContainer = $MainVBox/BoardContainer/BoardGrid
+@onready var _thick_lines: Control = $MainVBox/BoardContainer/ThickLines
 @onready var _number_pad: HBoxContainer = $MainVBox/NumberPad
 @onready var _status_label: Label = $MainVBox/StatusLabel
 
@@ -40,6 +42,7 @@ func _ready() -> void:
 	given.resize(GRID_SIZE)
 
 	_back_button.pressed.connect(_go_to_desktop)
+	_hint_button.pressed.connect(_show_hint)
 	_new_game_button.pressed.connect(_start_new_game)
 	# Смена уровня сразу генерирует новое поле (не нужно отдельно жать «Новая партия»).
 	_easy_button.pressed.connect(func() -> void:
@@ -65,6 +68,8 @@ func _ready() -> void:
 	_build_board_cells()
 	_build_number_pad()
 	_start_new_game()
+	# Рисуем толстые линии после того, как все элементы отрисованы
+	_draw_thick_lines()
 
 
 ## Создаём 81 кнопку-клетку и вешаем на каждую свой индекс.
@@ -150,7 +155,7 @@ func _fill_grid_random(g: PackedInt32Array) -> bool:
 	var pos := _find_first_empty(g)
 	if pos < 0:
 		return true
-	var row: int = pos / 9
+	var row: int = int(pos / 9.0)
 	var col: int = pos % 9
 	var nums: Array[int] = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 	nums.shuffle()
@@ -219,6 +224,32 @@ func _clear_selected_cell() -> void:
 	_status_label.text = "Клетка очищена."
 
 
+## Подсказка: заполняет выбранную клетку правильным значением или случайную пустую.
+func _show_hint() -> void:
+	if _selected_index >= 0 and not given[_selected_index] and puzzle[_selected_index] == 0:
+		# Если клетка выбрана и пуста — показываем правильное значение.
+		puzzle[_selected_index] = solution[_selected_index]
+		_refresh_cell(_selected_index)
+		_status_label.text = "Подсказка: в эту клетку нужно поставить %d." % solution[_selected_index]
+		_check_win_after_move()
+	else:
+		# Иначе находим все пустые клетки и выбираем случайную.
+		var empty_cells: Array[int] = []
+		for i in GRID_SIZE:
+			if puzzle[i] == 0:
+				empty_cells.append(i)
+		if empty_cells.is_empty():
+			_status_label.text = "Нет пустых клеток для подсказки."
+			return
+		empty_cells.shuffle()
+		var hint_idx: int = empty_cells.front()
+		puzzle[hint_idx] = solution[hint_idx]
+		_selected_index = hint_idx
+		_refresh_all_cells()
+		_status_label.text = "Подсказка: в клетку (%d, %d) поставлено %d." % [hint_idx / 9 + 1, hint_idx % 9 + 1, solution[hint_idx]]
+		_check_win_after_move()
+
+
 func _check_win_after_move() -> void:
 	for i in GRID_SIZE:
 		if puzzle[i] == 0:
@@ -259,15 +290,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				_refresh_all_cells()
 
 
-## Обновляем внешний вид одной кнопки: текст, цвет, рамки блоков 3×3.
+## Обновляем внешний вид одной кнопки: текст, цвет.
 func _refresh_cell(index: int) -> void:
 	var b: Button = _cell_buttons[index]
 	var v: int = puzzle[index]
 	b.text = "" if v == 0 else str(v)
 
 	var normal := StyleBoxFlat.new()
-	_apply_thick_box_lines(normal, index)
-	normal.border_color = Color(0.55, 0.6, 0.75)
+	# Границы кнопок не рисуем — линии рисуются через ColorRect
+	normal.border_width_left = 0
+	normal.border_width_top = 0
+	normal.border_width_right = 0
+	normal.border_width_bottom = 0
 
 	if given[index]:
 		# «Задача» — чуть темнее фона, цифра ярче (кнопка не disabled — иначе не нажмётся).
@@ -295,11 +329,13 @@ func _refresh_all_cells() -> void:
 		_refresh_cell(i)
 
 
-## Толстые линии между блоками 3×3 (как на бумажном судоку).
-func _apply_thick_box_lines(style: StyleBoxFlat, index: int) -> void:
-	var col: int = index % 9
-	var row: int = index / 9
-	style.border_width_left = 3 if (col % 3 == 0) else 1
-	style.border_width_top = 3 if (row % 3 == 0) else 1
-	style.border_width_right = 3 if (col % 3 == 2) else 1
-	style.border_width_bottom = 3 if (row % 3 == 2) else 1
+## Рисуем все линии (тонкие и толстые) через отдельный скрипт thick_lines.gd.
+## Этот скрипт использует _draw() для рисования линий, что гарантирует правильное позиционирование.
+func _draw_thick_lines() -> void:
+	# Ждём несколько кадров, чтобы GridContainer успел вычислить свои размеры
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Вызываем перерисовку
+	_thick_lines.queue_redraw()

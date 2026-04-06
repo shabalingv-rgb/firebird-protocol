@@ -193,6 +193,13 @@ public partial class FirebirdDatabase : Node
 		// Запрос к системному каталогу Firebird, что бы проверить наличие таблицы GAME_DAYS
 		var check = ExecuteQuery("SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'GAME_DAYS'");
 
+		if (check == null)
+		{
+			GD.PrintErr("❌ CreateTables: ошибка выполнения запроса, результат null");
+			GD.Print("🛠 Нужно создать структуру таблиц...");
+			return;
+		}
+
 		if (check.Count == 0)
 		{
 			GD.Print("🛠 Нужно создать структуру таблиц...");
@@ -278,13 +285,13 @@ public partial class FirebirdDatabase : Node
 		GD.Print("📦 Загрузка в кэш...");
 
 		CachedDays = ExecuteQuery("SELECT * FROM game_days ORDER BY day_number");
-		GD.Print("   📅 Дней: ", CachedDays.Count);
+		GD.Print("   📅 Дней: ", CachedDays?.Count ?? 0);
 
 		CachedEmails = ExecuteQuery("SELECT * FROM emails ORDER BY day_id, sort_order");
-		GD.Print("   📧 Писем: ", CachedEmails.Count);
+		GD.Print("   📧 Писем: ", CachedEmails?.Count ?? 0);
 
 		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
-		GD.Print("   🎯 Заданий: ", CachedQuests.Count);
+		GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
 
 		EmitSignal(SignalName.ContentLoaded);
 		GD.Print("✅ Кэш загружен");
@@ -361,6 +368,8 @@ public partial class FirebirdDatabase : Node
 
 	public GArray GetEmailsForDay(int dayId)
 	{
+		GD.Print($"GetEmailsForDay({dayId}) вызван");
+		GD.Print($"CachedEmails.Count = {CachedEmails?.Count ?? 0}");
 		var result = new GArray();
 		foreach (var item in CachedEmails)
 		{
@@ -393,6 +402,23 @@ public partial class FirebirdDatabase : Node
 	public GDictionary LoadPlayerProgress(int saveSlot = 1)
 	{
 		GArray result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
+
+		if (result == null)
+		{
+			GD.PrintErr("❌ LoadPlayerProgress: ошибка выполнения запроса, результат null");
+			GD.Print("💾 Прогресс по умолчанию (из-за ошибки БД)");
+			GDictionary fallbackProgress = new GDictionary();
+			fallbackProgress["save_slot"] = saveSlot;
+			fallbackProgress["player_role"] = "employee";
+			fallbackProgress["current_day"] = 1;
+			fallbackProgress["violations"] = 0;
+			fallbackProgress["trust_level"] = 50;
+			fallbackProgress["flags_unlocked"] = "{}";
+			fallbackProgress["quests_completed"] = "[]";
+			fallbackProgress["endings_unlocked"] = "[]";
+			fallbackProgress["total_playtime_minutes"] = 0;
+			return fallbackProgress;
+		}
 
 		if (result.Count > 0)
 		{
@@ -532,6 +558,12 @@ public partial class FirebirdDatabase : Node
 	public Dictionary GetRandomEventForDay(int day)
 	{
 		GArray result = ExecuteQuery($"SELECT * FROM random_events WHERE min_day <= {day} AND max_day >= {day}");
+
+		if (result == null)
+		{
+			GD.PrintErr("❌ GetRandomEventForDay: ошибка выполнения запроса, результат null");
+			return new GDictionary();
+		}
 
 		if (result.Count > 0)
 		{

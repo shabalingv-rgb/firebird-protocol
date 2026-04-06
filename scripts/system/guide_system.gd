@@ -1104,3 +1104,21 @@ func mark_as_read(article_id: String):
 	if not read_articles.has(article_id):
 		read_articles.append(article_id)
 		print("📚 Прочитано: ", article_id)
+
+func load_topic(topic_key: String):
+	"""Загрузка темы из БД"""
+	# В полной версии: DatabaseManager.GetGuideTopic(topic_key, current_day)
+
+	# Проверка разблокироки
+	if not is_topic_unlocked(topic_key):
+		show_locked_message(topic_key)
+		return
+	
+	# Загрузка контента
+	#... код загрузки...
+
+func show_locked_message(topic_key: String):
+	"""Показ сообщения что тема заблокирована"""
+	print("Тема Заблокирована", topic_key)
+	# Здесь можно показать UI с сообщением
+	
