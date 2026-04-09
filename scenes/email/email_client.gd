@@ -327,27 +327,62 @@ func show_report_dialog():
 	var dialog = ConfirmationDialog.new()
 	dialog.title = "📤 Отправка отчёта"
 	dialog.dialog_text = "Выберите вариант отчёта:"
+	dialog.ok_button_text = "Отправить"
+	dialog.cancel_button_text = "Отмена"
 	
 	# Применяем игровой шрифт
 	dialog.theme = _create_quest_theme()
 
 	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	
+	# Пустой лейбл-распорка чтобы отодвинуть радиокнопки от заголовка
+	var spacer = Label.new()
+	spacer.text = ""
+	spacer.custom_minimum_size = Vector2(0, 20)
+	vbox.add_child(spacer)
 
-	var option_button = OptionButton.new()
-	option_button.add_item("Задание выполнено. Данные прилагаются.")
-	option_button.add_item("Обнаружены аномалии. Требуется проверка.")
-	option_button.add_item("Ничего подозрительного не найдено.")
-	vbox.add_child(option_button)
+	var options = [
+		"Задание выполнено. Данные прилагаются.",
+		"Обнаружены аномалии. Требуется проверка.",
+		"Ничего подозрительного не найдено."
+	]
+
+	var selected_report = options[0]
+	var radio_buttons = []
+
+	for i in range(options.size()):
+		var radio = Button.new()
+		radio.toggle_mode = true
+		radio.button_pressed = (i == 0)
+		radio.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		radio.text = "● " + options[i] if i == 0 else "○ " + options[i]
+		radio.pressed.connect(func():
+			for rb in radio_buttons:
+				rb.button_pressed = false
+				var idx = radio_buttons.find(rb)
+				rb.text = "○ " + options[idx]
+			radio.button_pressed = true
+			radio.text = "● " + options[radio_buttons.find(radio)]
+			selected_report = options[radio_buttons.find(radio)]
+		)
+		radio_buttons.append(radio)
+		vbox.add_child(radio)
+	
+	# Распорка после радиокнопок
+	var spacer_bottom = Label.new()
+	spacer_bottom.text = ""
+	spacer_bottom.custom_minimum_size = Vector2(0, 10)
+	vbox.add_child(spacer_bottom)
 
 	dialog.add_child(vbox)
 
 	dialog.confirmed.connect(func():
-		var selected_text = option_button.get_item_text(option_button.selected)
-		send_report(selected_text)
+		send_report(selected_report)
 	)
 
 	add_child(dialog)
-	dialog.popup_centered(Vector2i(600, 300))
+	dialog.popup_centered(Vector2i(600, 230))
 		
 
 
@@ -356,18 +391,12 @@ func send_report(report_text: String):
 	print("📤 Отчёт отправлен: ", report_text)
 	var qid = int(active_quest.get("ID", active_quest.get("id", 0)))
 	DatabaseManager.SavePlayerChoice(qid, "report_text", report_text, QuestManager.current_day)
-	
+
 	# Проверяем текст отчёта на "подозрительный"
 	if "аномалии" in report_text.to_lower() or "ошибки" in report_text.to_lower():
-		# Игрок сообщил о проблемах - это может повлиять на сюжет
 		QuestManager.set_story_flag("reported_anomaly")
-	
-	# Показываем успех
-	var dialog = AcceptDialog.new()
-	dialog.title = "✅ Успешно"
-	dialog.dialog_text = "Отчёт отправлен руководству!"
-	add_child(dialog)
-	dialog.popup_centered()
+
+	show_success_message()
 
 func show_empty_message():
 	"""Показ сообщения что писем нет"""
