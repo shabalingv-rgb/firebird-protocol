@@ -133,26 +133,46 @@ func submit_quest_report(quest_id: String):
 
 func show_quest_not_completed_warning(details: String):
 	"""Показ предупреждения если задание ещё не выполнено"""
-	# Убедимся что шрифт правильный на уровне узла
-	body_label.add_theme_font_override("normal_font", quest_font)
-	body_label.add_theme_font_override("bold_font", quest_font)
-	body_label.add_theme_font_override("italics_font", quest_font)
-	body_label.add_theme_font_override("mono_font", quest_font)
+	var dialog = AcceptDialog.new()
+	dialog.title = "⛔ Задание не выполнено"
+	dialog.dialog_text = details + "\n\nОткройте терминал и выполните SQL-запрос, затем нажмите 'Отправить' снова."
+	dialog.ok_button_text = "Понятно"
 	
-	body_label.append_text("\n\n")
-	body_label.push_color(Color(1.0, 0.65, 0.0))  # orange
-	body_label.append_text("⛔ ВНИМАНИЕ: ")
-	body_label.append_text(details)
-	body_label.pop()
-	body_label.push_color(Color(0.5, 0.5, 0.5))  # gray
-	body_label.append_text("\n\nОткройте терминал и выполните SQL-запрос, затем нажмите 'Отправить' снова.")
-	body_label.pop()
+	# Применяем игровой шрифт
+	dialog.theme = _create_quest_theme()
+	
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(600, 250))
+	dialog.confirmed.connect(dialog.queue_free)
 
 func show_success_message():
-	body_label.text += "\n\n\n✅ ОТЧЁТ ОТПРАВЛЕН! ЗАДАНИЕ ВЫПОЛНЕНО."
+	var dialog = AcceptDialog.new()
+	dialog.title = "✅ Задание выполнено"
+	dialog.dialog_text = "Отчёт отправлен руководству!\nЗадание успешно завершено."
+	
+	dialog.theme = _create_quest_theme()
+	
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(500, 200))
+	dialog.confirmed.connect(dialog.queue_free)
 
 func show_error_message(msg: String):
-	body_label.text += "\n\n\n❌ " + msg
+	var dialog = AcceptDialog.new()
+	dialog.title = "❌ Ошибка"
+	dialog.dialog_text = msg
+	
+	dialog.theme = _create_quest_theme()
+	
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(500, 200))
+	dialog.confirmed.connect(dialog.queue_free)
+
+func _create_quest_theme() -> Theme:
+	"""Создаёт тему с игровым шрифтом для диалогов"""
+	var theme = Theme.new()
+	theme.default_font = quest_font
+	theme.default_font_size = 14
+	return theme
 
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
@@ -306,28 +326,28 @@ func show_report_dialog():
 	"""Показ диалога выбора варианта отчёта"""
 	var dialog = ConfirmationDialog.new()
 	dialog.title = "📤 Отправка отчёта"
+	dialog.dialog_text = "Выберите вариант отчёта:"
 	
+	# Применяем игровой шрифт
+	dialog.theme = _create_quest_theme()
+
 	var vbox = VBoxContainer.new()
-	
-	var label = Label.new()
-	label.text = "Выберите вариант отчёта:"
-	vbox.add_child(label)
-	
+
 	var option_button = OptionButton.new()
 	option_button.add_item("Задание выполнено. Данные прилагаются.")
 	option_button.add_item("Обнаружены аномалии. Требуется проверка.")
 	option_button.add_item("Ничего подозрительного не найдено.")
 	vbox.add_child(option_button)
-	
+
 	dialog.add_child(vbox)
-	
+
 	dialog.confirmed.connect(func():
 		var selected_text = option_button.get_item_text(option_button.selected)
 		send_report(selected_text)
 	)
-	
+
 	add_child(dialog)
-	dialog.popup_centered()
+	dialog.popup_centered(Vector2i(600, 300))
 		
 
 

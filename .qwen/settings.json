@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dotnet *)",
       "Bash(godot *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "WebSearch",
+      "WebFetch(docs.godotengine.org)"
     ]
   },
   "$version": 3

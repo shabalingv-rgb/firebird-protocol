@@ -1,4 +1,6 @@
-# Godot 4 RichTextLabel BBCode - Краткое руководство
+# Godot 4 UI - Шрифты и диалоги
+
+## RichTextLabel BBCode - Краткое руководство
 
 ## Включение BBCode
 
@@ -83,3 +85,59 @@ bbcode_enabled = true
 
 - [Официальная документация Godot 4](https://docs.godotengine.org/en/stable/tutorials/ui/bbcode_in_richtextlabel.html)
 - [Godot 4 RichText Tutorial (YouTube)](https://www.youtube.com/watch?v=L_H8Wvw8oG0)
+
+---
+
+## Кастомизация диалогов (AcceptDialog / ConfirmationDialog)
+
+### Создание диалога с кастомным шрифтом
+
+```gdscript
+# Загружаем шрифт один раз
+var quest_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+
+func show_custom_dialog():
+    var dialog = AcceptDialog.new()  # или ConfirmationDialog.new() для OK/Cancel
+    dialog.title = "Заголовок"
+    dialog.dialog_text = "Текст сообщения"
+    dialog.ok_button_text = "ОК"
+    
+    # Создаём тему со шрифтом
+    var theme = Theme.new()
+    theme.default_font = quest_font
+    theme.default_font_size = 14
+    dialog.theme = theme
+    
+    # Показываем диалог
+    add_child(dialog)
+    dialog.popup_centered(Vector2i(500, 200))
+    
+    # Обработка результатов
+    dialog.confirmed.connect(func(): print("OK нажат"))
+    # Для ConfirmationDialog:
+    # dialog.canceled.connect(func(): print("Отмена"))
+    
+    # Авто-удаление после закрытия
+    dialog.confirmed.connect(dialog.queue_free)
+```
+
+### Почему использовать диалоги лучше чем встраивать текст
+
+| Подход | Плюсы | Минусы |
+|--------|-------|--------|
+| **Встраивание в RichTextLabel** | Полный контроль над форматированием | Сложно применить шрифт, BBCode может не работать |
+| **AcceptDialog / ConfirmationDialog** | Шрифт применяется через `Theme`, стандартный UI | Меньше контроля над форматированием текста |
+
+### Методы диалогов
+
+| Метод | Описание |
+|-------|----------|
+| `dialog.dialog_text` | Текст сообщения |
+| `dialog.title` | Заголовок окна |
+| `dialog.ok_button_text` | Текст кнопки OK |
+| `dialog.add_cancel_button(text)` | Добавить кнопку отмены |
+| `dialog.popup_centered(size)` | Показать диалог по центру |
+| `dialog.confirmed.connect(...)` | Сигнал при нажатии OK |
+| `dialog.canceled.connect(...)` | Сигнал при отмене |
+| `dialog.get_label()` | Доступ к внутреннему Label |
+
