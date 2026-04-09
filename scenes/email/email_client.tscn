@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://bbhi23fpg4ux3"]
 
+[ext_resource type="Theme" uid="uid://7vufr44i5vp4" path="res://assets/themes/retro_theme.tres" id="1_7x7co"]
 [ext_resource type="Script" uid="uid://gvf7tm6miwj" path="res://scenes/email/email_client.gd" id="1_ps0rs"]
 [ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_2y7k8"]
 
@@ -10,6 +11,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_7x7co")
 script = ExtResource("1_ps0rs")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1293584174]
@@ -80,10 +82,15 @@ offset_bottom = 65.0
 theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Ответить"
 
-[node name="EmailBody" type="TextEdit" parent="." unique_id=876434661]
+[node name="EmailBody" type="RichTextLabel" parent="." unique_id=810244442]
 layout_mode = 0
 offset_left = 360.0
 offset_top = 127.0
 offset_right = 1134.0
 offset_bottom = 569.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
+theme_override_fonts/normal_font = ExtResource("2_2y7k8")
+theme_override_fonts/bold_font = ExtResource("2_2y7k8")
+theme_override_fonts/italics_font = ExtResource("2_2y7k8")
+theme_override_fonts/mono_font = ExtResource("2_2y7k8")
+bbcode_enabled = true
+autowrap_mode = 2

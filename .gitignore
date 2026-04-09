@@ -10,6 +10,7 @@ export.cfg
 export_presets.cfg
 
 # Temporary files
+qdrant_storage/
 tmp/
 temp/
 *.tmp

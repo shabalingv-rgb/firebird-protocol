@@ -12,6 +12,10 @@ extends Control
 var current_emails: Array = []
 var current_day_emails: Array = []
 var active_quest: Dictionary = {}
+var original_email_body: String = ""  # Для восстановления текста при предупреждении
+
+# Шрифт для уведомлений (загружаем один раз)
+var quest_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
 
 # Вспомогательная функция для получения значения из C# словаря (регистронезависимо)
 func get_dict_value(data: Dictionary, key: String, default = null):
@@ -33,8 +37,10 @@ func _ready():
 		email_list.item_selected.connect(_on_email_selected)
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
+	if reply_button:
+		reply_button.pressed.connect(_on_reply_button_pressed)
 
-	print("📧 Email Client загружен")
+	print("📧 Email Client загруен")
 
 	if DatabaseManager and not DatabaseManager.DatabaseReady.is_connected(_on_database_ready):
 		DatabaseManager.DatabaseReady.connect(_on_database_ready)
@@ -49,13 +55,11 @@ func _ready():
 		# БД поднимется позже — _on_database_ready вызовет load_emails_for_day
 		pass
 
-	if EmailSystem.inbox.is_empty():
-		print("⚠️ Входящих писем нет!")
-		subject_label.text = "Нет писем"
-		return
-
-	refresh_email_list()
-	load_first_unread_email()
+	# ❌ УДАЛИ ЭТОТ БЛОК (устарел):
+	# if EmailSystem.inbox.is_empty():
+	#     print("⚠️ Входящих писем нет!")
+	#     subject_label.text = "Нет писем"
+	#     return
 
 func refresh_email_list():
 	if not email_list:
@@ -101,51 +105,54 @@ func show_email(email: Dictionary):
 	subject_label.text = email.get("SUBJECT", "Без темы")
 	sender_label.text = email.get("SENDER", "Неизвестно")
 	body_label.text = email.get("BODY", "")
+	original_email_body = body_label.text  # Сбрасываем оригинальный текст
 	EmailSystem.mark_as_read(email)
-	
+
 	# Обновляем список (чтобы показать что прочитано)
 	refresh_email_list()
-	
-	# Добавляем кнопку "Отправить отчёт" если это письмо с заданием
-	if email.get("quest_id", null) != null or email.get("QUEST_ID", null) != null:
-		var qid = email.get("QUEST_ID", email.get("quest_id", ""))
-		add_report_button(str(qid))
 
-func add_report_button(quest_id: String):
-	# Удаляем старую кнопку если есть
-	if has_node("CheckQuest"):
-		$CheckQuest.queue_free()
+	# Добавляем кнопку "Отправить отчёт" если это письмо с заданием
+	var email_type = email.get("email_type", email.get("EMAIL_TYPE", "")).to_lower()
+	var has_quest_id = email.get("quest_id", email.get("QUEST_ID", null)) != null
 	
-	var btn = Button.new()
-	btn.name = "CheckQuest"
-	btn.text = "📤 Отправить отчёт о выполнении"
-	btn.pressed.connect(func(): submit_quest_report(quest_id))
-	
-	# Добавляем кнопку под текстом письма
-	if $EmailBody is TextEdit:
-		# Если TextEdit, добавляем как дочерний элемент
-		$EmailBody.add_child(btn)
-	else:
-		# Если Label, добавляем рядом
-		add_child(btn)
-		btn.owner = self
+	if email_type == "quest" or has_quest_id:
+		# Это письмо с заданием
+		pass
 
 func submit_quest_report(quest_id: String):
-	print("📤 Отправка отчёта по заданию: ", quest_id)
-	if QuestManager.is_quest_completed(quest_id):
-		if QuestManager.active_quest and not QuestManager.active_quest.is_empty():
+	# Проверяем, что есть активное задание и его ID совпадает
+	if QuestManager.active_quest and not QuestManager.active_quest.is_empty():
+		var active_id = QuestManager.active_quest.get("ID", QuestManager.active_quest.get("id", ""))
+		if str(active_id) == quest_id:
 			QuestManager.complete_quest(true)
 			show_success_message()
 		else:
-			show_error_message("Нет активного задания")
+			show_quest_not_completed_warning("Активное задание не совпадает. Выполните текущее задание в терминале.")
 	else:
-		show_error_message("Задание ещё не выполнено! Проверьте запрос в терминале.")
+		show_quest_not_completed_warning("Нет активного задания! Откройте терминал и выполните SQL-запрос.")
+
+func show_quest_not_completed_warning(details: String):
+	"""Показ предупреждения если задание ещё не выполнено"""
+	# Убедимся что шрифт правильный на уровне узла
+	body_label.add_theme_font_override("normal_font", quest_font)
+	body_label.add_theme_font_override("bold_font", quest_font)
+	body_label.add_theme_font_override("italics_font", quest_font)
+	body_label.add_theme_font_override("mono_font", quest_font)
+	
+	body_label.append_text("\n\n")
+	body_label.push_color(Color(1.0, 0.65, 0.0))  # orange
+	body_label.append_text("⛔ ВНИМАНИЕ: ")
+	body_label.append_text(details)
+	body_label.pop()
+	body_label.push_color(Color(0.5, 0.5, 0.5))  # gray
+	body_label.append_text("\n\nОткройте терминал и выполните SQL-запрос, затем нажмите 'Отправить' снова.")
+	body_label.pop()
 
 func show_success_message():
-	body_label.text += "\n\n✅ Отчёт отправлен! Задание выполнено."
+	body_label.text += "\n\n\n✅ ОТЧЁТ ОТПРАВЛЕН! ЗАДАНИЕ ВЫПОЛНЕНО."
 
 func show_error_message(msg: String):
-	body_label.text += "\n\n❌ " + msg
+	body_label.text += "\n\n\n❌ " + msg
 
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
@@ -168,19 +175,17 @@ func load_emails_for_day(day_number: int):
 	
 	# ✅ Используем C# метод из FirebirdDatabase.cs
 	var emails_data = DatabaseManager.GetEmailsForDay(day_number)
-	
-	print("📋 В кэше всего писем: ", DatabaseManager.CachedEmails.size())
+
+	print("📋 В кэше всего писем: ", DatabaseManager.GetCachedEmailsCount())
 	print("📫 Писем для дня ", day_number, ": ", emails_data.size())
 	
 	# Конвертируем C# Dictionary в GDScript Dictionary
 	current_emails = []
 	for email_data in emails_data:
 		var gd_email = {}
-		# Копируем все поля с нижним регистром ключей для удобства
 		for key in email_data.keys():
 			var normalized_key = str(key).to_lower()
 			gd_email[normalized_key] = email_data[key]
-		# Отладочный вывод для каждого письма
 		print("🔍 Ключи в письме: ", gd_email.keys())
 		print("📧 subject = ", gd_email.get("subject", "[НЕ НАЙДЕНО]"))
 		current_emails.append(gd_email)
@@ -191,11 +196,14 @@ func load_emails_for_day(day_number: int):
 	for email in current_emails:
 		print("📧 Письмо: ", email.get("subject", "Без темы"))
 	
+	# ✅ ОДИН БЛОК (убери дубликат!)
 	if current_emails.is_empty():
 		print("⚠️ Писем нет для дня ", day_number)
 		show_empty_message()
 	else:
-		display_emails_list()  # Показываем список в UI
+		print("✅ Писем загружено: ", current_emails.size())
+		display_emails_list()
+		display_email_content(0)  # ← Показываем первое письмо
 
 func display_emails_list():
 	#Отображение списка писем в EmailList
@@ -249,29 +257,49 @@ func display_email_content(index: int):
 
 	var email = current_emails[index]
 
-	#Заполняем UI
-	$EmailHeader/Subject.text = email.get("subject", "")
-	$EmailHeader/Sender.text = "От: " + email.get("sender", "")
-	$EmailHeader/DateLabel.text = email.get("publish_date", "")
-	$EmailBody.text = email.get("body", "")
+	# ✅ Обновляем ВСЕ поля UI
+	if has_node("EmailHeader/Subject"):
+		$EmailHeader/Subject.text = email.get("subject", "Без темы")
+	else:
+		print("❌ Не найден узел EmailHeader/Subject")
+	
+	if has_node("EmailHeader/Sender"):
+		$EmailHeader/Sender.text = "От: " + email.get("sender", "Неизвестно")
+	else:
+		print("❌ Не найден узел EmailHeader/Sender")
+	
+	if has_node("EmailBody"):
+		$EmailBody.bbcode_enabled = true
+		$EmailBody.add_theme_font_override("normal_font", quest_font)
+		$EmailBody.add_theme_font_override("bold_font", quest_font)
+		$EmailBody.add_theme_font_override("italics_font", quest_font)
+		$EmailBody.add_theme_font_override("mono_font", quest_font)
+		$EmailBody.text = email.get("body", "")
+		original_email_body = $EmailBody.text  # Сохраняем оригинальный текст
+	else:
+		print("❌ Не найден узел EmailBody")
 	
 	# Показываем кнопку ответа если это задание
-	var email_type = email.get("email_type", "")
+	var email_type = email.get("email_type", email.get("EMAIL_TYPE", "")).to_lower()
+	
 	if email_type == "quest":
-		$EmailHeader/ReplyButton.visible = true
-		$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
+		if has_node("EmailHeader/ReplyButton"):
+			$EmailHeader/ReplyButton.visible = true
+			$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
 
-		#агружаем связанне задание
-		var email_id = int(email.get("id", 0))
-		load_quest_for_email(email_id)
+			# Загружаем связанное задание
+			var email_id = int(email.get("id", email.get("ID", 0)))
+			load_quest_for_email(email_id)
 	else:
-		$EmailHeader/ReplyButton.visible = false
+		if has_node("EmailHeader/ReplyButton"):
+			$EmailHeader/ReplyButton.visible = false
 
 func _on_reply_button_pressed():
 	"""Отправка отчёта"""
 	if active_quest.is_empty():
+		show_quest_not_completed_warning("Нет активного задания для этого письма!")
 		return
-	
+
 	show_report_dialog()
 
 func show_report_dialog():
@@ -323,21 +351,25 @@ func send_report(report_text: String):
 
 func show_empty_message():
 	"""Показ сообщения что писем нет"""
-	$EmailHeader/EmailList.clear()
-	$EmailHeader/Subject.text = "Нет писем"
-	$EmailHeader/Sender.text = "Отправитель: "
-	$EmailBody.text = "Задания будут приходить по мере выполнения работы."
+	if has_node("EmailList"):
+		$EmailList.clear()
+	
+	if has_node("EmailHeader/Subject"):
+		$EmailHeader/Subject.text = "Нет писем"
+	
+	if has_node("EmailHeader/Sender"):
+		$EmailHeader/Sender.text = "От: "
+	
+	if has_node("EmailBody"):
+		$EmailBody.text = "Задания будут приходить по мере выполнения работы."
 
 func load_quest_for_email(email_id: int):
 	"""Загрузка задания для письма"""
 	var quest_data = DatabaseManager.GetQuestForEmail(email_id)
 
-	if quest_data and quest_data.Count > 0:
+	if quest_data and not quest_data.is_empty():
 		active_quest = {}
-		#Конвертируем C# Dictionary
-		for key in quest_data.Keys():
+		for key in quest_data.keys():
 			active_quest[key] = quest_data[key]
-
-		print("🎯 ЗЗадание загружено: ", active_quest.get("title", ""))
 	else:
 		print("⚠️ Задание не найдено для email_id=", email_id)

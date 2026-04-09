@@ -8,6 +8,7 @@ using Godot;
 using Godot.Collections;
 using GDictionary = Godot.Collections.Dictionary;
 using GArray = Godot.Collections.Array;
+using SystemDict = System.Collections.Generic.Dictionary<string, object>;
 
 
 public partial class FirebirdDatabase : Node
@@ -30,13 +31,18 @@ public partial class FirebirdDatabase : Node
 
 	public string GetLastError() => _lastError; // Метод для GDScript
 
-	public GArray CachedDays { get; private set; } = new();
-	public GArray CachedEmails { get; private set; } = new();
-	public GArray CachedQuests { get; private set; } = new();
-	public GArray CachedNews { get; private set; } = new();
-	public GArray CachedDossiers { get; private set; } = new();
-	public GArray CachedEvents { get; private set; } = new();
-	public GArray CachedEndings { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedDays { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedEmails { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedQuests { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedNews { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedDossiers { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedEvents { get; private set; } = new();
+	public List<Godot.Collections.Dictionary<string, Variant>> CachedEndings { get; private set; } = new();
+
+	// Методы для получения размера кэша (GDScript не может напрямую читать C# свойства)
+	public int GetCachedEmailsCount() => CachedEmails?.Count ?? 0;
+	public int GetCachedDaysCount() => CachedDays?.Count ?? 0;
+	public int GetCachedQuestsCount() => CachedQuests?.Count ?? 0;
 
 	public override void _Ready()
 	{
@@ -157,6 +163,7 @@ public partial class FirebirdDatabase : Node
 
 			CreateTables();
 			ImportContent();
+
 
 			IsInitialized = true;
 			EmitSignal(SignalName.DatabaseReady);
@@ -293,66 +300,106 @@ public partial class FirebirdDatabase : Node
 		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
 		GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
 
+		// Проверяем и добавляем задание для email_id=1, если его нет
+		CheckAndAddQuestForEmail(1);
+
 		EmitSignal(SignalName.ContentLoaded);
 		GD.Print("✅ Кэш загружен");
 	}
 
-	/// <summary>Выполнить SELECT из GDScript (терминал). При ошибке возвращает null — смотри GetLastError().</summary>
-	public GArray ExecuteQuery(string sql)
+private void CheckAndAddQuestForEmail(int emailId)
+{
+	GD.Print("🔍 Проверка задания для email_id=", emailId);
+	
+	// ✅ Простой способ: проверяем через ExecuteQuery и считаем результат
+	var checkResult = ExecuteQuery($"SELECT id FROM quests WHERE email_id = {emailId}");
+	
+	GD.Print("📊 Найдено заданий: ", checkResult.Count);
+	
+	if (checkResult.Count > 0)
 	{
-		_lastError = ""; // Сбрасываем ошибку перед новым запросом
-		var result = new GArray();
+		GD.Print("✅ Задание для email_id=", emailId, " уже существует");
+		return;
+	}
+	
+	// Добавляем задание
+	GD.Print("📋 Добавляем задание для email_id=", emailId);
+	
+	try
+	{
+		ExecuteNonQuery($@"
+            INSERT INTO quests (email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) 
+            VALUES ({emailId}, 'Первый запрос', 'Получите список всех сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM')
+		");
+		
+		GD.Print("✅ Задание добавлено!");
+		
+		// Обновляем кэш
+		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
+		GD.Print(" Кэш заданий обновлён: ", CachedQuests.Count);
+	}
+	catch (Exception e)
+	{
+		GD.PrintErr("❌ Ошибка добавления задания: ", e.Message);
+		GD.PrintErr("Stack: ", e.StackTrace);
+	}
+}
 
-		try
+	/// <summary>Выполнить SELECT из GDScript (терминал). При ошибке возвращает null — смотри GetLastError().</summary>
+private List<Godot.Collections.Dictionary<string, Variant>> ExecuteQuery(string sql)
+{
+	var result = new List<Godot.Collections.Dictionary<string, Variant>>();
+
+	try
+	{
+		using var command = new FbCommand(sql, _connection);
+		using var reader = command.ExecuteReader();
+
+		while (reader.Read())
 		{
-			using var command = new FbCommand(sql, _connection);
-			using var reader = command.ExecuteReader();
-
-			while (reader.Read())
+			var row = new Godot.Collections.Dictionary<string, Variant>();
+			for (int i = 0; i < reader.FieldCount; i++)
 			{
-				var row = new GDictionary();
-				for (int i = 0; i < reader.FieldCount; i++)
-				{
-					object val = reader.GetValue(i);
-					string name = reader.GetName(i);
-
-					if (val == null || val == DBNull.Value)
-					{
-						row[name] = new Variant();
-					}
-					else if (val is DateTime dt)
-					{
-						// Godot любит строки или метри времени для дат 
-						row[name] = dt.ToString("yyyy-MM-dd HH:mm:ss");
-					}
-					else if (val is int || val is long || val is short)
-					{
-						row[name] = Convert.ToInt64(val);
-					}
-					else if (val is float || val is double || val is decimal)
-					{
-						row[name] = Convert.ToDouble(val);
-					}
-					else
-					{
-						// Для всего остального используем ToStrinf()
-						row[name] = val.ToString();
-					}
-
-				}
-				result.Add(row);
+				string fieldName = reader.GetName(i);
+				object value = reader.GetValue(i);
+				
+				// Явная конвертация типов для Godot Variant
+				row[fieldName] = ConvertToVariant(value);
 			}
+			result.Add(row);
 		}
-		catch (Exception e)
-		{
-			_lastError = e.Message; // Запоминаем текст ошибки от irebird
-			GD.PrintErr($"❌ Ошибка SQL: {e.Message}");
-			return null; // озвращаем null как признак ошибки
-		}
-
-		return result;
+	}
+	catch (Exception e)
+	{
+		GD.PrintErr("❌ Ошибка запроса: ", e.Message);
+		GD.PrintErr("   SQL: ", sql);
 	}
 
+	return result;
+}
+
+/// <summary>Конвертирует объект из БД в Godot Variant</summary>
+private static Variant ConvertToVariant(object value)
+{
+	if (value == null || value == DBNull.Value)
+		return Variant.CreateFrom("");
+	
+	return value switch
+	{
+		int v => Variant.CreateFrom(v),
+		long v => Variant.CreateFrom(v),
+		short v => Variant.CreateFrom(v),
+		byte v => Variant.CreateFrom(v),
+		float v => Variant.CreateFrom(v),
+		double v => Variant.CreateFrom(v),
+		decimal v => Variant.CreateFrom((double)v),
+		string v => Variant.CreateFrom(v),
+		bool v => Variant.CreateFrom(v),
+		DateTime v => Variant.CreateFrom(v.ToString("yyyy-MM-dd HH:mm:ss")),
+		byte[] v => Variant.CreateFrom(System.Convert.ToBase64String(v)),
+		_ => Variant.CreateFrom(value.ToString())
+	};
+}
 	private void ExecuteNonQuery(string sql)
 	{
 		try
@@ -389,19 +436,46 @@ public partial class FirebirdDatabase : Node
 
 	public GDictionary GetQuestForEmail(int emailId)
 	{
-		foreach (var item in CachedQuests)
-		{
-			GDictionary quest = (GDictionary)item;
-			if (quest.ContainsKey("email_id") && quest["email_id"].AsInt32() == emailId)
-				return quest;
+		GD.Print($"🔍 GetQuestForEmail({emailId}) вызван");
+		GD.Print($"📦 CachedQuests.Count = {CachedQuests.Count}");
 
+		foreach (var quest in CachedQuests)
+		{
+			// quest это GDictionary = Godot.Collections.Dictionary<string, Variant>
+
+			// ✅ ПРОВЕРКА КЛЮЧА БЕЗ УЧЁТА РЕГИСТРА (как в GetEmailsForDay)
+			Variant emailIdValue = default;
+			bool found = false;
+
+			if (quest.ContainsKey("EMAIL_ID")) { emailIdValue = quest["EMAIL_ID"]; found = true; }
+			else if (quest.ContainsKey("email_id")) { emailIdValue = quest["email_id"]; found = true; }
+
+			if (found)
+			{
+				int questEmailId = emailIdValue.AsInt32();
+				GD.Print($"  📋 Quest EMAIL_ID = {questEmailId}");
+
+				if (questEmailId == emailId)
+				{
+					GD.Print("✅ Задание найдено!");
+					
+					// Возвращаем копию словаря (безопаснее для GDScript)
+					var result = new GDictionary();
+					foreach (var kvp in quest)
+					{
+						result[kvp.Key] = kvp.Value;
+					}
+					return result;
+				}
+			}
 		}
+
+		GD.Print($"❌ Задание НЕ найдено для email_id={emailId}");
 		return new GDictionary();
 	}
-
 	public GDictionary LoadPlayerProgress(int saveSlot = 1)
 	{
-		GArray result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
+		var result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
 
 		if (result == null)
 		{
@@ -557,7 +631,7 @@ public partial class FirebirdDatabase : Node
 
 	public Dictionary GetRandomEventForDay(int day)
 	{
-		GArray result = ExecuteQuery($"SELECT * FROM random_events WHERE min_day <= {day} AND max_day >= {day}");
+		var result = ExecuteQuery($"SELECT * FROM random_events WHERE min_day <= {day} AND max_day >= {day}");
 
 		if (result == null)
 		{
@@ -580,4 +654,6 @@ public partial class FirebirdDatabase : Node
 		_connection?.Close();
 		_connection?.Dispose();
 	}
+
+
 }

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet *)",
+      "Bash(godot *)",
+      "Bash(python3 *)"
+    ]
+  },
+  "$version": 3
+}
