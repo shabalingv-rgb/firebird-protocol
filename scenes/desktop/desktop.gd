@@ -87,7 +87,7 @@ func _open_sudoku():
 
 func _open_browser():
 	print("Открытие браузера...")
-	# Переход к туториалу
+	get_tree().change_scene_to_file("res://scenes/browser/browser.tscn")
 
 func _open_guide():
 	print("📖 Открытие справочника...")
@@ -110,7 +110,6 @@ func complete_task(difficulty: String):
 	
 func _input(event):
 	if event is InputEventMouseMotion:
-		# Здесь можно добавить проверку границ рамки
 		pass
 
 func show_new_day_notification(day: int):

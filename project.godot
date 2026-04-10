@@ -22,6 +22,7 @@ QuestManager="*uid://qvhnca2clj38"
 EmailSystem="*uid://cje5bc56xghjs"
 GuideSystem="*uid://bjwcspsofnsfi"
 DatabaseManager="*uid://h85iqknxq553"
+GlobalInput="res://scripts/system/global_input.gd"
 
 [display]
 

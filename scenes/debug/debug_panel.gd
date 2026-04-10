@@ -10,21 +10,31 @@ var current_role: String = "employee"  # employee, journalist, manager
 func _ready():
 	# Скрываем панель по умолчанию
 	visible = false
-	
+
 	day_slider.value_changed.connect(_on_day_changed)
 	role_button.pressed.connect(_on_role_changed)
 	$CompleteDayBtn.pressed.connect(_on_complete_day)
 	$SkipDayBtn.pressed.connect(_on_skip_day)
 	$AddEmailBtn.pressed.connect(_on_add_email)
 	$ClearProgressBtn.pressed.connect(_on_clear_progress)
-	$CloseBtn.pressed.connect(_on_close)
+	
+	# Кнопка закрытия (подключаем все)
+	var close_btn = get_node_or_null("CloseButton")
+	if close_btn:
+		close_btn.pressed.connect(_on_close)
+		print("🔧 Debug: CloseButton (X) подключен")
+	
+	if has_node("CloseBtn"):
+		$CloseBtn.pressed.connect(_on_close)
+		print("🔧 Debug: CloseBtn подключен")
 	
 	update_labels()
+	print("🔧 DebugPanel загружен, visible=", visible)
 
 func _input(event):
-	# Показываем панель по F1
-	if event is InputEventKey and event.pressed and event.keycode == KEY_F1:
-		visible = not visible
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		_on_close()
+		get_viewport().set_input_as_handled()
 
 func update_labels():
 	var d := QuestManager.current_day if QuestManager else GameState.current_day
@@ -37,6 +47,8 @@ func _on_day_changed(value):
 	if QuestManager:
 		QuestManager.current_day = v
 	GameState.current_day = v
+	print("📅 Debug: Эмит day_changed, день=", v)
+	GameState.day_changed.emit(v)
 	update_labels()
 	print("📅 Debug: День изменён на ", v)
 
@@ -60,14 +72,20 @@ func _on_complete_day():
 	GameState.advance_game_time(8)
 	if QuestManager:
 		QuestManager.next_day()
+	var new_day = QuestManager.current_day if QuestManager else GameState.current_day
+	print("📅 Debug: Эмит day_changed, день=", new_day)
+	GameState.day_changed.emit(new_day)
 	update_labels()
 	
 func _on_skip_day():
 	if QuestManager:
 		QuestManager.current_day += 1
 	GameState.current_day += 1
+	var new_day = QuestManager.current_day if QuestManager else GameState.current_day
+	print("⏭️ Debug: Эмит day_changed, день=", new_day)
+	GameState.day_changed.emit(new_day)
 	update_labels()
-	print("⏭️ Debug: Пропуск до дня ", QuestManager.current_day if QuestManager else GameState.current_day)
+	print("⏭️ Debug: Пропуск до дня ", new_day)
 
 func _on_add_email():
 	var test_email = {
@@ -89,4 +107,6 @@ func _on_clear_progress():
 	print("🗑️ Debug: Прогресс сброшен")
 
 func _on_close():
+	print("🔧 Debug: _on_close вызван!")
 	visible = false
+	print("🔧 Debug: visible=", visible)

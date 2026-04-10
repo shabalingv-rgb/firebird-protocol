@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <rect width="32" height="32" fill="#0a0a0a" rx="4"/>
+  <!-- Судоку - сетка 3x3 -->
+  <rect x="5" y="5" width="22" height="22" fill="none" stroke="#39ff14" stroke-width="2"/>
+  <line x1="12" y1="5" x2="12" y2="27" stroke="#39ff14" stroke-width="1"/>
+  <line x1="20" y1="5" x2="20" y2="27" stroke="#39ff14" stroke-width="1"/>
+  <line x1="5" y1="12" x2="27" y2="12" stroke="#39ff14" stroke-width="1"/>
+  <line x1="5" y1="20" x2="27" y2="20" stroke="#39ff14" stroke-width="1"/>
+  <!-- Числа в ячейках -->
+  <rect x="7" y="7" width="2" height="3" fill="#39ff14"/>
+  <rect x="14" y="14" width="3" height="2" fill="#39ff14"/>
+  <rect x="22" y="7" width="2" height="3" fill="#39ff14"/>
+  <rect x="7" y="22" width="3" height="2" fill="#39ff14"/>
+  <rect x="22" y="22" width="2" height="3" fill="#39ff14"/>
+</svg>

@@ -473,6 +473,118 @@ private static Variant ConvertToVariant(object value)
 		GD.Print($"❌ Задание НЕ найдено для email_id={emailId}");
 		return new GDictionary();
 	}
+
+	// === БРАУЗЕР: Загрузка доступных сайтов ===
+	public GArray GetAvailableSites(int dayId)
+	{
+		GD.Print($"🌐 GetAvailableSites({dayId}) вызван");
+		
+		var sites = new GArray();
+		
+		// Новости — всегда доступны с дня 1
+		var news = new GDictionary();
+		news["id"] = "news";
+		news["name"] = "📰 Новости НИИ";
+		news["icon"] = "res://assets/icons/news.png";
+		news["min_day"] = 1;
+		sites.Add(news);
+		
+		// Википедия — всегда доступна
+		var wiki = new GDictionary();
+		wiki["id"] = "wiki";
+		wiki["name"] = "📚 Википедия";
+		wiki["icon"] = "res://assets/icons/wiki.png";
+		wiki["min_day"] = 1;
+		sites.Add(wiki);
+		
+		// Доска объявлений — с дня 3
+		if (dayId >= 3)
+		{
+			var board = new GDictionary();
+			board["id"] = "board";
+			board["name"] = "📌 Доска объявлений";
+			board["icon"] = "res://assets/icons/board.png";
+			board["min_day"] = 3;
+			sites.Add(board);
+		}
+		
+		// Юмор — с дня 5
+		if (dayId >= 5)
+		{
+			var humor = new GDictionary();
+			humor["id"] = "humor";
+			humor["name"] = "😄 Юмор";
+			humor["icon"] = "res://assets/icons/humor.png";
+			humor["min_day"] = 5;
+			sites.Add(humor);
+		}
+		
+		GD.Print($"📊 Найдено сайтов: {sites.Count}");
+		return sites;
+	}
+
+	// === БРАУЗЕР: Загрузка статей для сайта ===
+	public GArray GetArticlesForSite(string siteId, int dayId)
+	{
+		GD.Print($"📰 GetArticlesForSite({siteId}, {dayId}) вызван");
+		
+		var articles = new GArray();
+		
+		try
+		{
+			string sql;
+			
+			if (siteId == "wiki")
+			{
+				// Wiki-статьи: постоянные + разблокированные
+				sql = $@"
+					SELECT id, title, content, author, is_permanent
+					FROM news_articles 
+					WHERE category = 'wiki' 
+					AND (is_permanent = 1 OR day_id <= {dayId})
+					ORDER BY title";
+			}
+			else
+			{
+				// Обычные статьи: только доступные по дню
+				sql = $@"
+					SELECT id, title, content, author, day_id
+					FROM news_articles 
+					WHERE category = '{siteId}' 
+					AND day_id <= {dayId}
+					ORDER BY day_id DESC";
+			}
+			
+			var result = ExecuteQuery(sql);
+			
+			foreach (var article in result)
+			{
+				articles.Add(article);
+			}
+			
+			GD.Print($"📊 Найдено статей: {articles.Count}");
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка загрузки статей: {e.Message}");
+		}
+		
+		return articles;
+	}
+
+	// === БРАУЗЕР: Получить конкретную статью ===
+	public GDictionary GetArticleById(int articleId)
+	{
+		var result = ExecuteQuery($"SELECT * FROM news_articles WHERE id = {articleId}");
+		
+		if (result.Count > 0)
+		{
+			return (GDictionary)result[0];
+		}
+		
+		return new GDictionary();
+	}
+
 	public GDictionary LoadPlayerProgress(int saveSlot = 1)
 	{
 		var result = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");

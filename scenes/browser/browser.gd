@@ -1,96 +1,175 @@
 extends Control
 
-@onready var site_buttons = $SiteButtons #Container с кнопками
-@onready var content_view = $ContentView/Text
-@onready var title_label = $ContentView/Title
+# Шрифт для элементов
+var quest_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+
+# Ссылки на узлы
+@onready var site_buttons_container = $SiteButtons
+@onready var article_list = $ArticleList
+@onready var article_text = $ContentView/ArticleText
+@onready var back_button = $BackButton
 
 var current_day: int = 1
-var available_sites: Dictionary = {}
+var current_site: String = ""
+var available_sites: Array = []
 var articles_cache: Array = []
+
 
 func _ready():
 	print("🌐 Browser загружен")
 	
-	# Подключаемся к сигналам
-	if QuestManager:
-		QuestManager.day_completed.connect(_on_day_changed)
+	# Подключаем сигналы
+	if back_button:
+		back_button.pressed.connect(_on_back_pressed)
 	
-	load_available_sites()
-	load_articles_for_day(1)
+	if article_list:
+		article_list.item_selected.connect(_on_article_selected)
+		article_list.add_theme_font_override("font", quest_font)
+	
+	# Получаем текущий день
+	if QuestManager:
+		current_day = QuestManager.current_day
+	
+	# Подписываемся на смену дня
+	if GameState:
+		if not GameState.day_changed.is_connected(_on_day_changed):
+			GameState.day_changed.connect(_on_day_changed)
+			print("🌐 Подписан на GameState.day_changed")
+		else:
+			print("🌐 Уже подписан на day_changed")
+		print("🌐 GameState.current_day=", GameState.current_day)
+	else:
+		print("⚠️ GameState не доступен!")
+	
+	# Все кнопки видны всегда, но статьи загружаются по доступности
+	_setup_site_buttons()
+
 
 func _on_day_changed(day: int):
+	"""Реакция на смену дня"""
+	print("🌐 Браузер: день изменён на ", day)
 	current_day = day
-	load_articles_for_day(day)
-	update_site_availability()
+	# Перезагружаем текущий сайт
+	if not current_site.is_empty():
+		print("🌐 Перезагружаю статьи для: ", current_site, " day=", day)
+		load_articles_for_site(current_site)
 
-func load_available_sites():
-	# Загрузка доступных сайтов из БД
-	# В полной версии: DatabaseManager.GetSitesForDay(current_day)
-	# Сейчас - заглушка:
-	available_sites = {
-		"news": {"name": "📰 Новости НИИ", "unlocked": true},
-		"wiki": {"name": "📚 Википедия", "unlocked": true},
-		"board": {"name": "📌 Доска объявлений", "unlocked": current_day >= 3},
-		"humor": {"name": "😂 Юмор", "unlocked": current_day >= 5}
-	}
-	
-	render_site_buttons()
 
-func render_site_buttons():
-	# Создание кнопок сайтов
-	# Очистка
-	for child in site_buttons.get_children():
+func _setup_site_buttons():
+	"""Создаёт кнопки для всех сайтов (видны всегда)"""
+	print("🌐 _setup_site_buttons: current_day=", current_day)
+	# Очищаем старые кнопки
+	for child in site_buttons_container.get_children():
 		child.queue_free()
 	
-	# Создание кнопок
-	for site_id in available_sites:
-		var site = available_sites[site_id]
-		if not site.unlocked:
-			continue
-		
+	var all_sites = [
+		{"id": "news", "name": "📰 Новости НИИ"},
+		{"id": "wiki", "name": "📚 Википедия"},
+		{"id": "board", "name": "📌 Доска объявлений"},
+		{"id": "humor", "name": "😄 Юмор"}
+	]
+	
+	for site in all_sites:
 		var btn = Button.new()
-		btn.text = site.name
-		btn.name = site_id
-		btn.connect("pressed", Callable(self, "_on_site_button_pressed").bind(site_id))
-		site_buttons.add_child(btn)
+		btn.text = site["name"]
+		btn.name = "btn_" + site["id"]
+		btn.custom_minimum_size = Vector2(150, 32)
+		btn.add_theme_font_override("font", quest_font)
+		var site_id = site["id"]
+		btn.pressed.connect(func(): _on_site_pressed(site_id))
+		site_buttons_container.add_child(btn)
+	
+	# Загружаем первый доступный сайт
+	load_articles_for_site("news")
 
 
-func _on_site_button_pressed(site_id: String):
-	# При клике на сайт
-	title_label.text = available_sites[site_id].name
-	load_available_site(site_id)
+func _on_site_pressed(site_id: String):
+	"""При клике на сайт"""
+	print("🌐 Открыт сайт: ", site_id)
+	current_site = site_id
+	load_articles_for_site(site_id)
+
 
 func load_articles_for_site(site_id: String):
-	# Загрузка статей для сайта
-	# Фильтруем статьи по сайту и дню
-	var relevant = []
-	for article in articles_cache:
-		if article.get("site_name") == site_id and article.get("day_id", 1) <= current_day:
-			relevant.append(article)
+	"""Загрузка статей для сайта"""
+	print("📰 Загрузка статей для ", site_id, " day=", current_day, "...")
 	
-	if relevant.is_empty():
-		content_view.text = "[i]Нет материалов для отображения[/i]"
+	# Проверяем доступность сайта по дню
+	var min_day = 1
+	if site_id == "board":
+		min_day = 3
+	elif site_id == "humor":
+		min_day = 5
+	
+	print("📰 min_day=", min_day, " current_day=", current_day)
+	
+	if current_day < min_day:
+		article_text.text = "Раздел в разработке."
+		article_list.clear()
+		print("📰 Раздел заблокирован до дня ", min_day)
 		return
 	
-	# Показываем первую статью (можно сделать список)
-	var article = relevant[0]
-	content_view.text = "[b]" + article.get("title", "") + "[/b]\n\n" + article.get("content", "")
+	if not DatabaseManager:
+		print("📰 DatabaseManager не доступен!")
+		return
+	
+	articles_cache = DatabaseManager.GetArticlesForSite(site_id, current_day)
+	print("📰 Найдено статей: ", articles_cache.size())
+	
+	# Очищаем список статей
+	article_list.clear()
+	
+	# Показываем статьи
+	for article_data in articles_cache:
+		var article = article_data as Dictionary
+		var title = str(article.get("TITLE", article.get("title", "Без названия")))
+		var author = str(article.get("AUTHOR", article.get("author", "")))
+		
+		var display_text = title
+		if not author.is_empty():
+			display_text += " — " + author
+		
+		article_list.add_item(display_text)
+	
+	# Показываем первую статью если есть
+	if articles_cache.size() > 0:
+		article_list.select(0)
+		_show_article(0)
+	else:
+		article_text.text = "Статей пока нет."
 
-func load_articles_for_day(day: int):
-	# Загрузка статей из БД для дня
-	# В полной версии: DatabaseManager.GetArticlesForDay(day)
-	articles_cache = [
-		{"site_name": "news", "day_id": 1, "title": "Планёрка", "content": "Сегодня в 09:00..."},
-		{"site_name": "wiki", "day_id": 1, "title": "Что такое SQL?", "content": "SQL - язык запросов...", "is_permanent": true},
-		{"site_name": "board", "day_id": 3, "title": "Пропуск", "content": "Найден пропуск на 3 этаж..."},
-		{"site_name": "humor", "day_id": 5, "title": "Анекдот", "content": "Программист и заба данных..."}
-	]
 
-func update_site_availability():
-	# Обновление доступности сайтов при смене дня
-	# Перегружаем список сайтов с учетом новых условий
-	load_available_sites()
+func _on_article_selected(index: int):
+	"""При выборе статьи"""
+	_show_article(index)
 
-func load_available_site(site_id: String):
-	# Загрузка контента конкретного сайта
-	load_articles_for_site(site_id)
+
+func _show_article(index: int):
+	"""Показать содержимое статьи"""
+	if index < 0 or index >= articles_cache.size():
+		return
+	
+	var article = articles_cache[index] as Dictionary
+	var title = str(article.get("TITLE", article.get("title", "")))
+	var content = str(article.get("CONTENT", article.get("content", "")))
+	var author = str(article.get("AUTHOR", article.get("author", "")))
+	
+	article_text.text = "[b]" + title + "[/b]"
+	if not author.is_empty():
+		article_text.text += "\n\n" + author
+	article_text.text += "\n\n" + content
+	
+	print("📖 Открыта статья: ", title)
+
+
+func _on_back_pressed():
+	"""Кнопка Назад"""
+	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
+
+
+func update_for_day(new_day: int):
+	"""Обновление при смене дня"""
+	current_day = new_day
+	# Перезагружаем текущий сайт
+	if not current_site.is_empty():
+		load_articles_for_site(current_site)

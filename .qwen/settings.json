@@ -5,7 +5,10 @@
       "Bash(godot *)",
       "Bash(python3 *)",
       "WebSearch",
-      "WebFetch(docs.godotengine.org)"
+      "WebFetch(docs.godotengine.org)",
+      "Bash(mkdir *)",
+      "Bash(pip3 install *)",
+      "Bash(brew *)"
     ]
   },
   "$version": 3
