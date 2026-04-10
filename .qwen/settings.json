@@ -8,7 +8,8 @@
       "WebFetch(docs.godotengine.org)",
       "Bash(mkdir *)",
       "Bash(pip3 install *)",
-      "Bash(brew *)"
+      "Bash(brew *)",
+      "Bash(move *)"
     ]
   },
   "$version": 3

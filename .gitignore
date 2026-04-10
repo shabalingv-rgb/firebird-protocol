@@ -15,14 +15,25 @@ tmp/
 temp/
 *.tmp
 *.sln
-*.csproj
 .vs/
 bin/
 obj/
+launch-qwen.bat
+launch-qwen.lnk
+
+# Platform-specific libraries (не коммитить)
+libfbclient.dylib
+libfbclient.so
+fbclient.dll
 
 # ========================
 # Чувствительные данные (НЕ публиковать!)
 # ========================
+
+# Бэкапы баз данных (не коммитить)
+*.fdb — копия
+*.fdb.backup
+*.fdb.bak
 .env
 .env.local
 *.key

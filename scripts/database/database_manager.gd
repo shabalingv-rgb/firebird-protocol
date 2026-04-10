@@ -1,6 +1,19 @@
 extends Node
-## Устаревшая заглушка: в игре используй autoload **DatabaseManager** (C# `FirebirdDatabase`).
-## Этот скрипт в сцену класть не нужно — см. `project.godot` → Autoload.
+## ⚠️ УСТАРЕВШИЙ ФАЙЛ — НЕ ИСПОЛЬЗУЕТСЯ!
+##
+## Autoload "DatabaseManager" в project.godot указывает на C# класс:
+##   scripts/system/FirebirdDatabase.cs (UID: uid://h85iqknxq553)
+##
+## Этот GDScript-файл остался от старой архитектуры и не подключён.
+## Не добавляйте сюда код — он не будет работать!
+##
+## Для работы с БД используйте:
+##   - DatabaseManager.GetEmailsForDay(day_id)   (C# метод)
+##   - DatabaseManager.GetQuestForEmail(email_id)
+##   - DatabaseManager.LoadPlayerProgress()
+##   - DatabaseManager.ExecuteQuery(sql)
+##
+## Если нужен GDScript-обёртка — создайте новый файл с другим именем.
 
 func get_emails_for_day(day_id: int) -> Array:
 	if has_node("/root/DatabaseManager"):

@@ -144,22 +144,6 @@ godot --headless --export-release "Linux" ../builds/firebird-protocol.x86_64
 
 ```
 firebird-protocol/
-├── addons/                  # Плагины Godot
-├── assets/
-│   ├── fonts/               # PressStart2P-Regular.ttf (пиксельный шрифт)
-│   └── icons/               # Монохромные иконки (SVG + PNG)
-│       ├── mail.svg/png     # Почта
-│       ├── browser.svg/png  # Браузер
-│       ├── help.svg/png     # Справка
-│       ├── sudoku.svg/png   # Судоку
-│       ├── news.svg/png     # Новости
-│       ├── wiki.svg/png     # Википедия
-│       ├── board.svg/png    # Доска объявлений
-│       └── humor.svg/png    # Юмор
-├── database/                # Файлы Firebird (.fdb)
-├── docs/                    # Документация
-│   └── godot4_richtextlabel_bbcode.md
-├── fb_temp/                 # Временные файлы Firebird
 ├── scenes/                  # Сцены Godot (.tscn + .gd)
 │   ├── browser/             # Внутриигровой браузер
 │   ├── debug/               # Панель отладки
@@ -168,15 +152,29 @@ firebird-protocol/
 │   ├── guide/               # Справочная система
 │   ├── main_menu/           # Главное меню
 │   ├── sudoku/              # Мини-игра Судоку
-│   └── terminal/            # SQL-терминал
+│   ├── terminal/            # SQL-терминал
+│   └── tutorial/            # Обучающие сцены
 ├── scripts/
 │   ├── database/            # SQL-скрипты инициализации
 │   │   └── game_content_firebird.sql
 │   ├── global/              # Глобальные GDScript-системы
-│   └── system/              # C# ядро и утилиты
-│       ├── FirebirdDatabase.cs
+│   └── system/              # C# ядро и GDScript-системы
+│       ├── FirebirdDatabase.cs   # Основной класс БД
+│       ├── quest_manager.gd
+│       ├── email_system.gd
 │       └── global_input.gd
+├── docs/                    # Документация
+│   ├── godot-dotnet/        # Godot .NET 4.x
+│   ├── firebird-sql/        # Firebird SQL 5.0
+│   ├── project-structure/   # Архитектура проекта
+│   └── ai-assistant/        # Инструкция для AI-моделей
+├── assets/
+│   ├── fonts/               # PressStart2P-Regular.ttf
+│   ├── icons/               # Монохромные иконки (SVG + PNG)
+│   └── themes/              # Темы оформления
+├── addons/                  # Плагины Godot
 ├── game_content.fdb         # Файл базы данных Firebird
+├── firebird-protocol.csproj # Проект .NET
 ├── firebird-protocol.slnx   # Решение .NET
 ├── project.godot            # Конфигурация проекта
 └── README.md
