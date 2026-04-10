@@ -19,3 +19,39 @@ temp/
 .vs/
 bin/
 obj/
+
+# ========================
+# Чувствительные данные (НЕ публиковать!)
+# ========================
+.env
+.env.local
+*.key
+*.pfx
+*.pem
+secrets/
+keys/
+config/secrets.json
+
+# ========================
+# Steam / Экспорт
+# ========================
+builds/
+exports/
+*.steam
+steam_appid.txt
+
+# ========================
+# IDE и редакторы
+# ========================
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.NCB
