@@ -148,6 +148,7 @@ CREATE TABLE employees (
 CREATE INDEX idx_emails_day ON emails(day_id);
 CREATE INDEX idx_quests_email ON quests(email_id);
 CREATE INDEX idx_news_day ON news_articles(day_id);
+CREATE INDEX idx_news_category ON news_articles(category);
 
 -- ============================================
 -- НАЧАЛЬНЫЕ ДАННЫЕ

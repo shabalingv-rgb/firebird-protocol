@@ -11,11 +11,6 @@ var is_quest_active: bool = false
 @onready var terminal_output = $TerminalScroll/TerminalOutput
 @onready var terminal_input = $TerminalInput
 @onready var terminal_scroll = $TerminalScroll
-#@onready var timer_label = $TimerLabel  # Если есть таймер
-
-# Эмуляция таблиц Firebird SQL
-var mock_tables: Dictionary = {}
-
 
 func _ready():
 	# Подключаемся к сигналам БД
@@ -24,12 +19,12 @@ func _ready():
 	
 	# Настройка терминала
 	terminal_input.text = ""
+	terminal_input.focus_mode = Control.FOCUS_ALL
 	terminal_input.grab_focus()
 	terminal_output.scroll_following = true
-	
+
 	welcome_message()
-	load_mock_tables()
-	
+
 	$BackButton.pressed.connect(_on_back_pressed)
 	$HelpButton.pressed.connect(_on_help_pressed)
 
@@ -63,36 +58,30 @@ func welcome_message():
 ║     Образовательная система НИИ "Файербёрд"      ║
 ╚══════════════════════════════════════════════════╝
 
-Доступные таблицы: employees, departments, projects
+Введите 'TABLES' для списка доступных таблиц
 Введите 'HELP' для списка команд
 
 """
 	terminal_output.text += welcome
 
 
-func load_mock_tables():
-	"""Загрузка тестовых данных для эмуляции БД"""
-	# Таблица employees
-	mock_tables["employees"] = [
-		{"id": 1, "name": "Иванов Иван", "department": "IT", "salary": 75000},
-		{"id": 2, "name": "Петрова Мария", "department": "HR", "salary": 65000},
-		{"id": 3, "name": "Сидоров Алексей", "department": "IT", "salary": 80000},
-		{"id": 4, "name": "Козлова Елена", "department": "Finance", "salary": 70000},
-		{"id": 5, "name": "Новиков Дмитрий", "department": "IT", "salary": 90000}
-	]
-	
-	# Таблица departments
-	mock_tables["departments"] = [
-		{"id": 1, "name": "IT", "budget": 1000000},
-		{"id": 2, "name": "HR", "budget": 500000},
-		{"id": 3, "name": "Finance", "budget": 750000}
-	]
-	
-	# Таблица projects
-	mock_tables["projects"] = [
-		{"id": 1, "name": "Протокол Феникс", "budget": 5000000, "status": "secret"},
-		{"id": 2, "name": "Аналитика данных", "budget": 200000, "status": "active"}
-	]
+func show_tables():
+	"""Показ реальных таблиц из Firebird"""
+	var result = DatabaseManager.call("ExecuteQuery",
+		"SELECT TRIM(RDB$RELATION_NAME) AS TABLE_NAME FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG = 0 ORDER BY RDB$RELATION_NAME")
+
+	var tables_text = "\n[color=cyan]ДОСТУПНЫЕ ТАБЛИЦЫ:[/color]\n"
+
+	if result == null or result.is_empty():
+		tables_text += "  [color=gray]Таблицы не найдены[/color]\n"
+	else:
+		for row in result:
+			var table_name = str(row.get("TABLE_NAME", "")).strip_edges()
+			if not table_name.is_empty():
+				tables_text += "  - " + table_name + "\n"
+
+	terminal_output.text += tables_text + "\n"
+
 
 func scroll_to_bottom():
 	#ДАём движку время пересчитать размер текста
@@ -112,10 +101,10 @@ func load_active_quest():
 		return
 	if not DatabaseManager:
 		return
-	var emails = DatabaseManager.GetEmailsForDay(current_day)
+	var emails = DatabaseManager.call("GetEmailsForDay", current_day)
 	for email in emails:
 		var eid = email.get("ID", email.get("id", -1))
-		var quest = DatabaseManager.GetQuestForEmail(int(eid))
+		var quest = DatabaseManager.call("GetQuestForEmail", int(eid))
 		if quest and not quest.is_empty():
 			current_quest = quest
 			active_quest = quest
@@ -202,7 +191,7 @@ func show_help_for_subject(subject: String):
 		_:
 			# Проверка имени таблицы в системном каталоге Firebird (экранируем кавычки в имени)
 			var safe = str(subject).replace("'", "''")
-			var check_db = DatabaseManager.ExecuteQuery(
+			var check_db = DatabaseManager.call("ExecuteQuery",
 				"SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = '" + safe + "'")
 			if check_db != null and check_db.size() > 0:
 				terminal_output.text += "Это существующая таблица в базе данных.\n"
@@ -237,14 +226,6 @@ func show_help():
 	terminal_output.text += help_text
 
 
-func show_tables():
-	"""Показ доступных таблиц"""
-	var tables_text = "\n[color=cyan]ДОСТУПНЫЕ ТАБЛИЦЫ:[/color]\n"
-	for table_name in mock_tables.keys():
-		tables_text += "  - " + table_name + "\n"
-	terminal_output.text += tables_text + "\n"
-
-
 func execute_sql(command: String) -> Dictionary:
 	"""Выполнение реального SQL запроса через Firebird"""
 	var cmd_upper = command.to_upper().strip_edges()
@@ -256,63 +237,14 @@ func execute_sql(command: String) -> Dictionary:
 			break
 
 	#Отправляем запрос в настоящий Firebird через наш С# менеджер
-	var result_data = DatabaseManager.ExecuteQuery(command)
+	var result_data = DatabaseManager.call("ExecuteQuery", command)
 
 	#Если результат null значит в C# произошла ошибка (исключение)
 	if result_data == null:
-		# Получаем тектс ошибки прямо из движка Firebird через наш новый метод
-		var err_text = DatabaseManager.GetLastError()
+		var err_text = DatabaseManager.call("GetLastError")
 		return {"success": false, "error": err_text}
 	
 	return {"success": true, "data": result_data}
-
-
-func execute_select(command: String) -> Dictionary:
-	"""Выполнение SELECT запроса"""
-	# Очень простая эмуляция - для демо
-	# В полной версии нужно парсить SQL
-	
-	var result_data: Array = []
-	
-	# Ищем имя таблицы
-	var table_name = ""
-	if "FROM" in command.to_upper():
-		var parts = command.split("FROM", 1, false)
-		if parts.size() > 1:
-			var after_from = parts[1].strip_edges()
-			var table_parts = after_from.split(" ")
-			if table_parts.size() > 0:
-				table_name = table_parts[0].strip_edges().to_lower()
-	
-	# Проверяем существует ли таблица
-	if not mock_tables.has(table_name):
-		return {"success": false, "error": "Таблица '" + table_name + "' не найдена"}
-	
-	# Возвращаем все данные таблицы (упрощённо)
-	result_data = mock_tables[table_name]
-	
-	# Отслеживаем использование SQL команд
-	track_sql_usage("SELECT")
-	
-	return {"success": true, "data": result_data}
-
-
-func execute_insert(_command: String) -> Dictionary:
-	"""Выполнение INSERT запроса"""
-	track_sql_usage("INSERT")
-	return {"success": true, "data": [], "message": "Запись добавлена (эмуляция)"}
-
-
-func execute_update(_command: String) -> Dictionary:
-	"""Выполнение UPDATE запроса"""
-	track_sql_usage("UPDATE")
-	return {"success": true, "data": [], "message": "Записи обновлены (эмуляция)"}
-
-
-func execute_delete(_command: String) -> Dictionary:
-	"""Выполнение DELETE запроса"""
-	track_sql_usage("DELETE")
-	return {"success": true, "data": [], "message": "Записи удалены (эмуляция)"}
 
 
 func display_result(data: Array):
@@ -376,8 +308,7 @@ func check_quest_completion(result_data: Array):
 func track_sql_usage(command_name: String):
 	"""Отслеживание использования SQL команды"""
 	if DatabaseManager:
-		# Используем TrackSqlUsage (с большой буквы)
-		DatabaseManager.TrackSqlUsage(command_name, current_day)
+		DatabaseManager.call("TrackSqlUsage", command_name, current_day)
 
 
 func set_day(day: int):

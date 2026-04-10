@@ -31,13 +31,13 @@ public partial class FirebirdDatabase : Node
 
 	public string GetLastError() => _lastError; // Метод для GDScript
 
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedDays { get; private set; } = new();
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedEmails { get; private set; } = new();
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedQuests { get; private set; } = new();
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedNews { get; private set; } = new();
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedDossiers { get; private set; } = new();
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedEvents { get; private set; } = new();
-	public List<Godot.Collections.Dictionary<string, Variant>> CachedEndings { get; private set; } = new();
+	public GArray CachedDays { get; private set; } = new();
+	public GArray CachedEmails { get; private set; } = new();
+	public GArray CachedQuests { get; private set; } = new();
+	public GArray CachedNews { get; private set; } = new();
+	public GArray CachedDossiers { get; private set; } = new();
+	public GArray CachedEvents { get; private set; } = new();
+	public GArray CachedEndings { get; private set; } = new();
 
 	// Методы для получения размера кэша (GDScript не может напрямую читать C# свойства)
 	public int GetCachedEmailsCount() => CachedEmails?.Count ?? 0;
@@ -346,60 +346,62 @@ private void CheckAndAddQuestForEmail(int emailId)
 }
 
 	/// <summary>Выполнить SELECT из GDScript (терминал). При ошибке возвращает null — смотри GetLastError().</summary>
-private List<Godot.Collections.Dictionary<string, Variant>> ExecuteQuery(string sql)
-{
-	var result = new List<Godot.Collections.Dictionary<string, Variant>>();
-
-	try
+	public GArray ExecuteQuery(string sql)
 	{
-		using var command = new FbCommand(sql, _connection);
-		using var reader = command.ExecuteReader();
+		var result = new GArray();
 
-		while (reader.Read())
+		try
 		{
-			var row = new Godot.Collections.Dictionary<string, Variant>();
-			for (int i = 0; i < reader.FieldCount; i++)
+			using var command = new FbCommand(sql, _connection);
+			using var reader = command.ExecuteReader();
+
+			while (reader.Read())
 			{
-				string fieldName = reader.GetName(i);
-				object value = reader.GetValue(i);
-				
-				// Явная конвертация типов для Godot Variant
-				row[fieldName] = ConvertToVariant(value);
+				var row = new Godot.Collections.Dictionary<string, Variant>();
+				for (int i = 0; i < reader.FieldCount; i++)
+				{
+					string fieldName = reader.GetName(i);
+					object value = reader.GetValue(i);
+
+					// Явная конвертация типов для Godot Variant
+					row[fieldName] = ConvertToVariant(value);
+				}
+				result.Add(row);
 			}
-			result.Add(row);
 		}
-	}
-	catch (Exception e)
-	{
-		GD.PrintErr("❌ Ошибка запроса: ", e.Message);
-		GD.PrintErr("   SQL: ", sql);
+		catch (Exception e)
+		{
+			GD.PrintErr("❌ Ошибка запроса: ", e.Message);
+			GD.PrintErr("   SQL: ", sql);
+			return null;
+		}
+
+		return result;
 	}
 
-	return result;
-}
-
-/// <summary>Конвертирует объект из БД в Godot Variant</summary>
-private static Variant ConvertToVariant(object value)
-{
-	if (value == null || value == DBNull.Value)
-		return Variant.CreateFrom("");
-	
-	return value switch
+	/// <summary>Конвертирует объект из БД в Godot Variant</summary>
+	private static Variant ConvertToVariant(object value)
 	{
-		int v => Variant.CreateFrom(v),
-		long v => Variant.CreateFrom(v),
-		short v => Variant.CreateFrom(v),
-		byte v => Variant.CreateFrom(v),
-		float v => Variant.CreateFrom(v),
-		double v => Variant.CreateFrom(v),
-		decimal v => Variant.CreateFrom((double)v),
-		string v => Variant.CreateFrom(v),
-		bool v => Variant.CreateFrom(v),
-		DateTime v => Variant.CreateFrom(v.ToString("yyyy-MM-dd HH:mm:ss")),
-		byte[] v => Variant.CreateFrom(System.Convert.ToBase64String(v)),
-		_ => Variant.CreateFrom(value.ToString())
-	};
-}
+		if (value == null || value == DBNull.Value)
+			return Variant.CreateFrom("");
+
+		return value switch
+		{
+			int v => Variant.CreateFrom(v),
+			long v => Variant.CreateFrom(v),
+			short v => Variant.CreateFrom(v),
+			byte v => Variant.CreateFrom(v),
+			float v => Variant.CreateFrom(v),
+			double v => Variant.CreateFrom(v),
+			decimal v => Variant.CreateFrom((double)v),
+			string v => Variant.CreateFrom(v),
+			bool v => Variant.CreateFrom(v),
+			DateTime v => Variant.CreateFrom(v.ToString("yyyy-MM-dd HH:mm:ss")),
+			byte[] v => Variant.CreateFrom(System.Convert.ToBase64String(v)),
+			_ => Variant.CreateFrom(value.ToString())
+		};
+	}
+
 	private void ExecuteNonQuery(string sql)
 	{
 		try
@@ -439,9 +441,9 @@ private static Variant ConvertToVariant(object value)
 		GD.Print($"🔍 GetQuestForEmail({emailId}) вызван");
 		GD.Print($"📦 CachedQuests.Count = {CachedQuests.Count}");
 
-		foreach (var quest in CachedQuests)
+		foreach (var questVariant in CachedQuests)
 		{
-			// quest это GDictionary = Godot.Collections.Dictionary<string, Variant>
+			GDictionary quest = (GDictionary)questVariant;
 
 			// ✅ ПРОВЕРКА КЛЮЧА БЕЗ УЧЁТА РЕГИСТРА (как в GetEmailsForDay)
 			Variant emailIdValue = default;
@@ -458,7 +460,7 @@ private static Variant ConvertToVariant(object value)
 				if (questEmailId == emailId)
 				{
 					GD.Print("✅ Задание найдено!");
-					
+
 					// Возвращаем копию словаря (безопаснее для GDScript)
 					var result = new GDictionary();
 					foreach (var kvp in quest)
