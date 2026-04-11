@@ -83,9 +83,8 @@ func refresh_email_list():
 		
 func _on_email_selected(index):
 	var email_index = email_list.get_item_metadata(index)
-	if email_index < EmailSystem.inbox.size():
-		var email = EmailSystem.inbox[email_index]
-		show_email(email)
+	if email_index >= 0 and email_index < current_emails.size():
+		show_email(current_emails[email_index])
 
 func load_first_unread_email():
 	for email in EmailSystem.inbox:
@@ -102,22 +101,28 @@ func load_first_unread_email():
 		show_email(EmailSystem.inbox[-1])
 
 func show_email(email: Dictionary):
-	subject_label.text = email.get("SUBJECT", "Без темы")
-	sender_label.text = email.get("SENDER", "Неизвестно")
-	body_label.text = email.get("BODY", "")
-	original_email_body = body_label.text  # Сбрасываем оригинальный текст
-	EmailSystem.mark_as_read(email)
+	subject_label.text = email.get("SUBJECT", email.get("subject", "Без темы"))
+	sender_label.text = "От: " + email.get("SENDER", email.get("sender", "Неизвестно"))
+	body_label.text = email.get("BODY", email.get("body", ""))
+	original_email_body = body_label.text
 
-	# Обновляем список (чтобы показать что прочитано)
-	refresh_email_list()
+	if EmailSystem.inbox.size() > 0:
+		EmailSystem.mark_as_read(email)
+		refresh_email_list()
 
 	# Добавляем кнопку "Отправить отчёт" если это письмо с заданием
 	var email_type = email.get("email_type", email.get("EMAIL_TYPE", "")).to_lower()
 	var has_quest_id = email.get("quest_id", email.get("QUEST_ID", null)) != null
-	
+
 	if email_type == "quest" or has_quest_id:
-		# Это письмо с заданием
-		pass
+		if has_node("EmailHeader/ReplyButton"):
+			$EmailHeader/ReplyButton.visible = true
+			$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
+			var email_id = int(email.get("id", email.get("ID", 0)))
+			load_quest_for_email(email_id)
+	else:
+		if has_node("EmailHeader/ReplyButton"):
+			$EmailHeader/ReplyButton.visible = false
 
 func submit_quest_report(quest_id: String):
 	# Проверяем, что есть активное задание и его ID совпадает
@@ -168,11 +173,10 @@ func show_error_message(msg: String):
 	dialog.confirmed.connect(dialog.queue_free)
 
 func _create_quest_theme() -> Theme:
-	"""Создаёт тему с игровым шрифтом для диалогов"""
-	var theme = Theme.new()
-	theme.default_font = quest_font
-	theme.default_font_size = 14
-	return theme
+	var new_theme = Theme.new()
+	new_theme.default_font = quest_font
+	new_theme.default_font_size = 14
+	return new_theme
 
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
@@ -206,24 +210,16 @@ func load_emails_for_day(day_number: int):
 		for key in email_data.keys():
 			var normalized_key = str(key).to_lower()
 			gd_email[normalized_key] = email_data[key]
-		print("🔍 Ключи в письме: ", gd_email.keys())
-		print("📧 subject = ", gd_email.get("subject", "[НЕ НАЙДЕНО]"))
 		current_emails.append(gd_email)
 	
 	current_day_emails = current_emails
-	
-	# Отладочный вывод
-	for email in current_emails:
-		print("📧 Письмо: ", email.get("subject", "Без темы"))
-	
-	# ✅ ОДИН БЛОК (убери дубликат!)
+
 	if current_emails.is_empty():
 		print("⚠️ Писем нет для дня ", day_number)
 		show_empty_message()
 	else:
 		print("✅ Писем загружено: ", current_emails.size())
 		display_emails_list()
-		display_email_content(0)  # ← Показываем первое письмо
 
 func display_emails_list():
 	#Отображение списка писем в EmailList
@@ -289,13 +285,11 @@ func display_email_content(index: int):
 		print("❌ Не найден узел EmailHeader/Sender")
 	
 	if has_node("EmailBody"):
-		$EmailBody.bbcode_enabled = true
+		$EmailBody.bbcode_enabled = false
 		$EmailBody.add_theme_font_override("normal_font", quest_font)
-		$EmailBody.add_theme_font_override("bold_font", quest_font)
-		$EmailBody.add_theme_font_override("italics_font", quest_font)
-		$EmailBody.add_theme_font_override("mono_font", quest_font)
-		$EmailBody.text = email.get("body", "")
-		original_email_body = $EmailBody.text  # Сохраняем оригинальный текст
+		var body_text = email.get("body", "")
+		$EmailBody.text = body_text
+		original_email_body = body_text
 	else:
 		print("❌ Не найден узел EmailBody")
 	
@@ -318,6 +312,12 @@ func _on_reply_button_pressed():
 	"""Отправка отчёта"""
 	if active_quest.is_empty():
 		show_quest_not_completed_warning("Нет активного задания для этого письма!")
+		return
+
+	# Проверяем, выполнено ли задание в терминале
+	var quest_id = active_quest.get("ID", active_quest.get("id", -1))
+	if QuestManager and not QuestManager.is_quest_completed(quest_id):
+		show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
 		return
 
 	show_report_dialog()
@@ -348,27 +348,28 @@ func show_report_dialog():
 		"Ничего подозрительного не найдено."
 	]
 
-	var selected_report = options[0]
+	var button_group = ButtonGroup.new()
 	var radio_buttons = []
 
 	for i in range(options.size()):
 		var radio = Button.new()
 		radio.toggle_mode = true
-		radio.button_pressed = (i == 0)
+		radio.button_group = button_group
 		radio.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		radio.text = "● " + options[i] if i == 0 else "○ " + options[i]
 		radio.pressed.connect(func():
 			for rb in radio_buttons:
-				rb.button_pressed = false
-				var idx = radio_buttons.find(rb)
-				rb.text = "○ " + options[idx]
-			radio.button_pressed = true
-			radio.text = "● " + options[radio_buttons.find(radio)]
-			selected_report = options[radio_buttons.find(radio)]
+				rb.text = "○ " + rb.get_meta("option_text")
+			radio.text = "● " + options[i]
 		)
+		radio.set_meta("option_text", options[i])
 		radio_buttons.append(radio)
 		vbox.add_child(radio)
-	
+
+	# Первая кнопка выбрана по умолчанию
+	if radio_buttons.size() > 0:
+		radio_buttons[0].button_pressed = true
+
 	# Распорка после радиокнопок
 	var spacer_bottom = Label.new()
 	spacer_bottom.text = ""
@@ -378,7 +379,9 @@ func show_report_dialog():
 	dialog.add_child(vbox)
 
 	dialog.confirmed.connect(func():
-		send_report(selected_report)
+		var selected = button_group.get_pressed_button()
+		var report = selected.get_meta("option_text") if selected else options[0]
+		send_report(report)
 	)
 
 	add_child(dialog)

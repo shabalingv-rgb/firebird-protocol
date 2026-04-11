@@ -87,16 +87,17 @@ func check_quest_completion(sql_result: Array, expected_rows: int) -> bool:
 
 
 func complete_quest(success: bool):
-	"""Завершение задания"""
 	if active_quest.is_empty():
+		print("⚠️ complete_quest: active_quest пуст, не могу завершить квест")
 		return
-	
+
 	if success:
 		var qtitle = active_quest.get("TITLE", active_quest.get("title", ""))
 		print("✅ Задание выполнено: ", qtitle)
-		# ID из БД может прийти как ID или id (Firebird / драйвер)
 		var qid = active_quest.get("ID", active_quest.get("id", -1))
+		print("📋 Завершаю quest_id: ", qid, " (type: ", typeof(qid), ")")
 		completed_quests.append(qid)
+		print("📋 completed_quests: ", completed_quests)
 		
 		# Сохраняем story flags
 		var raw_sf = active_quest.get("STORY_FLAGS_SET", active_quest.get("story_flags_set", ""))

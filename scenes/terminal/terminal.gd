@@ -34,6 +34,10 @@ func _ready():
 	$HelpButton.focus_mode = Control.FOCUS_ALL
 	$HelpButton.pressed.connect(_on_help_pressed)
 
+	# Если БД уже готова — загружаем задание сразу (сигнал уже ушёл)
+	if DatabaseManager and DatabaseManager.IsInitialized:
+		load_active_quest()
+
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
 
@@ -392,6 +396,13 @@ func execute_sql(command: String) -> Dictionary:
 			break
 
 	#Отправляем запрос в настоящий Firebird через наш С# менеджер
+	# 🚫 Блокируем опасные команды
+	if cmd_upper.begins_with("DROP ") or \
+	   cmd_upper.begins_with("ALTER ") or \
+	   cmd_upper.begins_with("TRUNCATE ") or \
+	   cmd_upper.begins_with("DELETE FROM RDB$"):
+		return {"success": false, "error": "⛔ Системные таблицы защищены! Операция запрещена."}
+
 	var result_data = DatabaseManager.call("ExecuteQuery", command)
 
 	#Если результат null значит в C# произошла ошибка (исключение)
@@ -406,15 +417,22 @@ func display_result(data: Array):
 	if data.is_empty():
 		terminal_output.append_text("[color=gray]Запрос выполнен. Строк: 0[/color]\n")
 		return
-	
+
+	# 📊 Лимит отображения для производительности
+	var max_rows = 100
+	var display_data = data  # Локальная ссылка для отображения
+	if data.size() > max_rows:
+		terminal_output.append_text("[color=yellow]⚠️ Показано первые %d строк (всего: %d)[/color]\n" % [max_rows, data.size()])
+		display_data = data.slice(0, max_rows)
+
 	# 1. Получаем колонки правильно (из первого элемента массива)
-	var columns = data[0].keys()
-	
+	var columns = display_data[0].keys()
+
 	# 2. Считаем ширину колонок
 	var col_widths = {}
 	for col in columns:
 		var max_w = str(col).length()
-		for row in data:
+		for row in display_data:
 			var val_text = str(row.get(col, "NULL"))
 			if val_text.length() > max_w:
 				max_w = val_text.length()
@@ -426,36 +444,41 @@ func display_result(data: Array):
 	for col in columns:
 		header += str(col).to_upper().rpad(col_widths[col]) + " | "
 		separator += "-".repeat(col_widths[col] + 1) + "+"
-	
+
 	terminal_output.append_text("[color=cyan]" + separator + "[/color]\n")
 	terminal_output.append_text("[color=cyan]" + header + "[/color]\n")
 	terminal_output.append_text("[color=cyan]" + separator + "[/color]\n")
-	
+
 	# 4. Выводим данные
-	for row in data:
+	for row in display_data:
 		var line = " "
 		for col in columns:
 			var value = str(row.get(col, "NULL"))
 			line += value.rpad(col_widths[col]) + " | "
 		terminal_output.append_text(line + "\n")
-		
+
 	terminal_output.append_text("[color=cyan]" + separator + "[/color]\n")
 	terminal_output.append_text("[color=yellow]Всего строк: " + str(data.size()) + "[/color]\n")
 	
 func check_quest_completion(result_data: Array):
-	"""Проверка выполнения задания"""
+	print("🔍 check_quest_completion: active_quest пуст=", active_quest.is_empty())
 	if active_quest.is_empty():
 		return
-	
+
 	var expected_rows = active_quest.get("EXPECTED_ROWS", active_quest.get("expected_rows", -1))
-	
+	print("🔍 check_quest_completion: ожидаю строк=", expected_rows, " получил=", result_data.size())
+
 	# 1. Простейшая проверка по количеству строк
 	if expected_rows >= 0 and result_data.size() == expected_rows:
+		# 🎲 20% шанс ложноотрицательного ответа (система «ошибается»)
+		if randf() < 0.2:
+			terminal_output.text += "\n[color=yellow]⚠️ СИСТЕМА: Обнаружены расхождения в результатах. Проверьте запрос и попробуйте снова.[/color]\n"
+			terminal_output.text += "[color=gray](Подсказка: иногда система выдаёт ложную тревогу...)[/color]\n"
+			return
+
 		terminal_output.text += "\n[color=green]✅ СИСТЕМА: Запрос принят. Данные соответствуют ожидаемым.[/color]\n"
 		QuestManager.complete_quest(true)
 		active_quest = {}
-		if QuestManager:
-			QuestManager.active_quest = {}
 		is_quest_active = false
 	else:
 		terminal_output.text += "\n[color=yellow]⚠️ СИСТЕМА: Получено " + str(result_data.size()) + " строк. Ожидалось " + str(expected_rows) + ".[/color]\n"

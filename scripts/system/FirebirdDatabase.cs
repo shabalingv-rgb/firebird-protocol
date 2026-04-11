@@ -284,6 +284,43 @@ public partial class FirebirdDatabase : Node
 		LoadContentToCache();
 	}
 
+	/// <summary>Загружает только INSERT-данные из SQL-файла (если таблицы есть, но пусты).</summary>
+	private void ImportInitialData()
+	{
+		string sqlPath = ProjectSettings.GlobalizePath("res://scripts/database/game_content_firebird.sql");
+		if (!File.Exists(sqlPath))
+		{
+			GD.PrintErr("❌ SQL-файл не найден: " + sqlPath);
+			return;
+		}
+
+		string sqlContent = File.ReadAllText(sqlPath).Replace("\r", "");
+		var commands = SplitSqlStatements(SqlLineComments.Replace(sqlContent, ""));
+
+		using (var transaction = _connection.BeginTransaction())
+		{
+			foreach (var cmdText in commands)
+			{
+				string cleanCmd = cmdText.Trim();
+				if (string.IsNullOrWhiteSpace(cleanCmd)) continue;
+				if (!cleanCmd.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase)) continue;
+
+				try
+				{
+					using var fbCmd = new FbCommand(cleanCmd, _connection, transaction);
+					fbCmd.ExecuteNonQuery();
+				}
+				catch (Exception e)
+				{
+					if (!e.Message.Contains("already exists") && !e.Message.Contains("duplicate"))
+						GD.PrintErr($"⚠️ ImportInitialData: {e.Message}");
+				}
+			}
+			transaction.Commit();
+		}
+		GD.Print("✅ Начальные данные загружены из SQL.");
+	}
+
 
 
 
@@ -300,8 +337,22 @@ public partial class FirebirdDatabase : Node
 		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
 		GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
 
-		// Проверяем и добавляем задание для email_id=1, если его нет
-		CheckAndAddQuestForEmail(1);
+		// Если таблицы есть, но данные пусты — загружаем начальные записи из SQL
+		if ((CachedDays?.Count ?? 0) == 0 || (CachedEmails?.Count ?? 0) == 0)
+		{
+			GD.Print("⚠️ Таблицы пусты — загружаю начальные данные...");
+			ImportInitialData();
+			// Перезагружаем кэш после импорта
+			CachedDays = ExecuteQuery("SELECT * FROM game_days ORDER BY day_number");
+			CachedEmails = ExecuteQuery("SELECT * FROM emails ORDER BY day_id, sort_order");
+			CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
+			GD.Print("   📅 Дней: ", CachedDays?.Count ?? 0);
+			GD.Print("   📧 Писем: ", CachedEmails?.Count ?? 0);
+			GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
+		}
+
+		// Проверяем и добавляем задание для email_id=2 (первое задание), если его нет
+		CheckAndAddQuestForEmail(2);
 
 		EmitSignal(SignalName.ContentLoaded);
 		GD.Print("✅ Кэш загружен");
@@ -417,8 +468,6 @@ private void CheckAndAddQuestForEmail(int emailId)
 
 	public GArray GetEmailsForDay(int dayId)
 	{
-		GD.Print($"GetEmailsForDay({dayId}) вызван");
-		GD.Print($"CachedEmails.Count = {CachedEmails?.Count ?? 0}");
 		var result = new GArray();
 		foreach (var item in CachedEmails)
 		{
@@ -739,6 +788,25 @@ private void CheckAndAddQuestForEmail(int emailId)
 		{
 			// Хоть мы и не прерываем игру, в логах ошибку лучше видеть
 			GD.PrintErr($"📊 Ошибка трекинга SQL: {e.Message}");
+		}
+	}
+
+	public void LogPlayerQuery(string sql, int dayId)
+	{
+		try
+		{
+			const string insertSql = @"
+				INSERT INTO player_query_log (query_text, day_id, executed_at)
+				VALUES (@queryText, @dayId, CURRENT_TIMESTAMP)";
+
+			using var cmd = new FbCommand(insertSql, _connection);
+			cmd.Parameters.Add("@queryText", FbDbType.VarChar).Value = sql ?? "";
+			cmd.Parameters.Add("@dayId", FbDbType.Integer).Value = dayId;
+			cmd.ExecuteNonQuery();
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка логирования запроса: {e.Message}");
 		}
 	}
 
