@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://cckuejacqg8c1"]
 
-[ext_resource type="Script" uid="uid://cplkbxydeo0cp" path="res://scenes/desktop/desktop.gd" id="1_75vvj"]
+[ext_resource type="Script" uid="uid://cplkbxydeo0cp" path="res://scenes/desktop/desktop.gd" id="1"]
+[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_75vvj"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0, 0.101960786, 0, 1)
 border_width_left = 2
 border_width_top = 2
@@ -17,7 +18,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_75vvj")
+script = ExtResource("1")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1210441409]
 layout_mode = 1
@@ -29,14 +30,17 @@ grow_vertical = 2
 color = Color(0.101960786, 0.101960786, 0.18039216, 1)
 
 [node name="DesktopIcons" type="Control" parent="." unique_id=1435794416]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchor_right = 0.08
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 2
 
 [node name="EmailIcon" type="Button" parent="DesktopIcons" unique_id=2026380193]
 layout_mode = 0
 offset_right = 58.0
 offset_bottom = 50.0
+theme_override_fonts/font = ExtResource("2")
 text = "Почта"
 
 [node name="TerminalIcon" type="Button" parent="DesktopIcons" unique_id=381912034]
@@ -45,6 +49,7 @@ offset_left = -3.0
 offset_top = 98.0
 offset_right = 87.0
 offset_bottom = 148.0
+theme_override_fonts/font = ExtResource("2")
 text = "Терминал"
 
 [node name="SudokuIcon" type="Button" parent="DesktopIcons" unique_id=1594236972]
@@ -53,6 +58,7 @@ offset_left = 3.0
 offset_top = 216.0
 offset_right = 68.0
 offset_bottom = 266.0
+theme_override_fonts/font = ExtResource("2")
 text = "Судоку"
 
 [node name="BrowserIcon" type="Button" parent="DesktopIcons" unique_id=185745649]
@@ -61,22 +67,25 @@ offset_left = 5.0
 offset_top = 329.0
 offset_right = 79.0
 offset_bottom = 379.0
+theme_override_fonts/font = ExtResource("2")
 text = "Браузер"
 
 [node name="GuideIcon" type="Button" parent="DesktopIcons" unique_id=1909677202]
 layout_mode = 0
-offset_left = -16.0
-offset_top = 444.0
-offset_right = 96.0
-offset_bottom = 494.0
+offset_left = 5.0
+offset_top = 446.0
+offset_right = 125.0
+offset_bottom = 496.0
+theme_override_fonts/font = ExtResource("2")
 text = "Справка"
 
 [node name="EndDay" type="Button" parent="DesktopIcons" unique_id=1397952786]
 layout_mode = 0
-offset_left = 2.0
-offset_top = 608.0
-offset_right = 132.0
-offset_bottom = 644.0
+offset_left = 3.0
+offset_top = 563.0
+offset_right = 219.0
+offset_bottom = 599.0
+theme_override_fonts/font = ExtResource("2")
 text = "Закрыть смену"
 
 [node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
@@ -86,7 +95,7 @@ offset_left = 846.0
 offset_top = 512.0
 offset_right = 1146.0
 offset_bottom = 572.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_75vvj")
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 
 [node name="NotificationLabel" type="Label" parent="NotificationPopup" unique_id=2130256741]
 layout_mode = 0
@@ -95,12 +104,14 @@ offset_top = 10.0
 offset_right = 390.0
 offset_bottom = 70.0
 theme_override_colors/font_color = Color(0, 1, 0, 1)
+theme_override_fonts/font = ExtResource("2")
 text = "Текст уведомления"
 
 [node name="ScreenOverlay" type="TextureRect" parent="." unique_id=564947875]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
 
 [node name="Taskbar" type="Control" parent="." unique_id=667694421]
 layout_mode = 1
@@ -121,5 +132,6 @@ offset_left = 987.0
 offset_top = 7.0
 offset_right = 1137.0
 offset_bottom = 30.0
+theme_override_fonts/font = ExtResource("2")
 text = "00:00"
 horizontal_alignment = 2

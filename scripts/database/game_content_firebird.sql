@@ -182,10 +182,16 @@ INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type,
 (1, 1, 'Отдел кадров', 'hr@nii-firebird.gov', 'Добро пожаловать', 'Уважаемый сотрудник! Поздравляем с первым рабочим днём в НИИ "Файербёрд".' || ASCII_CHAR(10) || ASCII_CHAR(10) || 'Ваш пропуск активирован. Рабочее место оборудовано терминалом с доступом к базе данных сотрудников.' || ASCII_CHAR(10) || ASCII_CHAR(10) || 'Ознакомьтесь с расписанием и ожидайте дальнейших указаний.', 'info', 1, 1);
 INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type, is_required, sort_order) VALUES
 (2, 1, 'Начальник отдела', 'chief@nii-firebird.gov', 'Первое задание: список сотрудников', 'Новичок, прежде чем приступать к работе, мне нужно знать, кто здесь работает.' || ASCII_CHAR(10) || ASCII_CHAR(10) || 'Составьте полный список сотрудников через терминал. Запрос должен вернуть все записи из таблицы employees.' || ASCII_CHAR(10) || ASCII_CHAR(10) || 'Подсказка: используйте SELECT * FROM employees.', 'quest', 1, 2);
+INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type, is_required, sort_order) VALUES
+(3, 2, 'Бухгалтерия', 'accounting@nii-firebird.gov', 'Зарплатная ведомость', 'Коллега, руководство просит подготовить сводку по зарплатам.' || ASCII_CHAR(10) || ASCII_CHAR(10) || 'Найдите среднюю зарплату по каждому отделу. Используйте агрегатные функции.' || ASCII_CHAR(10) || ASCII_CHAR(10) || 'Результат: отдел и средняя зарплата.', 'quest', 1, 1);
+INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type, is_required, sort_order) VALUES
+(4, 2, 'Коллега', 'ivanov@nii-firebird.gov', 'Привет от коллеги', 'Добро пожаловать в наш отдел! Если будут вопросы по базе — обращайся.', 'info', 0, 2);
 
 -- Задания (пример)
 INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES 
 (1, 2, 'Ознакомление с базой', 'Выполните запрос для получения списка сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM');
+INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES 
+(2, 3, 'Средняя зарплата', 'Получите среднюю зарплату по каждому отделу', 'SELECT department, AVG(salary) FROM employees GROUP BY department', 3, 'department,AVG_salary', 'medium', 'SELECT,AVG,GROUP BY');
 
 -- Сотрудники (пример)
 INSERT INTO employees (id, name, department, salary) VALUES (1, 'Иванов Иван', 'IT', 75000);

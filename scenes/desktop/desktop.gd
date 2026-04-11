@@ -28,16 +28,18 @@ func _ready():
 	update_clock()
 	
 func update_clock():
+	if !is_inside_tree():
+		return
+
 	if GameState.current_day == 0:
-		# В кафе время идёт медленнее (1 реальная секунда = 5 игровых минут)
 		game_time.minute += 1
 		if game_time.minute >= 60:
 			game_time.minute = 0
 			game_time.hour += 1
-	
+
 	var time_str = "%02d:%02d" % [game_time.hour, game_time.minute]
 	clock_label.text = time_str
-	
+
 	await get_tree().create_timer(1.0).timeout
 	update_clock()
 	
@@ -116,7 +118,86 @@ func show_new_day_notification(day: int):
 	show_notification("📬 Новые задания на день %d!" % day)
 	
 func _on_finish_day_button_pressed():
-	"""Завершение рабочего дня"""
-	if QuestManager:
-		QuestManager.next_day()
-		print("🌙 День завершён, следующий: ", QuestManager.current_day)
+	"""Завершение рабочего дня — проверка квестов и подтверждение"""
+	if not QuestManager:
+		_advance_day()
+		return
+
+	# Проверяем незавершённые квесты
+	var incomplete_quests = _get_incomplete_quests()
+
+	if incomplete_quests.size() > 0:
+		_show_day_end_warning(incomplete_quests)
+	else:
+		_advance_day()
+
+func _get_incomplete_quests() -> Array:
+	var incomplete = []
+	var emails = DatabaseManager.GetEmailsForDay(QuestManager.current_day)
+
+	for email in emails:
+		var email_type = email.get("EMAIL_TYPE", email.get("email_type", "")).to_lower()
+		if email_type != "quest":
+			continue
+
+		var email_id = int(email.get("ID", email.get("id", -1)))
+		var quest = DatabaseManager.GetQuestForEmail(email_id)
+		if quest == null or quest.is_empty():
+			continue
+
+		var title = quest.get("TITLE", quest.get("title", "Неизвестное задание"))
+		var quest_id = int(quest.get("ID", quest.get("id", -1)))
+
+		if not QuestManager.is_quest_completed(quest_id):
+			incomplete.append(title)
+
+	return incomplete
+
+func _show_day_end_warning(incomplete_quests: Array):
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "⚠️ Невыполненные задания"
+
+	var warning_text = "У вас осталось невыполненных заданий: %d\n\n" % incomplete_quests.size()
+	for q in incomplete_quests:
+		warning_text += "  • " + q + "\n"
+	warning_text += "\nНевыполнение рабочих обязанностей грозит последствиями.\nВы уверены, что хотите закончить рабочий день?"
+
+	dialog.dialog_text = warning_text
+	dialog.ok_button_text = "Завершить смену"
+	dialog.cancel_button_text = "Остаться"
+
+	# Игровой шрифт
+	var font = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+	var dlg_theme = Theme.new()
+	dlg_theme.default_font = font
+	dlg_theme.default_font_size = 12
+	dialog.theme = dlg_theme
+
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(600, 300))
+
+	dialog.confirmed.connect(func():
+		dialog.queue_free()
+		_advance_day()
+	)
+	dialog.canceled.connect(func():
+		dialog.queue_free()
+	)
+
+func _advance_day():
+	QuestManager.next_day()
+	var next_day = QuestManager.current_day
+
+	if next_day > 31:
+		print("🏁 Конец игры (25 июля)")
+		return
+
+	# Сохраняем ссылку на tree ДО смены сцены
+	var tree = get_tree()
+	var packed_scene = load("res://scenes/desktop/next_day_transition.tscn") as PackedScene
+	var scene = packed_scene.instantiate()
+	scene.set_day(next_day)
+
+	tree.root.remove_child(self)
+	tree.root.add_child(scene)
+	tree.current_scene = scene
