@@ -16,7 +16,7 @@ func _ready():
 	# Подключаемся к сигналам БД
 	if DatabaseManager:
 		DatabaseManager.DatabaseReady.connect(_on_database_ready)
-	
+
 	# Настройка терминала
 	terminal_input.text = ""
 	terminal_input.focus_mode = Control.FOCUS_ALL
@@ -25,14 +25,17 @@ func _ready():
 
 	welcome_message()
 
+	$BackButton.focus_mode = Control.FOCUS_ALL
 	$BackButton.pressed.connect(_on_back_pressed)
+	$HelpButton.focus_mode = Control.FOCUS_ALL
 	$HelpButton.pressed.connect(_on_help_pressed)
 
 func _on_back_pressed():
-	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn") 
-	
-func  _on_help_pressed():
+	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
+
+func _on_help_pressed():
 	get_tree().change_scene_to_file("res://scenes/guide/guide_client.tscn")
+	# После возврата из сцены помощи фокус вернётся через _on_terminal_focus_exited
 
 func _on_database_ready():
 	print("💻 Terminal: БД готова")
@@ -41,14 +44,123 @@ func _on_database_ready():
 
 
 func _input(event):
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_ENTER and terminal_input.has_focus():
+	if event is InputEventKey and event.pressed and terminal_input.has_focus():
+		# A-Z — вводим английские буквы (физические клавиши, любая раскладка)
+		if event.keycode >= KEY_A and event.keycode <= KEY_Z:
+			get_viewport().set_input_as_handled()
+			var caret = terminal_input.caret_column
+			var letter = char(event.keycode) if event.shift_pressed else char(event.keycode + 32)
+			_insert_text(caret, letter)
+			return
+
+		# 0-9 и символы на цифровом ряду
+		var unshifted = "0123456789"
+		var shifted = ")!@#$%^&*("
+		if event.keycode >= KEY_0 and event.keycode <= KEY_9:
+			get_viewport().set_input_as_handled()
+			var idx = event.keycode - KEY_0
+			var ch = shifted[idx] if event.shift_pressed else unshifted[idx]
+			_insert_text(terminal_input.caret_column, ch)
+			return
+
+		# Символы: `=`, `-`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/`, `*`, `(`, `)`
+		var symbol_map = {
+			KEY_EQUAL: "=", KEY_MINUS: "-", KEY_BRACKETLEFT: "[", KEY_BRACKETRIGHT: "]",
+			KEY_BACKSLASH: "\\", KEY_SEMICOLON: ";", KEY_APOSTROPHE: "'",
+			KEY_COMMA: ",", KEY_PERIOD: ".", KEY_SLASH: "/", KEY_ASTERISK: "*",
+			KEY_PARENLEFT: "(", KEY_PARENRIGHT: ")"
+		}
+		if event.keycode in symbol_map:
+			get_viewport().set_input_as_handled()
+			var ch = symbol_map[event.keycode]
+			if event.shift_pressed:
+				var shift_map = {"=": "+", "-": "_", "[": "{", "]": "}", "\\": "|",
+					";": ":", "'": "\"", ",": "<", ".": ">", "/": "?", "*": "*"}
+				ch = shift_map.get(ch, ch)
+			_insert_text(terminal_input.caret_column, ch)
+			return
+
+		# Backspace
+		if event.keycode == KEY_BACKSPACE:
+			get_viewport().set_input_as_handled()
+			var caret = terminal_input.caret_column
+			if caret > 0:
+				var text = terminal_input.text
+				terminal_input.text = text.erase(caret - 1, 1)
+				terminal_input.caret_column = caret - 1
+			return
+
+		# Delete
+		if event.keycode == KEY_DELETE:
+			get_viewport().set_input_as_handled()
+			var text = terminal_input.text
+			var caret = terminal_input.caret_column
+			if caret < text.length():
+				terminal_input.text = text.erase(caret, 1)
+				terminal_input.caret_column = caret
+			return
+
+		# Стрелки влево/вправо
+		if event.keycode == KEY_LEFT:
+			get_viewport().set_input_as_handled()
+			if terminal_input.caret_column > 0:
+				terminal_input.caret_column -= 1
+			return
+		if event.keycode == KEY_RIGHT:
+			get_viewport().set_input_as_handled()
+			if terminal_input.caret_column < terminal_input.text.length():
+				terminal_input.caret_column += 1
+			return
+
+		# Home / End
+		if event.keycode == KEY_HOME:
+			get_viewport().set_input_as_handled()
+			terminal_input.caret_column = 0
+			return
+		if event.keycode == KEY_END:
+			get_viewport().set_input_as_handled()
+			terminal_input.caret_column = terminal_input.text.length()
+			return
+
+		# Enter
+		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+			get_viewport().set_input_as_handled()
 			execute_command(terminal_input.text)
 			terminal_input.text = ""
-		
-		# Ctrl+L для очистки
-		elif event.keycode == KEY_L and (event.ctrl_pressed or event.meta_pressed):
+			terminal_input.caret_column = 0
+			return
+
+		# Tab — пробел
+		if event.keycode == KEY_TAB:
+			get_viewport().set_input_as_handled()
+			_insert_text(terminal_input.caret_column, " ")
+			return
+
+		# Space — пробел (если Tab не сработал)
+		if event.keycode == KEY_SPACE:
+			get_viewport().set_input_as_handled()
+			_insert_text(terminal_input.caret_column, " ")
+			return
+
+		# Ctrl+L — очистка экрана
+		if (event.ctrl_pressed or event.meta_pressed) and event.keycode == KEY_L:
+			get_viewport().set_input_as_handled()
 			terminal_output.text = ""
+			return
+
+		# Ctrl+C/V/X/A — пропускаем
+		if (event.ctrl_pressed or event.meta_pressed) and event.keycode in [KEY_C, KEY_V, KEY_X, KEY_A]:
+			return
+
+		# Всё остальное (включая русские буквы) — блокируем
+		get_viewport().set_input_as_handled()
+
+
+func _insert_text(at: int, text: String):
+	var current = terminal_input.text
+	terminal_input.text = current.insert(at, text)
+	terminal_input.caret_column = at + text.length()
+
 
 func welcome_message():
 	"""Приветственное сообщение"""
@@ -144,10 +256,9 @@ func execute_command(command: String):
 			show_help_for_subject(subject)
 		else :
 			show_help()
-		terminal_input.text = "" # Очищаем ввод
-		scroll_to_bottom() # Вызываем прокрутку здесь
+		scroll_to_bottom()
 		return
-		
+
 	if command.strip_edges().is_empty():
 		return
 
@@ -162,6 +273,7 @@ func execute_command(command: String):
 		return
 	elif command.to_upper().begins_with("TABLES"):
 		show_tables()
+		scroll_to_bottom()
 		return
 	
 	# Выполнение SQL запроса
@@ -172,10 +284,8 @@ func execute_command(command: String):
 			check_quest_completion(result.data)
 	else:
 		terminal_output.text += "[color=red]⚠️ ОШИБКА:[/color] " + str(result.error) + "\n"
-		
-	terminal_input.text = ""
-		
-	scroll_to_bottom() # Вызываем прокрутку здесь
+
+	scroll_to_bottom()
 
 
 func show_help_for_subject(subject: String):
