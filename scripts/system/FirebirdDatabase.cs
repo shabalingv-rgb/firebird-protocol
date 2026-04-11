@@ -422,7 +422,7 @@ private void CheckAndAddQuestForEmail(int emailId)
 		var result = new GArray();
 		foreach (var item in CachedEmails)
 		{
-			GDictionary email = (GDictionary)item;
+			GDictionary email = (GDictionary)(Variant)item;
 			int emailDayId = -1;
 			if (email.ContainsKey("DAY_ID")) emailDayId = email["DAY_ID"].AsInt32();
 			else if (email.ContainsKey("day_id")) emailDayId = email["day_id"].AsInt32();
@@ -431,7 +431,6 @@ private void CheckAndAddQuestForEmail(int emailId)
 			{
 				result.Add(email);
 			}
-
 		}
 		return result;
 	}
@@ -443,7 +442,7 @@ private void CheckAndAddQuestForEmail(int emailId)
 
 		foreach (var questVariant in CachedQuests)
 		{
-			GDictionary quest = (GDictionary)questVariant;
+			GDictionary quest = (GDictionary)(Variant)questVariant;
 
 			// ✅ ПРОВЕРКА КЛЮЧА БЕЗ УЧЁТА РЕГИСТРА (как в GetEmailsForDay)
 			Variant emailIdValue = default;

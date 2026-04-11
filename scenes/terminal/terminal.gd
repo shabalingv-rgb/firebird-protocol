@@ -7,6 +7,10 @@ var active_quest: Dictionary = {}  # ✅ ДОБАВЬ ЭТУ СТРОКУ
 var sql_command_history: Array = []
 var is_quest_active: bool = false
 
+# История команд терминала (стрелки вверх/вниз)
+var command_history: Array = []
+var command_history_index: int = -1
+
 # Ссылки на узлы UI
 @onready var terminal_output = $TerminalScroll/TerminalOutput
 @onready var terminal_input = $TerminalInput
@@ -112,6 +116,32 @@ func _input(event):
 				terminal_input.caret_column += 1
 			return
 
+		# Стрелка вверх — предыдущая команда
+		if event.keycode == KEY_UP:
+			get_viewport().set_input_as_handled()
+			if command_history.is_empty():
+				return
+			if command_history_index == -1:
+				command_history_index = command_history.size() - 1
+			elif command_history_index > 0:
+				command_history_index -= 1
+			_set_terminal_text(command_history[command_history_index])
+			return
+
+		# Стрелка вниз — следующая команда
+		if event.keycode == KEY_DOWN:
+			get_viewport().set_input_as_handled()
+			if command_history.is_empty() or command_history_index == -1:
+				return
+			if command_history_index < command_history.size() - 1:
+				command_history_index += 1
+				_set_terminal_text(command_history[command_history_index])
+			else:
+				command_history_index = -1
+				terminal_input.text = ""
+				terminal_input.caret_column = 0
+			return
+
 		# Home / End
 		if event.keycode == KEY_HOME:
 			get_viewport().set_input_as_handled()
@@ -125,7 +155,16 @@ func _input(event):
 		# Enter
 		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
 			get_viewport().set_input_as_handled()
-			execute_command(terminal_input.text)
+			var cmd = terminal_input.text.strip_edges()
+			if not cmd.is_empty():
+				# Добавляем в историю (избегая дубликатов подряд)
+				if command_history.is_empty() or command_history[-1] != cmd:
+					command_history.append(cmd)
+				# Ограничиваем историю 50 командами
+				if command_history.size() > 50:
+					command_history.remove_at(0)
+				command_history_index = -1  # сброс — следующая стрелка начнёт с конца
+				execute_command(cmd)
 			terminal_input.text = ""
 			terminal_input.caret_column = 0
 			return
@@ -160,6 +199,12 @@ func _insert_text(at: int, text: String):
 	var current = terminal_input.text
 	terminal_input.text = current.insert(at, text)
 	terminal_input.caret_column = at + text.length()
+
+
+func _set_terminal_text(text: String):
+	"""Установить текст в поле ввода и переместить курсор в конец"""
+	terminal_input.text = text
+	terminal_input.caret_column = text.length()
 
 
 func welcome_message():
