@@ -3,12 +3,15 @@ extends Control
 @onready var search_bar = $Header/SearchBar
 @onready var categories_tree = $ContentContainer/Sidebar/CategoriesTree
 @onready var progress_label = $ContentContainer/Sidebar/ProgressLabel
-@onready var content_label = $MainContent/ArticleContent
+@onready var article_title = $MainContent/ContentMargin/ArticleTitle
+@onready var content_label = $MainContent/ContentMargin/ArticleContent
 @onready var code_example = $CodeExample
 @onready var prev_button = $NavigationButtons/PrevButton
 @onready var next_button = $NavigationButtons/NextButton
 @onready var try_button = $TryItButton
 @onready var close_button = $Header/CloseButton
+
+var quest_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
 
 # Навигация
 var current_topic_id: String = ""
@@ -25,16 +28,16 @@ func _ready():
 	
 	# Фокус на поиск при открытии
 	search_bar.grab_focus()
-	
+
 	load_guide()
 	update_progress()
 	update_navigation_buttons()
-	
+
 	search_bar.placeholder_text = "🔍 Поиск по справке..."
-	
+
 func _input(event):
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_F and event.ctrl_or_meta_pressed:
+		if event.keycode == KEY_F and (event.ctrl_pressed or event.meta_pressed):
 			search_bar.grab_focus()
 			search_bar.select_all()
 		elif event.keycode == KEY_ESCAPE:
@@ -97,57 +100,30 @@ func show_article(topic_id: String):
 			topic_history = topic_history.slice(0, history_index + 1)
 		topic_history.append(topic_id)
 		history_index = topic_history.size() - 1
-	
+
 	current_topic_id = topic_id
-	
-	# Показываем статью
+
 	var topic = GuideSystem.guide_database[topic_id]
+	article_title.text = topic.title
 	content_label.text = topic.content
 	code_example.text = topic.get("example", "")
-	
+
 	update_navigation_buttons()
 	update_progress()
 
 func update_navigation_buttons():
 	prev_button.disabled = history_index <= 0
 	next_button.disabled = history_index >= topic_history.size() - 1
-	
-	# Меняем текст кнопки для визуальной обратной связи
-	if prev_button.disabled:
-		prev_button.text = "← Назад"
-		prev_button.disabled = true
-	else:
-		prev_button.text = "← Назад"
-		prev_button.disabled = false
-	
-	if next_button.disabled:
-		next_button.text = "Вперёд →"
-		next_button.disabled = true
-	else:
-		next_button.text = "Вперёд →"
-		next_button.disabled = false
-	
-	# ИЛИ меняем цвет через theme_override
-	if prev_button.disabled:
-		prev_button.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 0.5))
-	else:
-		prev_button.remove_theme_color_override("font_color")
-	
-	if next_button.disabled:
-		next_button.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 0.5))
-	else:
-		next_button.remove_theme_color_override("font_color")
 				
 func _on_prev_pressed():
 	if history_index > 0:
 		history_index -= 1
 		var prev_topic = topic_history[history_index]
 		current_topic_id = prev_topic
-		
 		var topic = GuideSystem.guide_database[prev_topic]
+		article_title.text = topic.title
 		content_label.text = topic.content
 		code_example.text = topic.get("example", "")
-		
 		update_navigation_buttons()
 		categories_tree.deselect_all()
 
@@ -156,11 +132,10 @@ func _on_next_pressed():
 		history_index += 1
 		var next_topic = topic_history[history_index]
 		current_topic_id = next_topic
-		
 		var topic = GuideSystem.guide_database[next_topic]
+		article_title.text = topic.title
 		content_label.text = topic.content
 		code_example.text = topic.get("example", "")
-		
 		update_navigation_buttons()
 		categories_tree.deselect_all()
 
