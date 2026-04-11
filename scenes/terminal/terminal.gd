@@ -461,12 +461,10 @@ func display_result(data: Array):
 	terminal_output.append_text("[color=yellow]Всего строк: " + str(data.size()) + "[/color]\n")
 	
 func check_quest_completion(result_data: Array):
-	print("🔍 check_quest_completion: active_quest пуст=", active_quest.is_empty())
 	if active_quest.is_empty():
 		return
 
 	var expected_rows = active_quest.get("EXPECTED_ROWS", active_quest.get("expected_rows", -1))
-	print("🔍 check_quest_completion: ожидаю строк=", expected_rows, " получил=", result_data.size())
 
 	# 1. Простейшая проверка по количеству строк
 	if expected_rows >= 0 and result_data.size() == expected_rows:

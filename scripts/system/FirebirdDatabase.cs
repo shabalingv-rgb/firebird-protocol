@@ -683,12 +683,17 @@ private void CheckAndAddQuestForEmail(int emailId)
 		return defaultProgress;
 	}
 
-	public void SavePlayerProgress(string role, int day, int violations, Dictionary flags, Dictionary quests)
+	public void SavePlayerProgress(string role, int day, int violations, Variant flagsVariant, Variant questsVariant)
 	{
 		try
 		{
-			string flagsJson = System.Text.Json.JsonSerializer.Serialize(flags);
-			string questsJson = System.Text.Json.JsonSerializer.Serialize(quests);
+			string flagsJson = flagsVariant.VariantType == Variant.Type.String
+				? flagsVariant.AsString()
+				: System.Text.Json.JsonSerializer.Serialize(flagsVariant.AsGodotDictionary());
+
+			string questsJson = questsVariant.VariantType == Variant.Type.String
+				? questsVariant.AsString()
+				: System.Text.Json.JsonSerializer.Serialize(questsVariant.AsGodotArray());
 			const int saveSlot = 1;
 
 			// Firebird не поддерживает ON CONFLICT — используем параметры (безопасно для кавычек в JSON) и UPDATE/INSERT

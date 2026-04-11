@@ -88,16 +88,13 @@ func check_quest_completion(sql_result: Array, expected_rows: int) -> bool:
 
 func complete_quest(success: bool):
 	if active_quest.is_empty():
-		print("⚠️ complete_quest: active_quest пуст, не могу завершить квест")
 		return
 
 	if success:
 		var qtitle = active_quest.get("TITLE", active_quest.get("title", ""))
 		print("✅ Задание выполнено: ", qtitle)
 		var qid = active_quest.get("ID", active_quest.get("id", -1))
-		print("📋 Завершаю quest_id: ", qid, " (type: ", typeof(qid), ")")
 		completed_quests.append(qid)
-		print("📋 completed_quests: ", completed_quests)
 		
 		# Сохраняем story flags
 		var raw_sf = active_quest.get("STORY_FLAGS_SET", active_quest.get("story_flags_set", ""))
@@ -215,16 +212,18 @@ func load_progress():
 	trust_level = int(progress.get("TRUST_LEVEL", progress.get("trust_level", 50)))
 	
 	var raw_flags = progress.get("FLAGS_UNLOCKED", progress.get("flags_unlocked", "{}"))
-	if raw_flags is String:
-		story_flags = JSON.parse_string(raw_flags)
+	var parsed_flags = JSON.parse_string(str(raw_flags))
+	if parsed_flags is Dictionary:
+		story_flags = parsed_flags
 	else:
-		story_flags = raw_flags
-		
+		story_flags = {}
+
 	var raw_quests = progress.get("QUESTS_COMPLETED", progress.get("quests_completed", "[]"))
-	if raw_quests is String:
-		completed_quests = JSON.parse_string(raw_quests)
+	var parsed_quests = JSON.parse_string(str(raw_quests))
+	if parsed_quests is Array:
+		completed_quests = parsed_quests
 	else:
-		completed_quests = raw_quests
+		completed_quests = []
 	
 	print("💾 Прогресс загружен: День ", current_day, ", Нарушения: ", violations)
 

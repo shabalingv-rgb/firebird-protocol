@@ -32,12 +32,46 @@ offset_bottom = 31.0
 theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Назад"
 
-[node name="EmailList" type="ItemList" parent="." unique_id=1629995095]
+[node name="EmailTabs" type="TabContainer" parent="." unique_id=1629995096]
 layout_mode = 0
-offset_left = 33.0
+offset_left = 12.0
 offset_top = 47.0
 offset_right = 350.0
 offset_bottom = 569.0
+current_tab = 0
+
+[node name="Входящие" type="Control" parent="EmailTabs" unique_id=1629995097]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InboxList" type="ItemList" parent="EmailTabs/Входящие" unique_id=1629995098]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_2y7k8")
+
+[node name="Архив" type="Control" parent="EmailTabs" unique_id=1629995099]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ArchiveList" type="ItemList" parent="EmailTabs/Архив" unique_id=1629995100]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_fonts/font = ExtResource("2_2y7k8")
 
 [node name="EmailHeader" type="Panel" parent="." unique_id=2137021936]
