@@ -3,6 +3,12 @@ extends Node
 var unlocked_topics: Array[String] = []
 var read_articles: Array[String] = []
 
+# Кэш тем из БД (дублирует структуру guide_database для быстрого доступа)
+var guide_topics_db_cache: Array = []
+
+# Текущий день игрока (обновляется из QuestManager)
+var current_day: int = 1
+
 var guide_database: Dictionary = {
 	# ==================== ОСНОВЫ SQL ====================
 	
@@ -1083,13 +1089,84 @@ FROM employees[/color][/code]""",
 
 func _ready():
 	print("📖 Guide System загружен!")
-	# Разблокируем базовые темы
-	unlock_topic("sql_basics_select")
-	unlock_topic("sql_basics_from")
-	unlock_topic("sql_where_clause")
-	unlock_topic("game_quest_system")
-	unlock_topic("game_violations")
-	unlock_topic("game_time_system")
+	
+	# Загружаем темы из Firebird БД
+	_load_topics_from_database()
+	
+	# Разблокируем темы, доступные по текущему дню
+	_unlock_topics_for_current_day()
+
+# === ЗАГРУЗКА ТЕМ ИЗ БАЗЫ ДАННЫХ ===
+func _load_topics_from_database():
+	if not DatabaseManager or not DatabaseManager.IsInitialized:
+		print("⚠️ БД не готова, использую встроенные темы")
+		return
+	
+	print("📚 Загрузка тем справки из Firebird...")
+	
+	# Загружаем все темы (без фильтрации по дню — фильтрация будет при разблокировке)
+	guide_topics_db_cache = DatabaseManager.GetAvailableGuideTopics(999)
+	
+	if guide_topics_db_cache.is_empty():
+		print("⚠️ Тем в БД не найдено, использую встроенные")
+		return
+	
+	# Добавляем темы из БД в guide_database
+	for topic_data in guide_topics_db_cache:
+		var topic = topic_data as Dictionary
+		var topic_key = str(topic.get("TOPIC_KEY", topic.get("topic_key", "")))
+		var title = str(topic.get("TITLE", topic.get("title", "")))
+		var content = str(topic.get("CONTENT", topic.get("content", "")))
+		var example = str(topic.get("SQL_EXAMPLE", topic.get("sql_example", "")))
+		var category = _map_category(str(topic.get("CATEGORY", topic.get("category", "sql"))))
+		var min_day = int(topic.get("MIN_DAY", topic.get("min_day", 1)))
+		
+		if topic_key.is_empty():
+			continue
+		
+		guide_database[topic_key] = {
+			"title": title,
+			"category": category,
+			"content": content,
+			"example": example if example != "" else "",
+			"firebird_specific": false,
+			"unlock_condition": "day_" + str(min_day) + "_start",
+			"min_day": min_day
+		}
+	
+	print("✅ Загружено тем из БД: ", guide_topics_db_cache.size())
+
+func _map_category(cat: String) -> String:
+	match cat:
+		"sql": return "basics"
+		"tables": return "filtering"
+		"game": return "game_mechanics"
+		_: return "advanced"
+
+# === РАЗБЛОКИРОВКА ТЕМ ПО ДНЯМ ===
+func _unlock_topics_for_current_day():
+	# Обновляем текущий день из QuestManager
+	if QuestManager:
+		current_day = QuestManager.current_day
+	
+	var unlocked_count = 0
+	
+	for topic_id in guide_database.keys():
+		var topic = guide_database[topic_id]
+		var min_day = topic.get("min_day", 1)
+		
+		# Разблокируем если день позволяет
+		if current_day >= min_day:
+			if not unlocked_topics.has(topic_id):
+				unlocked_topics.append(topic_id)
+				unlocked_count += 1
+	
+	print("🔓 Разблокировано тем: ", unlocked_count, " (день ", current_day, ")")
+
+# Публичный метод для обновления разблокировок при смене дня
+func refresh_unlocked_topics():
+	unlocked_topics.clear()
+	_unlock_topics_for_current_day()
 
 func unlock_topic(topic_id: String):
 	if not unlocked_topics.has(topic_id):

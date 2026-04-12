@@ -233,6 +233,11 @@ func _on_tab_changed(tab: int):
 func show_email(email: Dictionary):
 	subject_label.text = email.get("SUBJECT", email.get("subject", "Без темы"))
 	sender_label.text = "От: " + email.get("SENDER", email.get("sender", "Неизвестно"))
+	
+	# Помечаем письмо прочитанным в БД (и обновляем кэш)
+	var email_id = email.get("ID", email.get("id", -1))
+	if email_id > 0 and DatabaseManager and DatabaseManager.IsInitialized:
+		DatabaseManager.MarkEmailAsRead(email_id)
 	body_label.text = email.get("BODY", email.get("body", ""))
 	original_email_body = body_label.text
 
@@ -243,8 +248,8 @@ func show_email(email: Dictionary):
 		if has_node("EmailHeader/ReplyButton"):
 			$EmailHeader/ReplyButton.visible = true
 			$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
-			var email_id = int(email.get("id", email.get("ID", 0)))
-			load_quest_for_email(email_id)
+			var quest_email_id = int(email.get("id", email.get("ID", 0)))
+			load_quest_for_email(quest_email_id)
 	else:
 		if has_node("EmailHeader/ReplyButton"):
 			$EmailHeader/ReplyButton.visible = false

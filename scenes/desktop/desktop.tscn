@@ -4,12 +4,16 @@
 [ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
-bg_color = Color(0, 0.101960786, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
+bg_color = Color(0, 0.06, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
 border_color = Color(0, 1, 0, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="Desktop" type="Control" unique_id=1994708423]
 layout_mode = 3
@@ -89,23 +93,57 @@ theme_override_fonts/font = ExtResource("2")
 text = "Закрыть смену"
 
 [node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
-visible = false
 layout_mode = 0
-offset_left = 846.0
-offset_top = 512.0
-offset_right = 1146.0
-offset_bottom = 572.0
+offset_left = 810.0
+offset_top = 502.0
+offset_right = 1150.0
+offset_bottom = 582.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 
-[node name="NotificationLabel" type="Label" parent="NotificationPopup" unique_id=2130256741]
+[node name="CloseButton" type="Button" parent="NotificationPopup" unique_id=1869883202]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 5.0
+offset_right = 340.0
+offset_bottom = 25.0
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 10
+text = "✕"
+flat = true
+
+[node name="SenderLabel" type="Label" parent="NotificationPopup" unique_id=2130256742]
 layout_mode = 0
 offset_left = 10.0
-offset_top = 10.0
-offset_right = 390.0
-offset_bottom = 70.0
+offset_top = 8.0
+offset_right = 310.0
+offset_bottom = 28.0
+theme_override_colors/font_color = Color(0, 0.8, 0, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 8
+text = ""
+
+[node name="SubjectLabel" type="Label" parent="NotificationPopup" unique_id=2130256741]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 30.0
+offset_right = 330.0
+offset_bottom = 55.0
 theme_override_colors/font_color = Color(0, 1, 0, 1)
 theme_override_fonts/font = ExtResource("2")
-text = "Текст уведомления"
+theme_override_font_sizes/font_size = 9
+text = ""
+
+[node name="TimerLabel" type="Label" parent="NotificationPopup" unique_id=2130256743]
+layout_mode = 0
+offset_left = 280.0
+offset_top = 58.0
+offset_right = 330.0
+offset_bottom = 75.0
+theme_override_colors/font_color = Color(0, 0.5, 0, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 7
+text = ""
+horizontal_alignment = 2
 
 [node name="ScreenOverlay" type="TextureRect" parent="." unique_id=564947875]
 layout_mode = 0

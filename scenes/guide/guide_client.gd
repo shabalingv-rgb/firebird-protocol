@@ -25,9 +25,13 @@ func _ready():
 	next_button.pressed.connect(_on_next_pressed)
 	try_button.pressed.connect(_on_try_it_pressed)
 	close_button.pressed.connect(_on_close_pressed)
-	
+
 	# Фокус на поиск при открытии
 	search_bar.grab_focus()
+
+	# Обновляем разблокировки из БД при каждом открытии
+	if GuideSystem:
+		GuideSystem.refresh_unlocked_topics()
 
 	load_guide()
 	update_progress()
@@ -45,20 +49,20 @@ func _input(event):
 
 func load_guide():
 	categories_tree.clear()
-	
+
 	# Словарь для групп
 	var categories = {}
-	
+
 	# Собираем все разблокированные темы по категориям
 	for topic_id in GuideSystem.guide_database:
 		if GuideSystem.is_topic_unlocked(topic_id):
 			var topic = GuideSystem.guide_database[topic_id]
 			var cat = topic.category
-			
+
 			if not categories.has(cat):
 				categories[cat] = []
 			categories[cat].append(topic_id)
-	
+
 	# Создаём дерево с категориями
 	for cat in categories.keys():
 		# Корневой элемент категории
@@ -66,16 +70,16 @@ func load_guide():
 		cat_root.set_text(0, get_category_text(cat))
 		cat_root.set_selectable(0, false)
 		cat_root.set_custom_color(0, Color(0.8, 0.8, 0.8))
-		
+
 		# Элементы категории
 		for topic_id in categories[cat]:
 			var topic = GuideSystem.guide_database[topic_id]
 			var item = categories_tree.create_item(cat_root)
 			item.set_text(0, topic.title)
 			item.set_metadata(0, topic_id)
-			
+
 			# Подсветка Firebird-специфики
-			if topic.firebird_specific:
+			if topic.get("firebird_specific", false):
 				item.set_custom_color(0, Color(0, 0.8, 1))
 				
 func _on_category_selected():
@@ -105,8 +109,14 @@ func show_article(topic_id: String):
 
 	var topic = GuideSystem.guide_database[topic_id]
 	article_title.text = topic.title
+
+	# ✅ Включаем BBCode для корректного отображения форматирования
+	content_label.bbcode_enabled = true
 	content_label.text = topic.content
-	code_example.text = topic.get("example", "")
+
+	var example = topic.get("example", "")
+	code_example.bbcode_enabled = true
+	code_example.text = example
 
 	update_navigation_buttons()
 	update_progress()
@@ -122,7 +132,9 @@ func _on_prev_pressed():
 		current_topic_id = prev_topic
 		var topic = GuideSystem.guide_database[prev_topic]
 		article_title.text = topic.title
+		content_label.bbcode_enabled = true
 		content_label.text = topic.content
+		code_example.bbcode_enabled = true
 		code_example.text = topic.get("example", "")
 		update_navigation_buttons()
 		categories_tree.deselect_all()
@@ -134,7 +146,9 @@ func _on_next_pressed():
 		current_topic_id = next_topic
 		var topic = GuideSystem.guide_database[next_topic]
 		article_title.text = topic.title
+		content_label.bbcode_enabled = true
 		content_label.text = topic.content
+		code_example.bbcode_enabled = true
 		code_example.text = topic.get("example", "")
 		update_navigation_buttons()
 		categories_tree.deselect_all()
@@ -204,37 +218,41 @@ func _on_search_changed(new_text: String):
 	if new_text.is_empty():
 		load_guide()
 		return
-	
+
 	categories_tree.clear()
-	
+
 	var search_results_count = 0
 	
-	# Поиск по статьям
+	# Обновляем разблокировки перед поиском
+	if GuideSystem:
+		GuideSystem.refresh_unlocked_topics()
+
+	# Поиск по статьям (включая темы из БД)
 	for topic_id in GuideSystem.guide_database:
 		if GuideSystem.is_topic_unlocked(topic_id):
 			var topic = GuideSystem.guide_database[topic_id]
-			
+
 			# Ищем в заголовке, содержании и примере
 			var title_match = topic.title.to_lower().contains(new_text.to_lower())
 			var content_match = topic.content.to_lower().contains(new_text.to_lower())
 			var example_match = false
-			
+
 			if topic.has("example"):
 				example_match = topic.example.to_lower().contains(new_text.to_lower())
-			
+
 			if title_match or content_match or example_match:
 				# Создаём элемент с иконкой
 				var item = categories_tree.create_item()
 				var category_icon = get_category_icon(topic.category)
 				item.set_text(0, category_icon + " " + topic.title)
 				item.set_metadata(0, topic_id)
-				
+
 				# Подсветка Firebird-специфики
-				if topic.firebird_specific:
+				if topic.get("firebird_specific", false):
 					item.set_custom_color(0, Color(0, 0.8, 1))
-				
+
 				search_results_count += 1
-	
+
 	# Показываем количество результатов
 	if search_results_count > 0:
 		search_bar.placeholder_text = "Найдено: %d статей" % search_results_count

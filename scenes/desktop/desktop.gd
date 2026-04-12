@@ -1,7 +1,10 @@
 extends Control
 
 @onready var notification_popup = $NotificationPopup
-@onready var notification_label = $NotificationPopup/NotificationLabel
+@onready var sender_label = $NotificationPopup/SenderLabel
+@onready var subject_label = $NotificationPopup/SubjectLabel
+@onready var timer_label = $NotificationPopup/TimerLabel
+@onready var close_button = $NotificationPopup/CloseButton
 @onready var clock_label = $Taskbar/ClockLabel
 @onready var guide_icon = $DesktopIcons/GuideIcon
 
@@ -10,6 +13,11 @@ var game_time: Dictionary = {
 	"minute": 30,
 	"day": 0     # День 0 - это вечер перед работой
 }
+
+# Таймер уведомления
+var notification_timer: Timer = null
+var notification_time_left: int = 10
+var is_notification_showing: bool = false
 
 func _ready():
 	# Подключаем иконки
@@ -20,12 +28,111 @@ func _ready():
 	$DesktopIcons/GuideIcon.pressed.connect(_open_guide)
 	$DesktopIcons/EndDay.pressed.connect(_on_finish_day_button_pressed)
 	
+	# Подключаем крестик закрытия
+	close_button.pressed.connect(_close_notification)
+
+	# Гарантированно скрываем уведомление при старте
+	notification_popup.visible = false
+	notification_popup.modulate = Color(1, 1, 1, 0)
+
 	# Запуск обновления часов
-	await get_tree().create_timer(2.0).timeout
-	show_notification("📧 Новое письмо от HR НИИ")
-	
-	# Обновление часов каждую секунду (реальное время)
 	update_clock()
+	
+	# Показываем уведомление о новых письмах с небольшой задержкой
+	await get_tree().create_timer(1.5).timeout
+	_check_and_show_email_notification()
+
+func _check_and_show_email_notification():
+	"""Проверяет непрочитанные письма и показывает уведомление для первого"""
+	if not DatabaseManager or not DatabaseManager.IsInitialized:
+		return
+	if is_notification_showing:
+		return
+	
+	# Получаем письма текущего дня
+	var day = 1
+	if QuestManager:
+		day = QuestManager.current_day
+	
+	var emails = DatabaseManager.GetEmailsForDay(day)
+	
+	# Сначала ИЩЕМ непрочитанное, не трогая UI
+	var unread_sender = ""
+	var unread_subject = ""
+	for email in emails:
+		var is_read_val = email.get("IS_READ", email.get("is_read", 0))
+		if int(is_read_val) == 0:
+			unread_sender = email.get("SENDER", email.get("sender", "?"))
+			unread_subject = email.get("SUBJECT", email.get("subject", "?"))
+			break
+	
+	# Если нашли — показываем, иначе — НИЧЕГО не делаем
+	if unread_subject != "":
+		_show_email_notification(unread_sender, unread_subject)
+	else:
+		print("📧 Все письма прочитаны — пропуск уведомления")
+
+func _show_email_notification(sender: String, subject: String):
+	"""Показывает уведомление с таймером 10 секунд"""
+	if is_notification_showing:
+		return
+	
+	is_notification_showing = true
+	
+	# Сначала устанавливаем текст (popup скрыт)
+	sender_label.text = "📧 " + sender
+	subject_label.text = subject
+	timer_label.text = "10s"
+	
+	# Ждём один кадр чтобы текст отрисовался
+	await get_tree().process_frame
+	
+	# Только теперь показываем popup
+	notification_popup.visible = true
+	notification_popup.modulate = Color(1, 1, 1, 1)
+	
+	# Запускаем таймер обратного отсчёта
+	notification_time_left = 10
+	_start_notification_timer()
+
+func _start_notification_timer():
+	"""Запускает обратный отсчёт 10 секунд"""
+	# Создаём таймер если нет
+	if notification_timer:
+		notification_timer.stop()
+		notification_timer.queue_free()
+	
+	notification_timer = Timer.new()
+	notification_timer.wait_time = 1.0
+	notification_timer.one_shot = false
+	notification_timer.timeout.connect(_on_notification_tick)
+	add_child(notification_timer)
+	notification_timer.start()
+
+func _on_notification_tick():
+	"""Каждую секунду обновляем счётчик"""
+	notification_time_left -= 1
+	timer_label.text = str(notification_time_left) + "s"
+	
+	if notification_time_left <= 0:
+		_close_notification()
+
+func _close_notification():
+	"""Закрывает уведомление"""
+	is_notification_showing = false
+	
+	# Плавное исчезновение
+	var tween = create_tween()
+	tween.tween_property(notification_popup, "modulate", Color(1, 1, 1, 0), 0.3)
+	tween.tween_callback(func():
+		notification_popup.visible = false
+	)
+	
+	# Останавливаем таймер
+	if notification_timer:
+		notification_timer.stop()
+		notification_timer.queue_free()
+		notification_timer = null
 	
 func update_clock():
 	if !is_inside_tree():
@@ -59,21 +166,29 @@ func advance_game_time(hours: int):
 func on_new_day():
 	print("Начался новый день: ", game_time.day)
 	GameState.next_day()
-	# Здесь можно добавлять новые задания
 	
-	# Показываем уведомление ТОЛЬКО один раз
-	if not GameState.get_flag("email_notification_shown"):
-		await get_tree().create_timer(2.0).timeout
-		show_notification("📧 Новое письмо от HR НИИ")
-		GameState.set_flag("email_notification_shown", true)	
+	# Закрываем текущее уведомление если есть
+	_close_notification()
 	
+	# Проверяем новые письма через пару секунд
+	await get_tree().create_timer(2.0).timeout
+	_check_and_show_email_notification()
+
 
 func show_notification(text: String):
-	notification_label.text = text
+	"""Обратная совместимость — показывает короткое системное сообщение"""
+	sender_label.text = "ℹ️ Система"
+	subject_label.text = text
+	timer_label.text = ""
+	notification_popup.modulate = Color(1, 1, 1, 0)
 	notification_popup.visible = true
+	
+	var tween = create_tween()
+	tween.tween_property(notification_popup, "modulate", Color(1, 1, 1, 1), 0.3)
+	
 	# Автоскрытие через 5 секунд
 	await get_tree().create_timer(5.0).timeout
-	notification_popup.visible = false
+	_close_notification()
 
 func _open_email():
 	print("Открытие почты...")
@@ -140,8 +255,8 @@ func _get_incomplete_quests() -> Array:
 		if email_type != "quest":
 			continue
 
-		var email_id = int(email.get("ID", email.get("id", -1)))
-		var quest = DatabaseManager.GetQuestForEmail(email_id)
+		var quest_email_id = int(email.get("ID", email.get("id", -1)))
+		var quest = DatabaseManager.GetQuestForEmail(quest_email_id)
 		if quest == null or quest.is_empty():
 			continue
 

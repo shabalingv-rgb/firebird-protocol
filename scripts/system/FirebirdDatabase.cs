@@ -162,6 +162,7 @@ public partial class FirebirdDatabase : Node
 			GD.Print("✅ Подключение к Firebird успешно");
 
 			CreateTables();
+			ApplyMigrations();
 			ImportContent();
 
 
@@ -219,6 +220,37 @@ public partial class FirebirdDatabase : Node
 
 	}
 
+	/// <summary>Применяет миграции к существующей БД (добавляет недостающие колонки).</summary>
+	private void ApplyMigrations()
+	{
+		GD.Print("🔄 Применение миграций БД...");
+
+		try
+		{
+			// Проверяем наличие колонки is_read в таблице emails
+			var checkColumn = ExecuteQuery(@"
+				SELECT 1 FROM RDB$RELATION_FIELDS 
+				WHERE RDB$RELATION_NAME = 'EMAILS' 
+				AND RDB$FIELD_NAME = 'IS_READ'
+			");
+
+			if (checkColumn == null || checkColumn.Count == 0)
+			{
+				GD.Print("📝 Миграция: добавляем колонку is_read в emails...");
+				ExecuteNonQuery("ALTER TABLE emails ADD is_read SMALLINT DEFAULT 0");
+				GD.Print("✅ Колонка is_read добавлена");
+			}
+			else
+			{
+				GD.Print("✅ Колонка is_read уже существует");
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"⚠️ Ошибка миграции: {e.Message}");
+		}
+	}
+
 	private void ImportContent()
 	{
 		GD.Print("📥 Начало проверки структуры БД...");
@@ -226,7 +258,6 @@ public partial class FirebirdDatabase : Node
 		bool needImport = true;
 		try
 		{
-			// Ищем именно ТВОЮ таблицу. В Firebird системные имена всегда ВЕРХНИМ РЕГИСТРОМ
 			using var cmdCheck = new FbCommand(
 				"SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'",
 				_connection);
@@ -258,8 +289,11 @@ public partial class FirebirdDatabase : Node
 		string sqlContent = File.ReadAllText(sqlPath).Replace("\r", "");
 		var commands = SplitSqlStatements(SqlLineComments.Replace(sqlContent, ""));
 
-		using (var transaction = _connection.BeginTransaction())
+		FbTransaction transaction = null;
+		try
 		{
+			transaction = _connection.BeginTransaction();
+
 			foreach (var cmdText in commands)
 			{
 				string cleanCmd = cmdText.Trim();
@@ -269,7 +303,6 @@ public partial class FirebirdDatabase : Node
 				{
 					using var fbCmd = new FbCommand(cleanCmd, _connection, transaction);
 					fbCmd.ExecuteNonQuery();
-
 				}
 				catch (Exception e)
 				{
@@ -277,10 +310,27 @@ public partial class FirebirdDatabase : Node
 						GD.PrintErr($"⚠️ SQL Detail: {e.Message}");
 				}
 			}
-			// 2. Коммитим ВНУТРИ блока using, пока переменная transaction жива
+
 			transaction.Commit();
+			GD.Print("✅ База данных успешно инициализирована.");
 		}
-		GD.Print("✅ База данных успешно инициализирована.");
+		catch (Exception ex)
+		{
+			if (transaction != null)
+			{
+				try { transaction.Rollback(); } catch { }
+			}
+			GD.PrintErr($"❌ Ошибка импорта: {ex.Message}");
+			return;
+		}
+		finally
+		{
+			if (transaction != null)
+			{
+				try { transaction.Dispose(); } catch { }
+			}
+		}
+
 		LoadContentToCache();
 	}
 
@@ -297,8 +347,11 @@ public partial class FirebirdDatabase : Node
 		string sqlContent = File.ReadAllText(sqlPath).Replace("\r", "");
 		var commands = SplitSqlStatements(SqlLineComments.Replace(sqlContent, ""));
 
-		using (var transaction = _connection.BeginTransaction())
+		FbTransaction transaction = null;
+		try
 		{
+			transaction = _connection.BeginTransaction();
+
 			foreach (var cmdText in commands)
 			{
 				string cleanCmd = cmdText.Trim();
@@ -316,9 +369,25 @@ public partial class FirebirdDatabase : Node
 						GD.PrintErr($"⚠️ ImportInitialData: {e.Message}");
 				}
 			}
+
 			transaction.Commit();
+			GD.Print("✅ Начальные данные загружены из SQL.");
 		}
-		GD.Print("✅ Начальные данные загружены из SQL.");
+		catch (Exception ex)
+		{
+			if (transaction != null)
+			{
+				try { transaction.Rollback(); } catch { }
+			}
+			GD.PrintErr($"❌ Ошибка загрузки данных: {ex.Message}");
+		}
+		finally
+		{
+			if (transaction != null)
+			{
+				try { transaction.Dispose(); } catch { }
+			}
+		}
 	}
 
 
@@ -337,8 +406,18 @@ public partial class FirebirdDatabase : Node
 		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
 		GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
 
+		// Проверяем, пуста ли guide_topics (новые данные могли не загрузиться)
+		var guideTopicsCount = ExecuteQuery("SELECT COUNT(*) as cnt FROM guide_topics");
+		int guideTopicsRows = 0;
+		if (guideTopicsCount != null && guideTopicsCount.Count > 0)
+		{
+			var firstRow = (GDictionary)guideTopicsCount[0];
+			guideTopicsRows = firstRow.ContainsKey("CNT") ? firstRow["CNT"].AsInt32() : 0;
+		}
+		GD.Print("   📚 Справочных тем: ", guideTopicsRows);
+
 		// Если таблицы есть, но данные пусты — загружаем начальные записи из SQL
-		if ((CachedDays?.Count ?? 0) == 0 || (CachedEmails?.Count ?? 0) == 0)
+		if ((CachedDays?.Count ?? 0) == 0 || (CachedEmails?.Count ?? 0) == 0 || guideTopicsRows == 0)
 		{
 			GD.Print("⚠️ Таблицы пусты — загружаю начальные данные...");
 			ImportInitialData();
@@ -777,11 +856,11 @@ private void CheckAndAddQuestForEmail(int emailId)
 
 			string sqlAdvanced = $@"
                 EXECUTE BLOCK AS BEGIN
-                    IF (EXISTS (SELECT 1 FROM sql_commands WHERE command_name = '{cmd}')) THEN 
+                    IF (EXISTS (SELECT 1 FROM sql_commands WHERE command_name = '{cmd}')) THEN
                         UPDATE sql_commands
                         SET times_used = times_used + 1, last_used_day = {day}
                         WHERE command_name = '{cmd}';
-                    ELSE 
+                    ELSE
                         INSERT INTO sql_commands (command_name, times_used, last_used_day)
                         VALUES ('{cmd}', 1, {day});
 				END";
@@ -793,6 +872,39 @@ private void CheckAndAddQuestForEmail(int emailId)
 		{
 			// Хоть мы и не прерываем игру, в логах ошибку лучше видеть
 			GD.PrintErr($"📊 Ошибка трекинга SQL: {e.Message}");
+		}
+	}
+
+	// === Пометить письмо прочитанным (БД + кэш) ===
+	public void MarkEmailAsRead(int emailId)
+	{
+		GD.Print($"📧 MarkEmailAsRead({emailId})");
+
+		try
+		{
+			// Обновляем в БД
+			ExecuteNonQuery($"UPDATE emails SET is_read = 1 WHERE id = {emailId}");
+
+			// Обновляем в кэше
+			foreach (var item in CachedEmails)
+			{
+				GDictionary email = (GDictionary)(Variant)item;
+				int id = -1;
+				if (email.ContainsKey("ID")) id = email["ID"].AsInt32();
+				else if (email.ContainsKey("id")) id = email["id"].AsInt32();
+
+				if (id == emailId)
+				{
+					email["IS_READ"] = Variant.From(1);
+					email["is_read"] = Variant.From(1);
+					GD.Print($"  📬 Письмо #{emailId} помечено прочитанным в кэше");
+					break;
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка пометки письма: {e.Message}");
 		}
 	}
 
@@ -833,6 +945,219 @@ private void CheckAndAddQuestForEmail(int emailId)
 		}
 
 		return new GDictionary();
+	}
+
+	// === СПРАВКА: Загрузка всех доступных тем ===
+	public GArray GetAvailableGuideTopics(int dayId, string category = "")
+	{
+		GD.Print($"📚 GetAvailableGuideTopics(day={dayId}, category={category})");
+		
+		var topics = new GArray();
+		
+		try
+		{
+			string sql = @"
+				SELECT id, topic_key, title, content, sql_example, category, sort_order
+				FROM guide_topics 
+				WHERE min_day <= @day AND max_day >= @day";
+			
+			if (!string.IsNullOrEmpty(category))
+			{
+				sql += " AND category = @category";
+			}
+			
+			sql += " ORDER BY sort_order, title";
+			
+			using var cmd = new FbCommand(sql, _connection);
+			cmd.Parameters.Add("@day", FbDbType.Integer).Value = dayId;
+			
+			if (!string.IsNullOrEmpty(category))
+			{
+				cmd.Parameters.Add("@category", FbDbType.VarChar).Value = category;
+			}
+			
+			using var reader = cmd.ExecuteReader();
+			
+			while (reader.Read())
+			{
+				var topic = new GDictionary();
+				topic["id"] = Variant.From(reader.GetValue(0));
+				topic["topic_key"] = Variant.From(reader.GetValue(1));
+				topic["title"] = Variant.From(reader.GetValue(2));
+				topic["content"] = Variant.From(reader.GetValue(3));
+				topic["sql_example"] = Variant.From(reader.GetValue(4));
+				topic["category"] = Variant.From(reader.GetValue(5));
+				topic["sort_order"] = Variant.From(reader.GetValue(6));
+				
+				topics.Add(topic);
+			}
+			
+			GD.Print($"📊 Найдено тем: {topics.Count}");
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка загрузки тем: {e.Message}");
+		}
+		
+		return topics;
+	}
+
+	// === СПРАВКА: Получить тему по ключу ===
+	public GDictionary GetGuideTopicByKey(string topicKey)
+	{
+		GD.Print($"📖 GetGuideTopicByKey({topicKey})");
+		
+		var result = new GArray();
+		
+		try
+		{
+			using var cmd = new FbCommand(@"
+				SELECT id, topic_key, title, content, sql_example, category
+				FROM guide_topics 
+				WHERE topic_key = @topicKey
+			", _connection);
+			
+			cmd.Parameters.Add("@topicKey", FbDbType.VarChar).Value = topicKey ?? "";
+			
+			using var reader = cmd.ExecuteReader();
+			
+			while (reader.Read())
+			{
+				var topic = new GDictionary();
+				topic["id"] = Variant.From(reader.GetValue(0));
+				topic["topic_key"] = Variant.From(reader.GetValue(1));
+				topic["title"] = Variant.From(reader.GetValue(2));
+				topic["content"] = Variant.From(reader.GetValue(3));
+				topic["sql_example"] = Variant.From(reader.GetValue(4));
+				topic["category"] = Variant.From(reader.GetValue(5));
+				result.Add(topic);
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка загрузки темы: {e.Message}");
+		}
+		
+		if (result.Count > 0)
+		{
+			return (GDictionary)result[0];
+		}
+		
+		return new GDictionary();
+	}
+
+	// === СПРАВКА: Поиск тем по ключевому слову ===
+	public GArray SearchGuideTopics(string searchTerm)
+	{
+		GD.Print($"🔍 SearchGuideTopics({searchTerm})");
+		
+		var topics = new GArray();
+		
+		try
+		{
+			string sql = @"
+				SELECT id, topic_key, title, content, category
+				FROM guide_topics 
+				WHERE title LIKE @search 
+				   OR content LIKE @search 
+				   OR topic_key LIKE @search
+				ORDER BY title
+			";
+			
+			using var cmd = new FbCommand(sql, _connection);
+			cmd.Parameters.Add("@search", FbDbType.VarChar).Value = $"%{searchTerm}%";
+			
+			using var reader = cmd.ExecuteReader();
+			
+			while (reader.Read())
+			{
+				var topic = new GDictionary();
+				topic["id"] = Variant.From(reader.GetValue(0));
+				topic["topic_key"] = Variant.From(reader.GetValue(1));
+				topic["title"] = Variant.From(reader.GetValue(2));
+				topic["content"] = Variant.From(reader.GetValue(3));
+				topic["category"] = Variant.From(reader.GetValue(4));
+				topics.Add(topic);
+			}
+			
+			GD.Print($"📊 Найдено тем: {topics.Count}");
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка поиска: {e.Message}");
+		}
+		
+		return topics;
+	}
+
+	// === СПРАВКА: Получить структуру таблицы ===
+	public GArray GetTableStructure(string tableName)
+	{
+		GD.Print($"🏗️ GetTableStructure({tableName})");
+
+		var columns = new GArray();
+
+		if (string.IsNullOrWhiteSpace(tableName))
+		{
+			GD.PrintErr("❌ GetTableStructure: имя таблицы не указано");
+			return columns;
+		}
+
+		try
+		{
+			string safeName = tableName.Trim().ToUpper().Replace("'", "''");
+			string sql =
+				"SELECT " +
+				"TRIM(rf.RDB$FIELD_NAME) as FIELD_NAME, " +
+				"rf.RDB$FIELD_POSITION as FIELD_POSITION, " +
+				"f.RDB$FIELD_TYPE as FIELD_TYPE, " +
+				"f.RDB$FIELD_SUB_TYPE as FIELD_SUB_TYPE, " +
+				"f.RDB$FIELD_LENGTH as FIELD_LENGTH, " +
+				"rf.RDB$NULL_FLAG as NULL_FLAG " +
+				"FROM RDB$RELATION_FIELDS rf " +
+				"LEFT JOIN RDB$FIELDS f ON TRIM(rf.RDB$FIELD_SOURCE) = TRIM(f.RDB$FIELD_NAME) " +
+				"WHERE rf.RDB$RELATION_NAME = '" + safeName + "' " +
+				"ORDER BY rf.RDB$FIELD_POSITION";
+
+			GD.Print($"🔍 SQL запрос структуры: {sql}");
+
+			var result = ExecuteQuery(sql);
+			if (result != null)
+			{
+				GD.Print($"📊 Найдено колонок: {result.Count}");
+				foreach (var item in result)
+				{
+					GDictionary row = (GDictionary)item;
+					var col = new GDictionary();
+
+					var colName = row.ContainsKey("FIELD_NAME") ? row["FIELD_NAME"] : Variant.From("");
+					var colType = row.ContainsKey("FIELD_TYPE") ? row["FIELD_TYPE"] : Variant.From(0);
+					var colLength = row.ContainsKey("FIELD_LENGTH") ? row["FIELD_LENGTH"] : Variant.From(0);
+					var colNull = row.ContainsKey("NULL_FLAG") ? row["NULL_FLAG"] : Variant.From(0);
+
+					GD.Print($"  Колонка: [{colName}] Тип: [{colType}] Длина: [{colLength}] NULL_FLAG: [{colNull}]");
+
+					col["COLUMN_NAME"] = colName;
+					col["FIELD_TYPE"] = colType;
+					col["FIELD_LENGTH"] = colLength;
+
+					int nullFlag = colNull.AsInt32();
+					col["NULLABLE"] = Variant.From(nullFlag == 1 ? "NO" : "YES");
+
+					columns.Add(col);
+				}
+			}
+			else
+			{
+				GD.PrintErr("⚠️ ExecuteQuery вернул null");
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка получения структуры: {e.Message}");
+		}
+
+		return columns;
 	}
 
 	public override void _ExitTree()
