@@ -166,10 +166,10 @@ func advance_game_time(hours: int):
 func on_new_day():
 	print("Начался новый день: ", game_time.day)
 	GameState.next_day()
-	
+
 	# Закрываем текущее уведомление если есть
 	_close_notification()
-	
+
 	# Проверяем новые письма через пару секунд
 	await get_tree().create_timer(2.0).timeout
 	_check_and_show_email_notification()

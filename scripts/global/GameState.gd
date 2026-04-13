@@ -29,6 +29,9 @@ var persistent_flags: Dictionary = {}
 # ⭐ ДОБАВЬ ЭТО:
 var terminal_preset_query: String = ""
 
+# Режим для save_manager (устанавливается из главного меню)
+var save_manager_mode: String = "load"  # "create" или "load"
+
 func _ready():
 	# Инициализация при старте игры
 	load_game_state()

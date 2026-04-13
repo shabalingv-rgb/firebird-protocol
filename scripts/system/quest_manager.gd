@@ -26,13 +26,10 @@ const TRUST_DECREASE_PER_VIOLATION := 10
 
 func _ready():
 	print("📋 Quest Manager загружен")
-	
-	# Временно убираем проверку is_initialized
-	# Загружаем прогресс если есть
-	if DatabaseManager:
-		# Ждём немного пока БД инициализируется
-		await get_tree().create_timer(0.5).timeout
-		load_progress()
+
+	# НЕ загружаем прогресс автоматически — это делает главное меню ("Продолжить")
+	# или новая игра (reset_progress + start_day).
+	# Автозагрузка может перезаписать данные, загруженные из другого слота.
 
 
 func start_day(day_number: int):
@@ -114,11 +111,11 @@ func complete_quest(success: bool):
 
 
 func check_day_completion():
-	"""Проверка завершены ли все задания дня"""
+	"""Проверка заверены ли все задания дня"""
 	# Получаем все обязательные задания дня
 	var emails = DatabaseManager.GetEmailsForDay(current_day)
 	var required_quests = []
-	
+
 	for email in emails:
 		var eid = email.get("ID", email.get("id", -1))
 		var quest = DatabaseManager.GetQuestForEmail(int(eid))
@@ -128,20 +125,25 @@ func check_day_completion():
 		if req:
 			var qid = quest.get("ID", quest.get("id", -1))
 			required_quests.append(qid)
-	
+
 	# Проверяем все ли выполнены
 	var all_completed = true
 	for quest_id in required_quests:
 		if not completed_quests.has(quest_id):
 			all_completed = false
 			break
-	
+
 	if all_completed:
 		print("✅ День ", current_day, " завершён!")
 		day_completed.emit(current_day)
-		
+
 		# Сохраняем прогресс
 		save_progress()
+
+		# Авто-сохранение (если включено)
+		var auto_save_mgr = get_node_or_null("/root/AutoSaveManager")
+		if auto_save_mgr:
+			auto_save_mgr.do_auto_save(1)
 
 
 func next_day():

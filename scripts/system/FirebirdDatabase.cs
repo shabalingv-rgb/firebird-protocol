@@ -819,6 +819,295 @@ private void CheckAndAddQuestForEmail(int emailId)
 		}
 	}
 
+	// === СОХРАНЕНИЯ: Создать новое сохранение ===
+	public bool CreateSaveSlot(int saveSlot)
+	{
+		if (saveSlot < 1)
+		{
+			GD.PrintErr("❌ CreateSaveSlot: номер слота должен быть >= 1");
+			return false;
+		}
+
+		try
+		{
+			// Проверяем существует ли слот
+			using (var cmd = new FbCommand("SELECT COUNT(*) as cnt FROM player_progress WHERE save_slot = @slot", _connection))
+			{
+				cmd.Parameters.Add("@slot", FbDbType.Integer).Value = saveSlot;
+				using var reader = cmd.ExecuteReader();
+				if (reader.Read())
+				{
+					int count = Convert.ToInt32(reader.GetValue(0));
+					if (count > 0)
+					{
+						GD.Print($"💾 Слот {saveSlot} уже существует");
+						return false;
+					}
+				}
+			}
+
+			// Создаём пустое сохранение
+			using (var cmd = new FbCommand(@"
+				INSERT INTO player_progress (save_slot, user_role, current_day, violations, trust_level, last_saved)
+				VALUES (@slot, 'employee', 1, 0, 50, CURRENT_TIMESTAMP)
+			", _connection))
+			{
+				cmd.Parameters.Add("@slot", FbDbType.Integer).Value = saveSlot;
+				cmd.ExecuteNonQuery();
+			}
+
+			GD.Print($"✅ Слот сохранения {saveSlot} создан");
+			return true;
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка создания слота: {e.Message}");
+			return false;
+		}
+	}
+
+	// === СОХРАНЕНИЯ: Получить список всех слотов ===
+	public GArray GetSaveSlotsList()
+	{
+		var slots = new GArray();
+
+		try
+		{
+			var result = ExecuteQuery(@"
+				SELECT save_slot, user_role, current_day, violations, trust_level,
+				       total_playtime_minutes, last_saved
+				FROM player_progress
+				ORDER BY save_slot
+			");
+
+			if (result != null)
+			{
+				foreach (var slotVariant in result)
+				{
+					var slot = (GDictionary)(Variant)slotVariant;
+					slots.Add(slot);
+				}
+			}
+
+			GD.Print($"📊 Найдено слотов сохранений: {slots.Count}");
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка получения слотов: {e.Message}");
+		}
+
+		return slots;
+	}
+
+	// === СОХРАНЕНИЯ: Удалить сохранение ===
+	public bool DeleteSaveSlot(int saveSlot)
+	{
+		if (saveSlot < 1)
+		{
+			GD.PrintErr("❌ DeleteSaveSlot: номер слота должен быть >= 1");
+			return false;
+		}
+
+		FbTransaction transaction = null;
+		try
+		{
+			transaction = _connection.BeginTransaction();
+
+			// Удаляем прогресс
+			using (var cmd = new FbCommand("DELETE FROM player_progress WHERE save_slot = @slot", _connection, transaction))
+			{
+				cmd.Parameters.Add("@slot", FbDbType.Integer).Value = saveSlot;
+				cmd.ExecuteNonQuery();
+			}
+
+			// player_choices не имеет колонки save_slot — оставляем историю выборов
+			// (при необходимости можно добавить миграцию позже)
+
+			transaction.Commit();
+			GD.Print($"🗑️ Слот {saveSlot} удалён");
+			return true;
+		}
+		catch (Exception e)
+		{
+			transaction?.Rollback();
+			GD.PrintErr($"❌ Ошибка удаления слота: {e.Message}");
+			return false;
+		}
+		finally
+		{
+			transaction?.Dispose();
+		}
+	}
+
+	// === СОХРАНЕНИЯ: Сохранить текущее состояние игры ===
+	public void AutoSave(int saveSlot, int currentDay, int violations, int trustLevel,
+						 GDictionary flags, GArray completedQuests, int playtimeMinutes)
+	{
+		if (saveSlot < 1)
+		{
+			GD.PrintErr("❌ AutoSave: номер слота должен быть >= 1");
+			return;
+		}
+
+		try
+		{
+			string flagsJson = System.Text.Json.JsonSerializer.Serialize(flags);
+			string questsJson = System.Text.Json.JsonSerializer.Serialize(completedQuests);
+
+			const string updateSql = @"
+				UPDATE player_progress SET
+					current_day = @day,
+					violations = @violations,
+					trust_level = @trust,
+					flags_unlocked = @flagsJson,
+					quests_completed = @questsJson,
+					total_playtime_minutes = @playtime,
+					last_saved = CURRENT_TIMESTAMP
+				WHERE save_slot = @slot";
+
+			using (var cmd = new FbCommand(updateSql, _connection))
+			{
+				cmd.Parameters.Add("@day", FbDbType.Integer).Value = currentDay;
+				cmd.Parameters.Add("@violations", FbDbType.Integer).Value = violations;
+				cmd.Parameters.Add("@trust", FbDbType.Integer).Value = trustLevel;
+				cmd.Parameters.Add("@flagsJson", FbDbType.VarChar).Value = flagsJson ?? "{}";
+				cmd.Parameters.Add("@questsJson", FbDbType.VarChar).Value = questsJson ?? "[]";
+				cmd.Parameters.Add("@playtime", FbDbType.Integer).Value = playtimeMinutes;
+				cmd.Parameters.Add("@slot", FbDbType.Integer).Value = saveSlot;
+
+				int updated = cmd.ExecuteNonQuery();
+				if (updated == 0)
+				{
+					// Слот не найден — создаём
+					const string insertSql = @"
+						INSERT INTO player_progress (save_slot, user_role, current_day, violations, trust_level, flags_unlocked, quests_completed, total_playtime_minutes, last_saved)
+						VALUES (@slot, 'employee', @day, @violations, @trust, @flagsJson, @questsJson, @playtime, CURRENT_TIMESTAMP)";
+					using var ins = new FbCommand(insertSql, _connection);
+					ins.Parameters.Add("@slot", FbDbType.Integer).Value = saveSlot;
+					ins.Parameters.Add("@day", FbDbType.Integer).Value = currentDay;
+					ins.Parameters.Add("@violations", FbDbType.Integer).Value = violations;
+					ins.Parameters.Add("@trust", FbDbType.Integer).Value = trustLevel;
+					ins.Parameters.Add("@flagsJson", FbDbType.VarChar).Value = flagsJson ?? "{}";
+					ins.Parameters.Add("@questsJson", FbDbType.VarChar).Value = questsJson ?? "[]";
+					ins.Parameters.Add("@playtime", FbDbType.Integer).Value = playtimeMinutes;
+					ins.ExecuteNonQuery();
+					GD.Print($"✅ Авто-сохранение: слот {saveSlot} создан, день {currentDay}, время {playtimeMinutes} мин");
+				}
+				else
+				{
+					GD.Print($"💾 Авто-сохранение: слот {saveSlot}, день {currentDay}, время {playtimeMinutes} мин");
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка авто-сохранения: {e.Message}");
+		}
+	}
+
+	// === СОХРАНЕНИЯ: Загрузить историю выборов ===
+	public GArray GetPlayerChoices(int saveSlot)
+	{
+		var choices = new GArray();
+
+		if (saveSlot < 1)
+		{
+			GD.PrintErr("❌ GetPlayerChoices: номер слота должен быть >= 1");
+			return choices;
+		}
+
+		try
+		{
+			// player_choices не имеет колонки save_slot — возвращаем все выборы
+			using var cmd = new FbCommand(@"
+				SELECT quest_id, choice_type, choice_value, day_id, choice_timestamp
+				FROM player_choices
+				ORDER BY choice_timestamp
+			", _connection);
+
+			using var reader = cmd.ExecuteReader();
+			while (reader.Read())
+			{
+				var choice = new GDictionary();
+				choice["quest_id"] = ConvertToVariant(reader.GetValue(0));
+				choice["choice_type"] = ConvertToVariant(reader.GetValue(1));
+				choice["choice_value"] = ConvertToVariant(reader.GetValue(2));
+				choice["day_id"] = ConvertToVariant(reader.GetValue(3));
+				choice["choice_timestamp"] = ConvertToVariant(reader.GetValue(4));
+				choices.Add(choice);
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка загрузки выборов: {e.Message}");
+		}
+
+		return choices;
+	}
+
+	// === СОХРАНЕНИЯ: Получить статистику ===
+	public GDictionary GetGameStatistics(int saveSlot)
+	{
+		var stats = new GDictionary();
+
+		if (saveSlot < 1)
+		{
+			GD.PrintErr("❌ GetGameStatistics: номер слота должен быть >= 1");
+			return stats;
+		}
+
+		try
+		{
+			// Общая статистика прогресса
+			var progress = ExecuteQuery($"SELECT * FROM player_progress WHERE save_slot = {saveSlot}");
+			if (progress != null && progress.Count > 0)
+			{
+				stats["progress"] = progress[0];
+			}
+
+			// Количество выполненных заданий (парсим JSON из quests_completed)
+			var progressData = ExecuteQuery($"SELECT quests_completed FROM player_progress WHERE save_slot = {saveSlot}");
+			int questsCount = 0;
+			if (progressData != null && progressData.Count > 0)
+			{
+				var row = (GDictionary)progressData[0];
+				Variant questsVal = row.ContainsKey("QUESTS_COMPLETED") ? row["QUESTS_COMPLETED"] : row["quests_completed"];
+				if (questsVal.VariantType == Variant.Type.String)
+				{
+					string questsJson = questsVal.AsString();
+					if (!string.IsNullOrEmpty(questsJson) && questsJson != "[]")
+					{
+						var questIds = System.Text.Json.JsonSerializer.Deserialize<GArray>(questsJson);
+						if (questIds != null)
+							questsCount = questIds.Count;
+					}
+				}
+			}
+			stats["quests_completed_count"] = Variant.From(questsCount);
+
+			// Использованные SQL команды
+			var sqlStats = ExecuteQuery(@"
+				SELECT command_name, times_used
+				FROM sql_commands
+				WHERE times_used > 0
+				ORDER BY times_used DESC
+			");
+			stats["sql_usage"] = sqlStats ?? new GArray();
+
+			// Всего писем прочитано
+			var emailsRead = ExecuteQuery("SELECT COUNT(DISTINCT id) as cnt FROM emails WHERE is_read = 1");
+			stats["emails_read"] = (emailsRead != null && emailsRead.Count > 0) ? ((GDictionary)emailsRead[0])["CNT"] : Variant.From(0);
+
+			GD.Print("📊 Статистика загружена");
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"❌ Ошибка загрузки статистики: {e.Message}");
+		}
+
+		return stats;
+	}
+
 	/// <summary>Сохранить выбор игрока (отчёт из почты и т.д.).</summary>
 	public void SavePlayerChoice(int questId, string choiceType, string choiceValue, int dayId)
 	{
