@@ -6,6 +6,7 @@ signal quest_started(quest: Dictionary)
 signal quest_completed(quest: Dictionary, success: bool)
 signal day_completed(day_number: int)
 signal violation_added(count: int, reason: String)
+signal progress_loaded(current_day: int)
 #signal role_completed(role: String)
 
 # Autoload DatabaseManager = C# FirebirdDatabase (см. project.godot → Autoload)
@@ -226,6 +227,9 @@ func load_progress():
 		completed_quests = []
 	
 	print("💾 Прогресс загружен: День ", current_day, ", Нарушения: ", violations)
+	
+	# Уведомляем другие системы что прогресс загружен
+	progress_loaded.emit(current_day)
 
 func reset_progress():
 	"""Сброс прогресса"""

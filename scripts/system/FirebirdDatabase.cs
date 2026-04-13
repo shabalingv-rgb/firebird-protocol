@@ -948,57 +948,46 @@ private void CheckAndAddQuestForEmail(int emailId)
 	}
 
 	// === СПРАВКА: Загрузка всех доступных тем ===
-	public GArray GetAvailableGuideTopics(int dayId, string category = "")
+	public GArray GetAvailableGuideTopics(int dayId)
 	{
-		GD.Print($"📚 GetAvailableGuideTopics(day={dayId}, category={category})");
-		
+		GD.Print($"📚 GetAvailableGuideTopics(day={dayId})");
+
 		var topics = new GArray();
-		
+
 		try
 		{
-			string sql = @"
-				SELECT id, topic_key, title, content, sql_example, category, sort_order
-				FROM guide_topics 
-				WHERE min_day <= @day AND max_day >= @day";
-			
-			if (!string.IsNullOrEmpty(category))
+			string sql = $"SELECT id, topic_key, title, content, sql_example, category, sort_order, min_day, max_day " +
+				$"FROM guide_topics " +
+				$"WHERE min_day <= {dayId} AND max_day >= {dayId} " +
+				$"ORDER BY sort_order, title";
+
+			var result = ExecuteQuery(sql);
+			if (result != null)
 			{
-				sql += " AND category = @category";
+				foreach (var item in result)
+				{
+					GDictionary row = (GDictionary)(Variant)item;
+					var topic = new GDictionary();
+					topic["id"] = row.ContainsKey("ID") ? row["ID"] : Variant.From(0);
+					topic["topic_key"] = row.ContainsKey("TOPIC_KEY") ? row["TOPIC_KEY"] : Variant.From("");
+					topic["title"] = row.ContainsKey("TITLE") ? row["TITLE"] : Variant.From("");
+					topic["content"] = row.ContainsKey("CONTENT") ? row["CONTENT"] : Variant.From("");
+					topic["sql_example"] = row.ContainsKey("SQL_EXAMPLE") ? row["SQL_EXAMPLE"] : Variant.From("");
+					topic["category"] = row.ContainsKey("CATEGORY") ? row["CATEGORY"] : Variant.From("");
+					topic["sort_order"] = row.ContainsKey("SORT_ORDER") ? row["SORT_ORDER"] : Variant.From(0);
+					topic["min_day"] = row.ContainsKey("MIN_DAY") ? row["MIN_DAY"] : Variant.From(1);
+					topic["max_day"] = row.ContainsKey("MAX_DAY") ? row["MAX_DAY"] : Variant.From(999);
+					topics.Add(topic);
+				}
 			}
-			
-			sql += " ORDER BY sort_order, title";
-			
-			using var cmd = new FbCommand(sql, _connection);
-			cmd.Parameters.Add("@day", FbDbType.Integer).Value = dayId;
-			
-			if (!string.IsNullOrEmpty(category))
-			{
-				cmd.Parameters.Add("@category", FbDbType.VarChar).Value = category;
-			}
-			
-			using var reader = cmd.ExecuteReader();
-			
-			while (reader.Read())
-			{
-				var topic = new GDictionary();
-				topic["id"] = Variant.From(reader.GetValue(0));
-				topic["topic_key"] = Variant.From(reader.GetValue(1));
-				topic["title"] = Variant.From(reader.GetValue(2));
-				topic["content"] = Variant.From(reader.GetValue(3));
-				topic["sql_example"] = Variant.From(reader.GetValue(4));
-				topic["category"] = Variant.From(reader.GetValue(5));
-				topic["sort_order"] = Variant.From(reader.GetValue(6));
-				
-				topics.Add(topic);
-			}
-			
+
 			GD.Print($"📊 Найдено тем: {topics.Count}");
 		}
 		catch (Exception e)
 		{
 			GD.PrintErr($"❌ Ошибка загрузки тем: {e.Message}");
 		}
-		
+
 		return topics;
 	}
 

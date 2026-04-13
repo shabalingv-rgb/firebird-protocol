@@ -3,8 +3,8 @@ extends Control
 @onready var search_bar = $Header/SearchBar
 @onready var categories_tree = $ContentContainer/Sidebar/CategoriesTree
 @onready var progress_label = $ContentContainer/Sidebar/ProgressLabel
-@onready var article_title = $MainContent/ContentMargin/ArticleTitle
-@onready var content_label = $MainContent/ContentMargin/ArticleContent
+@onready var article_title = $MainContent/ContentMargin/VBox/ArticleTitle
+@onready var content_label = $MainContent/ContentMargin/VBox/ArticleContent
 @onready var code_example = $CodeExample
 @onready var prev_button = $NavigationButtons/PrevButton
 @onready var next_button = $NavigationButtons/NextButton
@@ -110,11 +110,13 @@ func show_article(topic_id: String):
 	var topic = GuideSystem.guide_database[topic_id]
 	article_title.text = topic.title
 
-	# ✅ Включаем BBCode для корректного отображения форматирования
+	# Очищаем и устанавливаем контент (предотвращает наложение)
+	content_label.clear()
 	content_label.bbcode_enabled = true
 	content_label.text = topic.content
 
 	var example = topic.get("example", "")
+	code_example.clear()
 	code_example.bbcode_enabled = true
 	code_example.text = example
 
@@ -132,8 +134,10 @@ func _on_prev_pressed():
 		current_topic_id = prev_topic
 		var topic = GuideSystem.guide_database[prev_topic]
 		article_title.text = topic.title
+		content_label.clear()
 		content_label.bbcode_enabled = true
 		content_label.text = topic.content
+		code_example.clear()
 		code_example.bbcode_enabled = true
 		code_example.text = topic.get("example", "")
 		update_navigation_buttons()
@@ -146,8 +150,10 @@ func _on_next_pressed():
 		current_topic_id = next_topic
 		var topic = GuideSystem.guide_database[next_topic]
 		article_title.text = topic.title
+		content_label.clear()
 		content_label.bbcode_enabled = true
 		content_label.text = topic.content
+		code_example.clear()
 		code_example.bbcode_enabled = true
 		code_example.text = topic.get("example", "")
 		update_navigation_buttons()
@@ -210,9 +216,9 @@ func extract_sql_from_bbcode(text: String) -> String:
 	return ""
 	
 func update_progress():
-	var total = GuideSystem.guide_database.size()
 	var unlocked = GuideSystem.unlocked_topics.size()
-	progress_label.text = "Изучено: %d/%d тем" % [unlocked, total]
+	var read = GuideSystem.read_articles.size()
+	progress_label.text = "Изучено: %d/%d тем" % [read, unlocked]
 
 func _on_search_changed(new_text: String):
 	if new_text.is_empty():
