@@ -144,11 +144,21 @@ func _create_slot_ui(slot_number: int, slot_data: Dictionary) -> void:
 
 	slot_container.add_child(info_container)
 
-	# ── Кнопки ──
-	var btn_container := VBoxContainer.new()
+	# ── Кнопки (горизонтально) ──
+	var btn_container := HBoxContainer.new()
 	btn_container.add_theme_constant_override("separation", 10)
+	btn_container.size_flags_horizontal = Control.SIZE_SHRINK_END
+	btn_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	if not slot_data.is_empty():
+		# Порядок: Сохранить → Загрузить → Удалить
+
+		# Кнопка сохранения — только если пришли из пауз-меню
+		if _came_from_pause():
+			var save_btn := _make_button("💾 Сохранить", Color(0, 1, 0, 1), Color(0, 0.2, 0, 1))
+			save_btn.pressed.connect(_on_save_current.bind(slot_number))
+			btn_container.add_child(save_btn)
+
 		# Кнопка загрузки
 		var load_btn := _make_button("📥 Загрузить", Color(0, 1, 0, 1), Color(0, 0.3, 0, 1))
 		load_btn.pressed.connect(_on_load_pressed.bind(slot_number))
@@ -183,7 +193,8 @@ func _make_button(text: String, font_color: Color, bg_color: Color) -> Button:
 	btn.text = text
 	btn.add_theme_font_override("font", _retro_font())
 	btn.add_theme_font_size_override("font_size", 12)
-	btn.custom_minimum_size = Vector2(180, 36)
+	btn.custom_minimum_size = Vector2(160, 36)
+	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	# Стиль кнопки
 	var style := StyleBoxFlat.new()
@@ -336,10 +347,55 @@ func _on_autosave_toggled() -> void:
 # ──────────── Навигация ────────────
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/main_menu/main_menu.tscn.tscn")
+	# Если пришли из пауз-меню — возвращаемся туда, иначе в главное меню
+	if GameState and GameState.previous_scene != "":
+		var target = GameState.previous_scene
+		GameState.previous_scene = ""
+		get_tree().change_scene_to_file(target)
+	else:
+		get_tree().change_scene_to_file("res://scenes/main_menu/main_menu.tscn.tscn")
 
 
 # ──────────── Утилиты ────────────
+
+func _came_from_pause() -> bool:
+	"""Проверка: пришли ли мы из пауз-меню (через кнопку «Сохранить»)."""
+	if GameState:
+		return GameState.previous_scene.begins_with("res://scenes/") and GameState.previous_scene != "res://scenes/main_menu/main_menu.tscn.tscn"
+	return false
+
+
+func _on_save_current(slot_number: int) -> void:
+	"""Сохранить текущий прогресс в указанный слот и вернуться в игру."""
+	print("💾 Сохранение в слот %d..." % slot_number)
+
+	if not DatabaseManager or not QuestManager:
+		_show_error_dialog("Невозможно сохранить — данные не доступны.")
+		return
+
+	var auto_mgr = get_node_or_null("/root/AutoSaveManager")
+	var playtime = auto_mgr.get_playtime_minutes() if auto_mgr else 0
+
+	DatabaseManager.AutoSave(
+		slot_number,
+		QuestManager.current_day,
+		QuestManager.violations,
+		QuestManager.trust_level,
+		QuestManager.story_flags,
+		QuestManager.completed_quests,
+		playtime
+	)
+
+	print("✅ Слот %d сохранён — возвращаюсь в игру" % slot_number)
+
+	# Возвращаемся в предыдущую сцену
+	if GameState and GameState.previous_scene != "":
+		var target = GameState.previous_scene
+		GameState.previous_scene = ""
+		get_tree().change_scene_to_file(target)
+	else:
+		get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
+
 
 func _retro_font() -> FontFile:
 	return preload("res://assets/fonts/PressStart2P-Regular.ttf")

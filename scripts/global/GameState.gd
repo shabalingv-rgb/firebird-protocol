@@ -32,6 +32,9 @@ var terminal_preset_query: String = ""
 # Режим для save_manager (устанавливается из главного меню)
 var save_manager_mode: String = "load"  # "create" или "load"
 
+# Путь к сцене, откуда пришли в save_manager (для кнопки "Назад")
+var previous_scene: String = ""
+
 func _ready():
 	# Инициализация при старте игры
 	load_game_state()

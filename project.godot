@@ -24,6 +24,7 @@ GuideSystem="*uid://bjwcspsofnsfi"
 DatabaseManager="*uid://h85iqknxq553"
 GlobalInput="res://scripts/system/global_input.gd"
 AutoSaveManager="res://scripts/system/auto_save_manager.gd"
+PauseMenu="res://scenes/pause_menu/pause_menu.tscn"
 
 [display]
 

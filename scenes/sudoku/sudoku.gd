@@ -246,7 +246,7 @@ func _show_hint() -> void:
 		puzzle[hint_idx] = solution[hint_idx]
 		_selected_index = hint_idx
 		_refresh_all_cells()
-		_status_label.text = "Подсказка: в клетку (%d, %d) поставлено %d." % [hint_idx / 9 + 1, hint_idx % 9 + 1, solution[hint_idx]]
+		_status_label.text = "Подсказка: в клетку (%d, %d) поставлено %d." % [floori(hint_idx / 9.0) + 1, hint_idx % 9 + 1, solution[hint_idx]]
 		_check_win_after_move()
 
 
