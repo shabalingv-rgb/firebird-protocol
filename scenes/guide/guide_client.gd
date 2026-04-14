@@ -45,7 +45,13 @@ func _input(event):
 			search_bar.grab_focus()
 			search_bar.select_all()
 		elif event.keycode == KEY_ESCAPE:
-			_on_close_pressed()
+			# Esc → пауз-меню (вместо прямого выхода на рабочий стол)
+			var pause_menu = get_node_or_null("/root/PauseMenu")
+			if pause_menu and not pause_menu.is_open:
+				pause_menu.show_menu()
+				get_viewport().set_input_as_handled()  # чтобы PauseMenu не поймал тот же Esc
+			else:
+				_on_close_pressed()
 
 func load_guide():
 	categories_tree.clear()

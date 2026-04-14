@@ -206,6 +206,10 @@ func _input(event):
 		if (event.ctrl_pressed or event.meta_pressed) and event.keycode in [KEY_C, KEY_V, KEY_X, KEY_A]:
 			return
 
+		# Esc — открываем паузу (не блокируем)
+		if event.keycode == KEY_ESCAPE:
+			return
+
 		# Всё остальное (включая русские буквы) — блокируем
 		get_viewport().set_input_as_handled()
 
