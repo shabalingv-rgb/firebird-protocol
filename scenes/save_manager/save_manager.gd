@@ -285,7 +285,7 @@ func _on_create_pressed(slot_number: int) -> void:
 
 	var success: bool = DatabaseManager.CreateSaveSlot(slot_number)
 	if success:
-		print("✅ Слот %d создан — запускаю игру" % slot_number)
+		print("✅ Слот %d создан — показываю интро-дату" % slot_number)
 
 		# Инициализируем QuestManager для новой игры
 		if QuestManager:
@@ -298,8 +298,16 @@ func _on_create_pressed(slot_number: int) -> void:
 			GameState.security_violations = 0
 			GameState.story_flags = {}
 
-		# Сразу запускаем рабочий стол (день 1)
-		get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
+		# Скрываем save_manager, чтобы интро было на тёмном фоне
+		visible = false
+
+		# Показываем начальную дату — 24 июня 1990
+		var packed := load("res://scenes/desktop/next_day_transition.tscn") as PackedScene
+		var transition := packed.instantiate() as Control
+		transition.show_intro_date()
+
+		get_tree().root.add_child(transition)
+		# Сцена сама перейдёт на desktop через 3 секунды (см. _ready)
 	else:
 		_show_error_dialog("Ошибка создания слота %d.\nВозможно, слот уже существует." % slot_number)
 

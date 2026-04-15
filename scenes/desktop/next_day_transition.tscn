@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=3 format=3 uid="uid://c8m3k5xn7rq9e"]
 
 [ext_resource type="Script" path="res://scenes/desktop/next_day_transition.gd" id="1"]
 [ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2"]
@@ -6,7 +6,7 @@
 [sub_resource type="LabelSettings" id="LabelSettings_1"]
 font = ExtResource("2")
 font_color = Color(0, 1, 0, 1)
-font_size = 48
+font_size = 20
 shadow_color = Color(0, 0.5, 0, 1)
 shadow_size = 8
 
@@ -35,14 +35,14 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -400.0
-offset_top = -60.0
-offset_right = 400.0
-offset_bottom = 60.0
+offset_left = -500.0
+offset_top = -140.0
+offset_right = 500.0
+offset_bottom = 140.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 label_settings = SubResource("LabelSettings_1")
-text = "День 1"
+text = "Кафе «ФайрБёрд»"
