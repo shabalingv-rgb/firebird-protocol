@@ -258,6 +258,8 @@ func _check_win_after_move() -> void:
 		if puzzle[i] != solution[i]:
 			_status_label.text = "Все клетки заполнены, но есть ошибки. Проверьте цифры."
 			return
+	
+	# Победа!
 	_status_label.text = "Победа! Судоку решён верно."
 	_on_sudoku_completed(true)
 
