@@ -291,6 +291,12 @@ func _show_hr_email_notification() -> void:
 	var dialog = AcceptDialog.new()
 	dialog.title = "📬 НОВОЕ ПИСЬМО!"
 	dialog.dialog_text = "Вам пришло письмо от Отдела кадров НИИ \"Файербёрд\".\n\nПроверьте почту на рабочем столе."
+	
+	# Применяем системный игровой шрифт
+	var system_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+	dialog.add_theme_font_override("font", system_font)
+	dialog.add_theme_font_size_override("font_size", 16)
+	
 	add_child(dialog)
 	dialog.popup_centered(Vector2i(500, 200))
 	dialog.confirmed.connect(dialog.queue_free)
