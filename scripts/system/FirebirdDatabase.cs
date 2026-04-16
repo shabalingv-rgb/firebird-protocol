@@ -430,50 +430,9 @@ public partial class FirebirdDatabase : Node
 			GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
 		}
 
-		// Проверяем и добавляем задание для email_id=2 (первое задание), если его нет
-		CheckAndAddQuestForEmail(2);
-
 		EmitSignal(SignalName.ContentLoaded);
 		GD.Print("✅ Кэш загружен");
 	}
-
-private void CheckAndAddQuestForEmail(int emailId)
-{
-	GD.Print("🔍 Проверка задания для email_id=", emailId);
-	
-	// ✅ Простой способ: проверяем через ExecuteQuery и считаем результат
-	var checkResult = ExecuteQuery($"SELECT id FROM quests WHERE email_id = {emailId}");
-	
-	GD.Print("📊 Найдено заданий: ", checkResult.Count);
-	
-	if (checkResult.Count > 0)
-	{
-		GD.Print("✅ Задание для email_id=", emailId, " уже существует");
-		return;
-	}
-	
-	// Добавляем задание
-	GD.Print("📋 Добавляем задание для email_id=", emailId);
-	
-	try
-	{
-		ExecuteNonQuery($@"
-            INSERT INTO quests (email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) 
-            VALUES ({emailId}, 'Первый запрос', 'Получите список всех сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM')
-		");
-		
-		GD.Print("✅ Задание добавлено!");
-		
-		// Обновляем кэш
-		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
-		GD.Print(" Кэш заданий обновлён: ", CachedQuests.Count);
-	}
-	catch (Exception e)
-	{
-		GD.PrintErr("❌ Ошибка добавления задания: ", e.Message);
-		GD.PrintErr("Stack: ", e.StackTrace);
-	}
-}
 
 	/// <summary>Выполнить SELECT из GDScript (терминал). При ошибке возвращает null — смотри GetLastError().</summary>
 	public GArray ExecuteQuery(string sql)
@@ -730,6 +689,7 @@ private void CheckAndAddQuestForEmail(int emailId)
 			fallbackProgress["trust_level"] = 50;
 			fallbackProgress["flags_unlocked"] = "{}";
 			fallbackProgress["quests_completed"] = "[]";
+			fallbackProgress["unlock_conditions"] = "{}";
 			fallbackProgress["endings_unlocked"] = "[]";
 			fallbackProgress["total_playtime_minutes"] = 0;
 			return fallbackProgress;
@@ -756,6 +716,7 @@ private void CheckAndAddQuestForEmail(int emailId)
 		defaultProgress["trust_level"] = 50;
 		defaultProgress["flags_unlocked"] = "{}";
 		defaultProgress["quests_completed"] = "[]";
+		defaultProgress["unlock_conditions"] = "{}";
 		defaultProgress["endings_unlocked"] = "[]";
 		defaultProgress["total_playtime_minutes"] = 0;
 
@@ -763,6 +724,11 @@ private void CheckAndAddQuestForEmail(int emailId)
 	}
 
 	public void SavePlayerProgress(string role, int day, int violations, Variant flagsVariant, Variant questsVariant)
+	{
+		SavePlayerProgressWithUnlocks(role, day, violations, flagsVariant, questsVariant, null);
+	}
+
+	public void SavePlayerProgressWithUnlocks(string role, int day, int violations, Variant flagsVariant, Variant questsVariant, Variant? unlockConditionsVariant)
 	{
 		try
 		{
@@ -773,6 +739,14 @@ private void CheckAndAddQuestForEmail(int emailId)
 			string questsJson = questsVariant.VariantType == Variant.Type.String
 				? questsVariant.AsString()
 				: System.Text.Json.JsonSerializer.Serialize(questsVariant.AsGodotArray());
+
+			string unlocksJson = "{}";
+			if (unlockConditionsVariant != null && unlockConditionsVariant.Value.VariantType != Variant.Type.Nil)
+			{
+				unlocksJson = unlockConditionsVariant.Value.VariantType == Variant.Type.String
+					? unlockConditionsVariant.Value.AsString()
+					: System.Text.Json.JsonSerializer.Serialize(unlockConditionsVariant.Value.AsGodotDictionary());
+			}
 			const int saveSlot = 1;
 
 			// Firebird не поддерживает ON CONFLICT — используем параметры (безопасно для кавычек в JSON) и UPDATE/INSERT
@@ -783,6 +757,7 @@ private void CheckAndAddQuestForEmail(int emailId)
 					violations = @violations,
 					flags_unlocked = @flagsJson,
 					quests_completed = @questsJson,
+					unlock_conditions = @unlocksJson,
 					last_saved = CURRENT_TIMESTAMP
 				WHERE save_slot = @saveSlot";
 
@@ -793,13 +768,14 @@ private void CheckAndAddQuestForEmail(int emailId)
 				cmd.Parameters.Add("@violations", FbDbType.Integer).Value = violations;
 				cmd.Parameters.Add("@flagsJson", FbDbType.VarChar).Value = flagsJson ?? "{}";
 				cmd.Parameters.Add("@questsJson", FbDbType.VarChar).Value = questsJson ?? "[]";
+				cmd.Parameters.Add("@unlocksJson", FbDbType.VarChar).Value = unlocksJson ?? "{}";
 				cmd.Parameters.Add("@saveSlot", FbDbType.Integer).Value = saveSlot;
 				int updated = cmd.ExecuteNonQuery();
 				if (updated == 0)
 				{
 					const string insertSql = @"
-						INSERT INTO player_progress (save_slot, user_role, current_day, violations, flags_unlocked, quests_completed, last_saved)
-						VALUES (@saveSlot, @role, @day, @violations, @flagsJson, @questsJson, CURRENT_TIMESTAMP)";
+						INSERT INTO player_progress (save_slot, user_role, current_day, violations, flags_unlocked, quests_completed, unlock_conditions, last_saved)
+						VALUES (@saveSlot, @role, @day, @violations, @flagsJson, @questsJson, @unlocksJson, CURRENT_TIMESTAMP)";
 					using var ins = new FbCommand(insertSql, _connection);
 					ins.Parameters.Add("@saveSlot", FbDbType.Integer).Value = saveSlot;
 					ins.Parameters.Add("@role", FbDbType.VarChar).Value = role ?? "";
@@ -807,6 +783,7 @@ private void CheckAndAddQuestForEmail(int emailId)
 					ins.Parameters.Add("@violations", FbDbType.Integer).Value = violations;
 					ins.Parameters.Add("@flagsJson", FbDbType.VarChar).Value = flagsJson ?? "{}";
 					ins.Parameters.Add("@questsJson", FbDbType.VarChar).Value = questsJson ?? "[]";
+					ins.Parameters.Add("@unlocksJson", FbDbType.VarChar).Value = unlocksJson ?? "{}";
 					ins.ExecuteNonQuery();
 				}
 			}

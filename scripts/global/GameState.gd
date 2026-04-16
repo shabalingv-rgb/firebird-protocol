@@ -19,9 +19,21 @@ var current_day: int = 0
 var security_violations: int = 0
 var is_game_over: bool = false
 
+# Статистика (из предложенного game_state.gd)
+var total_playtime_seconds: float = 0.0
+var emails_read: int = 0
+var quests_completed_count: int = 0
+
+func _process(delta: float) -> void:
+	total_playtime_seconds += delta  # float, НЕ int — иначе всегда 0
+
 # Флаги сюжета (ключ: значение)
 # Пример: "day_zero_passed": true, "journalist_contacted": false
 var story_flags: Dictionary = {}
+
+# Условия разблокировки (ключ: true/false)
+# Пример: "sudoku_completed": true
+var unlocked_conditions: Dictionary = {}
 
 # Сохранение прогресса (флаги, которые влияют на следующие кампании)
 var persistent_flags: Dictionary = {}
@@ -62,6 +74,13 @@ func get_flag(flag_name: String, default: bool = false) -> bool:
 func get_persistent_flag(flag_name: String, default: bool = false) -> bool:
 	return persistent_flags.get(flag_name, default)
 
+func set_unlock_condition(condition_name: String, value: bool = true):
+	unlocked_conditions[condition_name] = value
+	print("🔓 Условие разблокировки: ", condition_name, " = ", value)
+
+func is_condition_unlocked(condition_name: String) -> bool:
+	return unlocked_conditions.get(condition_name, false)
+
 func next_day():
 	current_day += 1
 	day_changed.emit(current_day)
@@ -81,7 +100,13 @@ func save_game_state():
 		"day": current_day,
 		"violations": security_violations,
 		"flags": story_flags,
-		"persistent": persistent_flags
+		"persistent": persistent_flags,
+		"unlocked_conditions": unlocked_conditions,
+		"stats": {
+			"total_playtime_seconds": total_playtime_seconds,
+			"emails_read": emails_read,
+			"quests_completed_count": quests_completed_count
+		}
 	}
 	file.store_string(JSON.stringify(data))
 	file.close()
@@ -99,6 +124,15 @@ func load_game_state():
 			security_violations = data.get("violations", 0)
 			story_flags = data.get("flags", {})
 			persistent_flags = data.get("persistent", {})
+			unlocked_conditions = data.get("unlocked_conditions", {})
+
+			# Восстанавливаем статистику
+			var stats = data.get("stats", {})
+			if stats is Dictionary:
+				total_playtime_seconds = float(stats.get("total_playtime_seconds", 0.0))
+				emails_read = int(stats.get("emails_read", 0))
+				quests_completed_count = int(stats.get("quests_completed_count", 0))
+
 			security_violation_changed.emit(security_violations)
 
 func advance_game_time(hours: int):
