@@ -28,3 +28,26 @@ func load_player_progress(save_slot: int = 1) -> Dictionary:
 
 func save_player_progress(role: String, day: int, violations: int, flags: Dictionary, quests: Array):
 	print("💾 Прогресс сохранён: день=", day)
+
+
+func save_player_progress_with_unlocks(role: String, day: int, violations: int, flags: Dictionary, quests: Array, unlock_conditions: Dictionary):
+	if has_node("/root/DatabaseManager"):
+		var fb = get_node("/root/DatabaseManager")
+		fb.SavePlayerProgressWithUnlocks(role, day, violations, flags, quests, unlock_conditions)
+	else:
+		print("💾 Прогресс сохранён (заглушка): день=", day)
+
+
+# ═══════════════════════════════════════════
+# Методы для unlock_conditions (обёртки)
+# ═══════════════════════════════════════════
+
+func set_unlock_condition(condition_name: String, value: bool = true):
+	if GameState and GameState.has_method("set_unlock_condition"):
+		GameState.set_unlock_condition(condition_name, value)
+
+
+func is_condition_unlocked(condition_name: String) -> bool:
+	if GameState and GameState.has_method("is_condition_unlocked"):
+		return GameState.is_condition_unlocked(condition_name)
+	return false

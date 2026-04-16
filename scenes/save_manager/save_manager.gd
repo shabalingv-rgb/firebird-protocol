@@ -1,17 +1,17 @@
 extends Control
-## Менеджер сохранений — создание, загрузка, удаление слотов.
-## Авто-сохранение и таймер времени делегированы autoload **AutoSaveManager**.
+## Менеджер сохранений — создание, загрузка, удаление слотов + автосохранение.
 ##
 ## Режимы работы (устанавливаются из главного меню):
 ##   mode = "create"  → «Новая игра»  — показать слоты, при создании → сразу в игру
 ##   mode = "load"    → «Продолжить»  — показать слоты, при загрузке → в игру
 
+const AUTOSAVE_SLOT := 0
+const MANUAL_SLOTS := 3
+
 @onready var slots_container: VBoxContainer = $SlotsPanel/SaveSlotsContainer
 @onready var autosave_checkbox: CheckBox = $AutoSaveContainer/AutoSaveCheckbox
 @onready var back_button: Button = $BackButton
 @onready var title_label: Label = $TitleLabel
-
-const MAX_SLOTS := 3
 
 var save_slots: Array = []
 var mode: String = "load"  # "create" или "load"
@@ -60,22 +60,101 @@ func _refresh_slots() -> void:
 	for child in slots_container.get_children():
 		child.queue_free()
 
-	for i in MAX_SLOTS:
+	# 1. Строка автосохранения (слот 0) — только загрузка
+	var auto_data := _find_slot_data(AUTOSAVE_SLOT)
+	_create_autosave_ui(auto_data)
+
+	# 2. Ручные слоты 1-3
+	for i in MANUAL_SLOTS:
 		var slot_number := i + 1
-		var slot_data: Dictionary = {}
-
-		for slot in save_slots:
-			var s: Dictionary = slot as Dictionary
-			var sv = s.get("SAVE_SLOT", s.get("save_slot", -1))
-			if int(sv) == slot_number:
-				slot_data = s
-				break
-
+		var slot_data := _find_slot_data(slot_number)
 		_create_slot_ui(slot_number, slot_data)
 
 
+func _find_slot_data(slot_number: int) -> Dictionary:
+	for slot in save_slots:
+		var s: Dictionary = slot as Dictionary
+		var sv = s.get("SAVE_SLOT", s.get("save_slot", -1))
+		if int(sv) == slot_number:
+			return s
+	return {}
+
+
+# ──────────── Автосохранение (первая строка) ────────────
+
+func _create_autosave_ui(slot_data: Dictionary) -> void:
+	var slot_container := HBoxContainer.new()
+	slot_container.name = "AutoSaveSlot"
+	slot_container.add_theme_constant_override("separation", 20)
+	slot_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# Стиль — пунктирная рамка (через тонкую зелёную)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0.04, 0, 0.5)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(0, 0.6, 0, 0.7)
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
+
+	if not slot_data.is_empty():
+		style.border_color = Color(0, 1, 0, 1)
+	slot_container.add_theme_stylebox_override("panel", style)
+
+	# ── Информация ──
+	var info_container := VBoxContainer.new()
+	info_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var title := Label.new()
+	title.text = "⏱ Автосохранение"
+	title.add_theme_font_override("font", _retro_font())
+	title.add_theme_font_size_override("font_size", 12)
+	title.add_theme_color_override("font_color", Color(0, 1, 0, 1))
+	info_container.add_child(title)
+
+	if not slot_data.is_empty():
+		var day: int = int(slot_data.get("CURRENT_DAY", slot_data.get("current_day", 0)))
+		var playtime: int = int(slot_data.get("TOTAL_PLAYTIME_MINUTES", slot_data.get("total_playtime_minutes", 0)))
+		var last_saved: String = str(slot_data.get("LAST_SAVED", slot_data.get("last_saved", "")))
+
+		_add_info_label(info_container, "День: %d" % day, Color(0, 0.85, 0, 1))
+		_add_info_label(info_container, "Время игры: %d мин" % playtime, Color(0, 0.85, 0, 1))
+
+		if last_saved != "":
+			_add_info_label(info_container, "Сохранено: %s" % last_saved, Color(0, 0.7, 0, 1))
+	else:
+		var empty_label := Label.new()
+		empty_label.text = "Нет автосохранения"
+		empty_label.add_theme_font_override("font", _retro_font())
+		empty_label.add_theme_font_size_override("font_size", 10)
+		empty_label.add_theme_color_override("font_color", Color(0, 0.5, 0, 0.7))
+		info_container.add_child(empty_label)
+
+	slot_container.add_child(info_container)
+
+	# ── Кнопка «Загрузить» (только она) ──
+	var btn_container := HBoxContainer.new()
+	btn_container.add_theme_constant_override("separation", 10)
+	btn_container.size_flags_horizontal = Control.SIZE_SHRINK_END
+	btn_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	if not slot_data.is_empty():
+		var load_btn := _make_button("📥 Загрузить", Color(0, 1, 0, 1), Color(0, 0.3, 0, 1))
+		load_btn.pressed.connect(_on_load_pressed.bind(AUTOSAVE_SLOT))
+		btn_container.add_child(load_btn)
+
+	slot_container.add_child(btn_container)
+	slots_container.add_child(slot_container)
+
+
+# ──────────── Ручные слоты (1-3) ────────────
+
 func _create_slot_ui(slot_number: int, slot_data: Dictionary) -> void:
-	"""Создание UI-элемента для одного слота."""
+	"""Создание UI-элемента для одного ручного слота."""
 	var slot_container := HBoxContainer.new()
 	slot_container.name = "Slot%d" % slot_number
 	slot_container.add_theme_constant_override("separation", 20)
@@ -98,7 +177,6 @@ func _create_slot_ui(slot_number: int, slot_data: Dictionary) -> void:
 	else:
 		style.border_color = Color(0, 0.5, 0, 0.6)  # тёмно-зелёная — пустой слот
 	slot_container.add_theme_stylebox_override("panel", style)
-	slot_container.add_theme_constant_override("separation", 20)
 
 	# ── Информация ──
 	var info_container := VBoxContainer.new()
@@ -270,6 +348,13 @@ func _on_load_pressed(slot_number: int) -> void:
 		GameState.current_day = QuestManager.current_day
 		GameState.security_violations = QuestManager.violations
 		GameState.story_flags = QuestManager.story_flags.duplicate()
+		# Загружаем unlock_conditions из БД
+		var raw_unlock = progress.get("UNLOCK_CONDITIONS", progress.get("unlock_conditions", null))
+		if raw_unlock != null and str(raw_unlock).length() > 0:
+			var parsed_unlock = JSON.parse_string(str(raw_unlock))
+			GameState.unlocked_conditions = parsed_unlock if parsed_unlock is Dictionary else {}
+		else:
+			GameState.unlocked_conditions = {}
 
 	get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
 
@@ -297,6 +382,7 @@ func _on_create_pressed(slot_number: int) -> void:
 			GameState.current_day = 1
 			GameState.security_violations = 0
 			GameState.story_flags = {}
+			GameState.unlocked_conditions = {}
 
 		# Скрываем save_manager, чтобы интро было на тёмном фоне
 		visible = false

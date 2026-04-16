@@ -264,45 +264,36 @@ func _check_win_after_move() -> void:
 	_on_sudoku_completed(true)
 
 
-func _on_sudoku_completed(is_success: bool):
+func _on_sudoku_completed(is_success: bool) -> void:
 	"""Вызывается когда игрок завершил партию в Судоку"""
 	print("🧩 Судоку завершено! Успех: ", is_success)
-	
+
 	if not is_success:
 		return
-	
-	# Отмечаем что Судоку пройдено
+
+	# Устанавливаем условие разблокировки через GameState
 	var game_state = get_node_or_null("/root/GameState")
-	if game_state:
-		game_state.sudoku_completed = true
-	
-	# 📧 Отправляем письмо от HR!
-	var db_manager = get_node_or_null("/root/DatabaseManager")
-	if db_manager:
-		# Обновляем письмо - убираем условие блокировки
-		db_manager.call("ExecuteNonQuery", 
-			"UPDATE emails SET unlock_condition = NULL WHERE subject = 'Приглашение на работу'")
-		
-		print("📧 Письмо от HR разблокировано!")
-	
-	# Показываем уведомление
+	if game_state and game_state.has_method("set_unlock_condition"):
+		game_state.set_unlock_condition("sudoku_completed", true)
+
+	# Сохраняем состояние
+	if game_state and game_state.has_method("save_game_state"):
+		game_state.save_game_state()
+
+	print("🔓 Условие 'sudoku_completed' установлено — письмо от HR разблокировано!")
+
+	# Показываем уведомление о новом письме
 	_show_hr_email_notification()
 
 
-func _show_hr_email_notification():
-	"""Показ уведомления о новом письме"""
-	var notification = """
-[color=green]📬 НОВОЕ ПИСЬМО![/color]
-
-Вам пришло письмо от Отдела кадров НИИ "Файербёрд".
-
-Нажмите Enter чтобы продолжить...
-"""
-	# Временная реализация - вывод в лог
-	print(notification)
-	
-	# TODO: Реализовать показ уведомления через UI (диалог или overlay)
-	# Можно использовать существующий Label или создать новый узел уведомления
+func _show_hr_email_notification() -> void:
+	"""Показ уведомления о новом письме от HR"""
+	var dialog = AcceptDialog.new()
+	dialog.title = "📬 НОВОЕ ПИСЬМО!"
+	dialog.dialog_text = "Вам пришло письмо от Отдела кадров НИИ \"Файербёрд\".\n\nПроверьте почту на рабочем столе."
+	add_child(dialog)
+	dialog.popup_centered(Vector2i(500, 200))
+	dialog.confirmed.connect(dialog.queue_free)
 
 
 func _unhandled_input(event: InputEvent) -> void:

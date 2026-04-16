@@ -120,6 +120,12 @@ func load_emails_for_day(day_number: int):
 		if already_archived:
 			continue
 
+		# Проверяем условие разблокировки
+		var unlock_condition = gd_email.get("unlock_condition", "").strip_edges()
+		if unlock_condition != "" and not _is_condition_met(unlock_condition):
+			print("🔒 Письмо заблокировано: ", gd_email.get("subject", ""), " (условие: ", unlock_condition, ")")
+			continue
+
 		current_emails.append(gd_email)
 
 	if current_emails.is_empty():
@@ -156,6 +162,22 @@ func refresh_inbox():
 		inbox_list.add_item(icon + subject + " — " + sender)
 		inbox_list.set_item_metadata(inbox_list.item_count - 1, inbox_list.item_count - 1)
 
+	# Показываем заблокированные письма (серые, без доступа)
+	var all_emails = DatabaseManager.GetEmailsForDay(QuestManager.current_day if QuestManager else 1)
+	for email_data in all_emails:
+		var gd_email = {}
+		for key in email_data.keys():
+			gd_email[str(key).to_lower()] = email_data[key]
+
+		var unlock_condition = gd_email.get("unlock_condition", "").strip_edges()
+		if unlock_condition != "" and not _is_condition_met(unlock_condition):
+			var subject = gd_email.get("subject", "[Заблокировано]")
+			var sender = gd_email.get("sender", "???")
+			inbox_list.add_item("🔒 " + subject + " — " + sender)
+			var item_idx = inbox_list.item_count - 1
+			inbox_list.set_item_metadata(item_idx, -1)  # special marker
+			inbox_list.set_item_custom_fg_color(item_idx, Color(0.4, 0.4, 0.4))
+
 	# Авто-выбор первого письма
 	if inbox_list.item_count > 0:
 		inbox_list.select(0)
@@ -171,6 +193,22 @@ func _get_email_icon(email_type: String) -> String:
 		"info": return "📄 "
 		"warning": return "⚠️ "
 		_: return "📄 "
+
+func _is_condition_met(condition: String) -> bool:
+	"""Проверяет, выполнено ли условие разблокировки письма."""
+	if condition == "" or condition == "none":
+		return true
+
+	# Проверяем через GameState
+	if GameState and GameState.has_method("is_condition_unlocked"):
+		if GameState.is_condition_unlocked(condition):
+			return true
+
+	# Проверяем через QuestManager (story_flags)
+	if QuestManager and QuestManager.has_story_flag(condition):
+		return true
+
+	return false
 
 func refresh_archive():
 	"""Обновление списка архива."""
@@ -201,11 +239,9 @@ func _on_inbox_selected(index: int):
 	if metadata >= 0 and metadata < current_emails.size():
 		# Письмо из текущего дня
 		show_email(current_emails[metadata])
-	elif metadata < 0:
-		# Письмо из архива (незавершённый квест)
-		var archive_index = -metadata - 1
-		if archive_index >= 0 and archive_index < archived_emails.size():
-			show_email(archived_emails[archive_index])
+	elif metadata == -1:
+		# Заблокированное письмо — показываем уведомление
+		show_quest_not_completed_warning("Это письмо заблокировано. Выполните условие для разблокировки.")
 
 func _on_archive_selected(index: int):
 	if index >= 0 and index < archived_emails.size():

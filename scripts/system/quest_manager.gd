@@ -47,26 +47,49 @@ func start_day(day_number: int):
 func load_quests_for_day(day_number: int):
 	"""Загрузка заданий для дня"""
 	var emails = DatabaseManager.GetEmailsForDay(day_number)
-	
+
 	for email in emails:
 		# Пытаемся взять ID или id (Firebird любит заглавные)
 		var email_id = email.get("ID", email.get("id", -1))
-		
+
+		# Проверяем unlock_condition
+		var unlock_condition = str(email.get("UNLOCK_CONDITION", email.get("unlock_condition", ""))).strip_edges()
+		if unlock_condition != "" and not _is_unlock_condition_met(unlock_condition):
+			print("🔒 Письмо заблокировано (условие: ", unlock_condition, ")")
+			continue
+
 		#Внимание: Тут должен вызываться метод получения ЗАДАНИЯ
 		var quest = DatabaseManager.GetQuestForEmail(email_id)
-		
+
 		if quest and not quest.is_empty():
 			#Проверяем заголовок задания (опять же учиытваем регистр)
 			var is_required = quest.get("IS_REQUIRED", quest.get("is_required", true))
 			var title = quest.get("TITLE", quest.get("title", "Без названия"))
-			
+
 			if is_required:
 				active_quest = quest
 				quest_started.emit(quest)
 				print("🎯 Активное задание: ", title)
 				return
-	
+
 	print("ℹ️ Нет обязательных заданий на день ", day_number)
+
+
+func _is_unlock_condition_met(condition: String) -> bool:
+	"""Проверяет, выполнено ли условие разблокировки."""
+	if condition == "" or condition == "none":
+		return true
+
+	# Проверяем через GameState
+	if GameState and GameState.has_method("is_condition_unlocked"):
+		if GameState.is_condition_unlocked(condition):
+			return true
+
+	# Проверяем через story_flags
+	if story_flags.get(condition, false):
+		return true
+
+	return false
 
 
 func check_quest_completion(sql_result: Array, expected_rows: int) -> bool:
@@ -140,11 +163,6 @@ func check_day_completion():
 		# Сохраняем прогресс
 		save_progress()
 
-		# Авто-сохранение (если включено)
-		var auto_save_mgr = get_node_or_null("/root/AutoSaveManager")
-		if auto_save_mgr:
-			auto_save_mgr.do_auto_save(1)
-
 
 func next_day():
 	"""Переход к следующему дню"""
@@ -184,15 +202,21 @@ func save_progress():
 	"""Сохранение прогресса"""
 	if not DatabaseManager:
 		return
-	
-	DatabaseManager.SavePlayerProgress(
+
+	# Собираем unlock_conditions из GameState
+	var unlock_conditions = {}
+	if GameState and GameState.has_method("is_condition_unlocked"):
+		unlock_conditions = GameState.unlocked_conditions.duplicate()
+
+	DatabaseManager.SavePlayerProgressWithUnlocks(
 		player_role,
 		current_day,
 		violations,
 		story_flags,
-		completed_quests
+		completed_quests,
+		unlock_conditions
 	)
-	
+
 	print("💾 Прогресс сохранён")
 
 
@@ -227,7 +251,13 @@ func load_progress():
 		completed_quests = parsed_quests
 	else:
 		completed_quests = []
-	
+
+	# Загружаем unlock_conditions
+	var raw_unlocks = progress.get("UNLOCK_CONDITIONS", progress.get("unlock_conditions", "{}"))
+	var parsed_unlocks = JSON.parse_string(str(raw_unlocks))
+	if parsed_unlocks is Dictionary and GameState:
+		GameState.unlocked_conditions = parsed_unlocks
+
 	print("💾 Прогресс загружен: День ", current_day, ", Нарушения: ", violations)
 	
 	# Уведомляем другие системы что прогресс загружен
@@ -242,7 +272,11 @@ func reset_progress():
 	trust_level = 50
 	completed_quests = []
 	story_flags = {}
-	
+
+	if GameState and GameState.has_method("set_unlock_condition"):
+		# Сбрасываем unlock_conditions через GameState
+		GameState.unlocked_conditions = {}
+
 	print("🗑️ Прогресс сброшен")
 
 

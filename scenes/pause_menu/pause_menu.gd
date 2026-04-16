@@ -34,9 +34,9 @@ func _input(event: InputEvent) -> void:
 		if is_open:
 			hide_menu()
 		else:
-			# Не открываем в главном меню
+			# Не открываем в главном меню и в менеджере сохранений
 			var current_scene = get_tree().current_scene
-			if current_scene and current_scene.name != "MainMenu_tscn":
+			if current_scene and current_scene.name != "MainMenu_tscn" and current_scene.name != "SaveManager":
 				show_menu()
 
 
