@@ -258,7 +258,51 @@ func _check_win_after_move() -> void:
 		if puzzle[i] != solution[i]:
 			_status_label.text = "Все клетки заполнены, но есть ошибки. Проверьте цифры."
 			return
+	
+	# Победа!
 	_status_label.text = "Победа! Судоку решён верно."
+	_on_sudoku_completed(true)
+
+
+func _on_sudoku_completed(is_success: bool):
+	"""Вызывается когда игрок завершил партию в Судоку"""
+	print("🧩 Судоку завершено! Успех: ", is_success)
+	
+	if not is_success:
+		return
+	
+	# Отмечаем что Судоку пройдено
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state:
+		game_state.sudoku_completed = true
+	
+	# 📧 Отправляем письмо от HR!
+	var db_manager = get_node_or_null("/root/DatabaseManager")
+	if db_manager:
+		# Обновляем письмо - убираем условие блокировки
+		db_manager.call("ExecuteNonQuery", 
+			"UPDATE emails SET unlock_condition = NULL WHERE subject = 'Приглашение на работу'")
+		
+		print("📧 Письмо от HR разблокировано!")
+	
+	# Показываем уведомление
+	_show_hr_email_notification()
+
+
+func _show_hr_email_notification():
+	"""Показ уведомления о новом письме"""
+	var notification = """
+[color=green]📬 НОВОЕ ПИСЬМО![/color]
+
+Вам пришло письмо от Отдела кадров НИИ "Файербёрд".
+
+Нажмите Enter чтобы продолжить...
+"""
+	# Временная реализация - вывод в лог
+	print(notification)
+	
+	# TODO: Реализовать показ уведомления через UI (диалог или overlay)
+	# Можно использовать существующий Label или создать новый узел уведомления
 
 
 func _unhandled_input(event: InputEvent) -> void:
