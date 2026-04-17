@@ -1,0 +1,98 @@
+[gd_scene load_steps=2 format=3 uid="uid://tutorial_test_scene"]
+
+[ext_resource type="Script" path="res://scripts/system/tutorial_test.gd" id="1_script"]
+
+[node name="TutorialTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.15, 0.15, 0.2, 1)
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 30.0
+offset_right = 700.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 24
+text = "ИНСТРУКТАЖ ПОЛЬЗОВАТЕЛЯ"
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 90.0
+offset_right = 700.0
+offset_bottom = 110.0
+value = 0.0
+show_percentage = true
+
+[node name="QuestionContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 140.0
+offset_right = 700.0
+offset_bottom = 400.0
+theme_override_constants/separation = 15
+
+[node name="QuestionLabel" type="Label" parent="QuestionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Текст вопроса"
+
+[node name="CodeExample" type="CodeEdit" parent="QuestionContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+size_flags_horizontal = 3
+editable = false
+code_highlighter = null
+text = "-- Пример кода"
+
+[node name="AnswerInput" type="LineEdit" parent="QuestionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Введите ваш ответ..."
+
+[node name="HintButton" type="Button" parent="QuestionContainer"]
+layout_mode = 2
+size_flags_horizontal = 1
+text = "💡 Подсказка"
+
+[node name="FeedbackLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 420.0
+offset_right = 700.0
+offset_bottom = 460.0
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+
+[node name="NextButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 550.0
+offset_top = 480.0
+offset_right = 680.0
+offset_bottom = 520.0
+text = "Следующий вопрос"
+
+[node name="SkipButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 480.0
+offset_right = 250.0
+offset_bottom = 520.0
+text = "⚠️ Пропустить"

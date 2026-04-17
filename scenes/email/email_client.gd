@@ -381,6 +381,12 @@ func show_report_dialog():
 	dialog.popup_centered(Vector2i(600, 230))
 
 func send_report(report_text: String):
+	# Проверяем: это письмо от HR (инструктаж)?
+	if active_quest and int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0))) == 1:
+		print("📚 Это инструктаж! Переходим к тестированию...")
+		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
+		return
+
 	print("📤 Отчёт отправлен: ", report_text)
 	var qid = int(active_quest.get("ID", active_quest.get("id", 0)))
 	DatabaseManager.SavePlayerChoice(qid, "report_text", report_text, QuestManager.current_day)

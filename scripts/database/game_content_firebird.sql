@@ -73,7 +73,8 @@ CREATE TABLE player_progress (
     unlock_conditions VARCHAR(2000),
     endings_unlocked VARCHAR(2000),
     total_playtime_minutes INTEGER DEFAULT 0,
-    last_saved TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    last_saved TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tutorial_completed BOOLEAN DEFAULT FALSE
 );
 
 -- Таблица: player_choices
