@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("firebird-protocol")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f18a4bd74fe9eb786e0bb044e44238e024c39128")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+00a2575484a1d2304efe158db32e71581918752a")]
 [assembly: System.Reflection.AssemblyProductAttribute("firebird-protocol")]
 [assembly: System.Reflection.AssemblyTitleAttribute("firebird-protocol")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
