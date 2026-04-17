@@ -162,22 +162,6 @@ func refresh_inbox():
 		inbox_list.add_item(icon + subject + " — " + sender)
 		inbox_list.set_item_metadata(inbox_list.item_count - 1, inbox_list.item_count - 1)
 
-	# Показываем заблокированные письма (серые, без доступа)
-	var all_emails = DatabaseManager.GetEmailsForDay(QuestManager.current_day if QuestManager else 1)
-	for email_data in all_emails:
-		var gd_email = {}
-		for key in email_data.keys():
-			gd_email[str(key).to_lower()] = email_data[key]
-
-		var unlock_condition = gd_email.get("unlock_condition", "").strip_edges()
-		if unlock_condition != "" and not _is_condition_met(unlock_condition):
-			var subject = gd_email.get("subject", "[Заблокировано]")
-			var sender = gd_email.get("sender", "???")
-			inbox_list.add_item("🔒 " + subject + " — " + sender)
-			var item_idx = inbox_list.item_count - 1
-			inbox_list.set_item_metadata(item_idx, -1)  # special marker
-			inbox_list.set_item_custom_fg_color(item_idx, Color(0.4, 0.4, 0.4))
-
 	# Авто-выбор первого письма
 	if inbox_list.item_count > 0:
 		inbox_list.select(0)
@@ -239,9 +223,6 @@ func _on_inbox_selected(index: int):
 	if metadata >= 0 and metadata < current_emails.size():
 		# Письмо из текущего дня
 		show_email(current_emails[metadata])
-	elif metadata == -1:
-		# Заблокированное письмо — показываем уведомление
-		show_quest_not_completed_warning("Это письмо заблокировано. Выполните условие для разблокировки.")
 
 func _on_archive_selected(index: int):
 	if index >= 0 and index < archived_emails.size():
