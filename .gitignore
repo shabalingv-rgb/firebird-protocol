@@ -1,140 +1,21 @@
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Godot
-.godot/
-.mono/
-export.cfg
-export_presets.cfg
-
-# Temporary files
-qdrant_storage/
-tmp/
-temp/
-*.tmp
-*.sln
-.vs/
-bin/
-obj/
-launch-qwen.bat
-launch-qwen.lnk
-
-# Platform-specific libraries (не коммитить)
-libfbclient.dylib
-libfbclient.so
-fbclient.dll
-
-# ========================
-# Чувствительные данные (НЕ публиковать!)
-# ========================
-
-# Бэкапы баз данных (не коммитить)
-*.fdb — копия
-*.fdb.backup
-*.fdb.bak
-.env
-.env.local
-*.key
-*.pfx
-*.pem
-secrets/
-keys/
-config/secrets.json
-
-# ========================
-# Steam / Экспорт
-# ========================
-builds/
-exports/
-*.steam
-steam_appid.txt
-
-# ========================
-# IDE и редакторы
-# ========================
-.vscode/
-.idea/
-*.suo
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.NCB
-
 ```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-dist/
-build/
-target/
+# Build artifacts
+*.import
+*.scn.import
+*.tres.import
+*.res.import
+*.gdimport
+
+# Godot-specific
+.godot/
+*.godot
+export_presets.cfg
+project.godot
 
 # Dependencies
-.venv/
-venv/
-node_modules/
-.mypy_cache/
-.pytest_cache/
-.gradle/
+addons/
+*.pck
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
-*.swo
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# System files
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
-
-
-
-
-
 ```
