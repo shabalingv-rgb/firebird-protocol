@@ -1,9 +1,17 @@
+```
 # Compiled and build artifacts
+*.import
 *.pyc
-__pycache__/
 *.o
 *.obj
 *.class
+*.so
+*.dll
+*.exe
+*.class
+*.a
+*.out
+*.bin
 *.exe
 *.dll
 *.so
@@ -14,26 +22,55 @@ build/
 target/
 
 # Dependencies
-.venv/
-venv/
 node_modules/
+target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
+julia-*/
+zig*/
+venv/
+.venv/
+__pycache__/
 .mypy_cache/
 .pytest_cache/
 .coverage
 coverage/
 htmlcov/
 .gradle/
+.pipenv/
+# Build artifacts
+*.import
+*.scn.import
+*.tres.import
+*.res.import
+*.gdimport
 
-# Logs and temp files
+# Godot-specific
+.godot/
+*.godot
+export_presets.cfg
+project.godot
+
+# Dependencies
+addons/
+*.pck
+
+# Logs
 *.log
 *.tmp
 *.swp
 *.swo
+*.bak
+*.~
+*~
 
-# Environment
+# Environment and secrets
 .env
 .env.local
-*.env.*
+.env.*
+*.env
+.envrc
 
 # Editors
 .vscode/
@@ -42,8 +79,24 @@ htmlcov/
 *.swo
 
 # System
+# OS
+# OS generated files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+._*
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
 
 # Compressed files
 *.zip
@@ -68,3 +121,5 @@ Thumbs.db
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+*.tar.zst
+```
