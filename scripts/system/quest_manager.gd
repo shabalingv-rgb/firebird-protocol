@@ -309,6 +309,20 @@ func check_tutorial_completion():
 	return false
 
 
+func can_start_day(day_number: int) -> bool:
+	"""Проверка: можно ли начать этот день"""
+	
+	if day_number == 2:
+		# День 2 доступен только после инструктажа
+		return tutorial_completed
+	
+	if day_number > 2:
+		# Последующие дни - после завершения предыдущего
+		return current_day >= day_number - 1
+	
+	return true
+
+
 func check_random_events():
 	"""Проверка случайных событий"""
 	var event = DatabaseManager.GetRandomEventForDay(current_day)
