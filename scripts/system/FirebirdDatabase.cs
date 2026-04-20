@@ -169,11 +169,15 @@ public partial class FirebirdDatabase : Node
 			IsInitialized = true;
 			EmitSignal(SignalName.DatabaseReady);
 			GD.Print("✅ БД готова к работе");
-			using (var cmd = new FbCommand("SELECT MON$DATABASE_NAME FROM MON$DATABASE", _connection))
-
+			
+			// Проверка подключения вынесена в отдельную транзакцию
+			using (var trans = _connection.BeginTransaction())
 			{
-				GD.Print("Реальный путь к БД на сервере: " + cmd.ExecuteScalar());
-
+				using (var cmd = new FbCommand("SELECT MON$DATABASE_NAME FROM MON$DATABASE", _connection, trans))
+				{
+					GD.Print("Реальный путь к БД на сервере: " + cmd.ExecuteScalar());
+				}
+				trans.Commit();
 			}
 
 
@@ -188,10 +192,14 @@ public partial class FirebirdDatabase : Node
 
 		if (_isConnected && _connection != null)
 		{
-			using (var cmd = new FbCommand("SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'", _connection))
+			using (var trans = _connection.BeginTransaction())
 			{
-				var count = cmd.ExecuteScalar();
-				GD.Print($"Найдено таблиц с таким именем: {count}");
+				using (var cmd = new FbCommand("SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'", _connection, trans))
+				{
+					var count = cmd.ExecuteScalar();
+					GD.Print($"Найдено таблиц с таким именем: {count}");
+				}
+				trans.Commit();
 			}
 		}
 	}
@@ -495,8 +503,10 @@ public partial class FirebirdDatabase : Node
 	{
 		try
 		{
-			using var command = new FbCommand(sql, _connection);
+			using var trans = _connection.BeginTransaction();
+			using var command = new FbCommand(sql, _connection, trans);
 			command.ExecuteNonQuery();
+			trans.Commit();
 		}
 		catch (Exception e)
 		{
