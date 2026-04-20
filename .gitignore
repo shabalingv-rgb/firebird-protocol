@@ -1,3 +1,4 @@
+Nothing should be ignored based on the provided file changes. The only modified file is `scenes/email/email_client.gd`, which appears to be a source code file for a Godot project and should not be ignored.
 ```
 # Compiled and build artifacts
 *.import

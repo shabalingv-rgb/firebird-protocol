@@ -314,10 +314,14 @@ func _on_reply_button_pressed():
 		show_quest_not_completed_warning("Нет активного задания для этого письма!")
 		return
 
-	var quest_id = active_quest.get("ID", active_quest.get("id", -1))
-	if QuestManager and not QuestManager.is_quest_completed(quest_id):
-		show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
-		return
+	var quest_email_id = int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0)))
+	
+	# Исключение для инструктажа (письмо от HR) - не требует выполнения в терминале
+	if quest_email_id != 2:
+		var quest_id = active_quest.get("ID", active_quest.get("id", -1))
+		if QuestManager and not QuestManager.is_quest_completed(quest_id):
+			show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
+			return
 
 	show_report_dialog()
 
