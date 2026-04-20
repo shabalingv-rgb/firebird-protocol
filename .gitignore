@@ -4,6 +4,12 @@
 *.pyc
 *.o
 *.obj
+*.so
+*.dll
+*.exe
+*.class
+*.a
+*.out
 *.bin
 *.exe
 *.dll
@@ -16,6 +22,12 @@ target/
 
 # Dependencies
 node_modules/
+target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
+julia-*/
+zig*/
 venv/
 .venv/
 __pycache__/
@@ -56,6 +68,11 @@ addons/
 *.env
 .envrc
 
+# Editors
+.vscode/
+.idea/
+
+# OS
 # OS generated files
 .DS_Store
 Thumbs.db
