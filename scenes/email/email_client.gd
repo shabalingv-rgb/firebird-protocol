@@ -382,7 +382,7 @@ func show_report_dialog():
 
 func send_report(report_text: String):
 	# Проверяем: это письмо от HR (инструктаж)?
-	if active_quest and int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0))) == 2:
+	if active_quest and int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0))) == 1:
 		print("📚 Это инструктаж! Переходим к тестированию...")
 		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
 		return
