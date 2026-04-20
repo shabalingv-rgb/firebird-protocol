@@ -5,6 +5,7 @@ extends Control
 @onready var sender_label = $EmailHeader/Sender
 @onready var date_label = $EmailHeader/DateLabel
 @onready var reply_button = $EmailHeader/ReplyButton
+@onready var follow_instructions_button = $EmailHeader/FollowInstructionsButton
 @onready var body_label = $EmailBody
 @onready var back_button = $BackButton
 @onready var email_tabs = $EmailTabs
@@ -32,11 +33,13 @@ func _ready():
 		back_button.pressed.connect(_on_back_pressed)
 	if reply_button:
 		reply_button.pressed.connect(_on_reply_button_pressed)
+	if follow_instructions_button:
+		follow_instructions_button.pressed.connect(_on_follow_instructions_pressed)
 	if email_tabs:
 		email_tabs.tab_changed.connect(_on_tab_changed)
 
 	print("📧 Email Client загружен")
-
+	
 	if DatabaseManager and not DatabaseManager.DatabaseReady.is_connected(_on_database_ready):
 		DatabaseManager.DatabaseReady.connect(_on_database_ready)
 
@@ -260,12 +263,16 @@ func show_email(email: Dictionary):
 
 	# Кнопка для квестов
 	var email_type = email.get("email_type", email.get("EMAIL_TYPE", "")).to_lower()
+	var quest_email_id = int(email.get("id", email.get("ID", 0)))
+
+	# Показываем кнопку "Запустить процедуру" только для письма от HR (инструктаж)
+	if follow_instructions_button:
+		follow_instructions_button.visible = (quest_email_id == 2)
 
 	if email_type == "quest":
 		if has_node("EmailHeader/ReplyButton"):
 			$EmailHeader/ReplyButton.visible = true
 			$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
-			var quest_email_id = int(email.get("id", email.get("ID", 0)))
 			load_quest_for_email(quest_email_id)
 	else:
 		if has_node("EmailHeader/ReplyButton"):
@@ -324,6 +331,32 @@ func _on_reply_button_pressed():
 			return
 
 	show_report_dialog()
+
+
+func _on_follow_instructions_pressed():
+	"""Обработчик кнопки 'Запустить процедуру' - для инструктажа и других специальных заданий"""
+	if active_quest.is_empty():
+		# Если квеста нет в кэше, пробуем загрузить
+		var email_id = 0
+		# Пытаемся получить ID из текущего отображаемого письма
+		for email in current_emails:
+			if email.get("subject", "").contains("Приглашение") or email.get("SUBJECT", "").contains("Приглашение"):
+				email_id = int(email.get("id", email.get("ID", 0)))
+				break
+		
+		if email_id > 0:
+			load_quest_for_email(email_id)
+	
+	# Проверяем, что это письмо от HR (инструктаж)
+	var quest_email_id = int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0)))
+	if quest_email_id == 2:
+		print("📚 Запуск инструктажа через кнопку 'Запустить процедуру'...")
+		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
+	else:
+		# Универсальная логика для других специальных процедур
+		print("🔧 Запуск специальной процедуры для email_id=", quest_email_id)
+		# Здесь можно добавить логику для других типов процедур
+		show_error_message("Процедура еще не реализована для этого письма.")
 
 func show_report_dialog():
 	var dialog = ConfirmationDialog.new()

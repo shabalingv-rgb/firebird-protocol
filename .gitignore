@@ -54,6 +54,9 @@ build/
 node_modules/
 venv/
 .venv/
+.env
+.env.local
+.env.*
 .mypy_cache/
 .pytest_cache/
 .coverage
@@ -121,6 +124,8 @@ addons/
 Thumbs.db
 desktop.ini
 
+# Coverage and testing
+.coverage
 # Editors and IDEs
 .vscode/
 .idea/
@@ -132,7 +137,16 @@ desktop.ini
 # Coverage reports
 coverage/
 htmlcov/
-.coverage
+
+# Build directories
+dist/
+build/
+target/
+.gradle/
+
+# Python specific
+.mypy_cache/
+.pytest_cache/
 
 # Compressed files
 *.zip
@@ -158,5 +172,6 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+```
 *.tar.zst
 ```
