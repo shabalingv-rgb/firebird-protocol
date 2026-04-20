@@ -23,8 +23,24 @@ __pycache__/
 .pytest_cache/
 .gradle/
 .pipenv/
+# Build artifacts
+*.import
+*.scn.import
+*.tres.import
+*.res.import
+*.gdimport
 
-# Logs and temp files
+# Godot-specific
+.godot/
+*.godot
+export_presets.cfg
+project.godot
+
+# Dependencies
+addons/
+*.pck
+
+# Logs
 *.log
 *.tmp
 *.swp
