@@ -1,3 +1,26 @@
+```
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build artifacts
 Nothing should be ignored based on the provided file changes. The only modified file is `scenes/email/email_client.gd`, which appears to be a source code file for a Godot project and should not be ignored.
 ```
 # Compiled and build artifacts
@@ -20,10 +43,22 @@ Nothing should be ignored based on the provided file changes. The only modified 
 *.out
 dist/
 build/
-target/
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
 
 # Dependencies
 node_modules/
+venv/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
 target/
 .gradle/
 .mypy_cache/
@@ -118,6 +153,7 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
+```
 *.tar.gz
 *.tar.bz2
 *.tar.xz
