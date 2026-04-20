@@ -21,6 +21,26 @@ __pycache__/
 *.pyd
 
 # Build artifacts
+Nothing should be ignored based on the provided file changes. The only modified file is `scenes/email/email_client.gd`, which appears to be a source code file for a Godot project and should not be ignored.
+```
+# Compiled and build artifacts
+*.import
+*.pyc
+*.o
+*.obj
+*.class
+*.so
+*.dll
+*.exe
+*.class
+*.a
+*.out
+*.bin
+*.exe
+*.dll
+*.so
+*.a
+*.out
 dist/
 build/
 *.o
@@ -39,10 +59,80 @@ venv/
 .coverage
 coverage/
 htmlcov/
+target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
+julia-*/
+zig*/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+.gradle/
+.pipenv/
+# Build artifacts
+*.import
+*.scn.import
+*.tres.import
+*.res.import
+*.gdimport
 
-# System files
+# Godot-specific
+.godot/
+*.godot
+export_presets.cfg
+project.godot
+
+# Dependencies
+addons/
+*.pck
+
+# Logs
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.~
+*~
+
+# Environment and secrets
+.env
+.env.local
+.env.*
+*.env
+.envrc
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System
+# OS
+# OS generated files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+._*
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
 
 # Compressed files
 *.zip
@@ -63,4 +153,10 @@ Thumbs.db
 *.Z
 *.lz
 *.lzo
+```
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+*.tar.zst
 ```
