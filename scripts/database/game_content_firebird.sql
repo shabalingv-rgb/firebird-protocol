@@ -266,6 +266,8 @@ INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type,
 2. Изучить основные SQL-команды
 3. Выполнить первое пробное задание
 
+❗ ВАЖНО: Для запуска инструктажа нажмите кнопку "Отправить отчет" внизу этого письма.
+
 С уважением,
 Отдел кадров НИИ "Файербёрд"', 'quest', 1, 2, 'sudoku_completed');
 
@@ -330,6 +332,10 @@ INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type,
 -- ============================================
 -- ЗАДАНИЯ
 -- ============================================
+-- Задание для инструктажа (письмо от HR, email_id = 2)
+INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES
+(3, 2, 'Инструктаж по SQL', 'Пройдите тест по основам SQL для допуска к работе', 'SELECT * FROM employees', 0, '*', 'easy', 'SELECT,FROM,WHERE');
+
 INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES
 (1, 6, 'Ознакомление с базой', 'Выполните запрос для получения списка сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM');
 
