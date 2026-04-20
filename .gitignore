@@ -1,110 +1,59 @@
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Godot
-.godot/
-.mono/
-export.cfg
-export_presets.cfg
-
-# Temporary files
-qdrant_storage/
-tmp/
-temp/
-*.tmp
-*.sln
-.vs/
-bin/
-obj/
-launch-qwen.bat
-launch-qwen.lnk
-
-# Platform-specific libraries (не коммитить)
-libfbclient.dylib
-libfbclient.so
-fbclient.dll
-
-# ========================
-# Чувствительные данные (НЕ публиковать!)
-# ========================
-
-# Бэкапы баз данных (не коммитить)
-*.fdb — копия
-*.fdb.backup
-*.fdb.bak
-.env
-.env.local
-*.key
-*.pfx
-*.pem
-secrets/
-keys/
-config/secrets.json
-
-# ========================
-# Steam / Экспорт
-# ========================
-builds/
-exports/
-*.steam
-steam_appid.txt
-
-# ========================
-# IDE и редакторы
-# ========================
-.vscode/
-.idea/
-*.suo
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.NCB
-
 ```
 # Compiled and build artifacts
+*.import
 *.pyc
-__pycache__/
 *.o
 *.obj
+*.bin
+*.exe
+*.dll
+*.so
+*.a
+*.out
 dist/
 build/
 target/
 
 # Dependencies
-.venv/
-venv/
 node_modules/
+venv/
+.venv/
+__pycache__/
 .mypy_cache/
 .pytest_cache/
 .gradle/
+.pipenv/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
 *.swo
+*.bak
+*.~
+*~
 
-# Environment
+# Environment and secrets
 .env
 .env.local
-*.env.*
+.env.*
+*.env
+.envrc
 
-# Editors
-.vscode/
-.idea/
-
-# System files
+# OS generated files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Coverage
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+._*
+
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
@@ -132,9 +81,4 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-
-
-
-
 ```

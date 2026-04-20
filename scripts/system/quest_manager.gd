@@ -19,6 +19,10 @@ var trust_level: int = 50
 var completed_quests: Array = []
 var story_flags: Dictionary = {}
 
+# Переменные для отслеживания состояния инструктажа
+var tutorial_completed: bool = false
+var tutorial_violations: int = 0
+
 # Константы
 const MAX_VIOLATIONS := 5
 const TRUST_DECREASE_PER_VIOLATION := 10
@@ -272,12 +276,51 @@ func reset_progress():
 	trust_level = 50
 	completed_quests = []
 	story_flags = {}
+	tutorial_completed = false
+	tutorial_violations = 0
 
 	if GameState and GameState.has_method("set_unlock_condition"):
 		# Сбрасываем unlock_conditions через GameState
 		GameState.unlocked_conditions = {}
 
 	print("🗑️ Прогресс сброшен")
+
+
+func check_tutorial_completion():
+	"""Проверка: можно ли перейти ко Дню 2"""
+	if tutorial_completed:
+		return true
+	
+	# Проверяем в БД
+	if DatabaseManager:
+		var progress = DatabaseManager.LoadPlayerProgress(1)
+		var flags_json = progress.get("FLAGS_UNLOCKED", progress.get("flags_unlocked", "{}"))
+		
+		# Парсим JSON (можно через JSON.parse)
+		var flags = {}
+		if flags_json != "{}":
+			var json = JSON.new()
+			var error = json.parse(flags_json)
+			if error == OK:
+				flags = json.data
+		
+		return flags.get("tutorial_completed", false)
+	
+	return false
+
+
+func can_start_day(day_number: int) -> bool:
+	"""Проверка: можно ли начать этот день"""
+	
+	if day_number == 2:
+		# День 2 доступен только после инструктажа
+		return tutorial_completed
+	
+	if day_number > 2:
+		# Последующие дни - после завершения предыдущего
+		return current_day >= day_number - 1
+	
+	return true
 
 
 func check_random_events():
