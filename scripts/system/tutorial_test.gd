@@ -87,7 +87,7 @@ func show_question(index: int):
 	# Снимаем блокировку ввода
 	is_processing = false
 	
-	print(f"📝 Вопрос {index + 1}/{tutorial_questions.size()}")
+	print("📝 Вопрос ", index + 1, "/", tutorial_questions.size())
 
 
 func check_answer():
@@ -141,7 +141,7 @@ func complete_tutorial():
 	
 	progress_bar.value = 100
 	
-	print(f"✅ Инструктаж завершён. Ошибок: {violations_in_test}")
+	print("✅ Инструктаж завершён. Ошибок: ", violations_in_test)
 	
 	# Сохраняем результат в QuestManager
 	if QuestManager:
