@@ -324,13 +324,11 @@ func _on_reply_button_pressed():
 	var quest_email_id = int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0)))
 	
 	# Исключение для инструктажа (письмо от HR) - не требует выполнения в терминале
-	# Но теперь для инструктажа используется отдельная кнопка, так что это больше не нужно
-	# Оставляем стандартную логику для всех писем
-	
-	var quest_id = active_quest.get("ID", active_quest.get("id", -1))
-	if QuestManager and not QuestManager.is_quest_completed(quest_id):
-		show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
-		return
+	if quest_email_id != 2:
+		var quest_id = active_quest.get("ID", active_quest.get("id", -1))
+		if QuestManager and not QuestManager.is_quest_completed(quest_id):
+			show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
+			return
 
 	show_report_dialog()
 
@@ -420,9 +418,12 @@ func show_report_dialog():
 	dialog.popup_centered(Vector2i(600, 230))
 
 func send_report(report_text: String):
-	# Теперь эта функция используется только для обычных заданий
-	# Письмо от HR (инструктаж) обрабатывается через кнопку "Запустить процедуру"
-	
+	# Проверяем: это письмо от HR (инструктаж)?
+	if active_quest and int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0))) == 2:
+		print("📚 Это инструктаж! Переходим к тестированию...")
+		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
+		return
+
 	print("📤 Отчёт отправлен: ", report_text)
 	var qid = int(active_quest.get("ID", active_quest.get("id", 0)))
 	DatabaseManager.SavePlayerChoice(qid, "report_text", report_text, QuestManager.current_day)
