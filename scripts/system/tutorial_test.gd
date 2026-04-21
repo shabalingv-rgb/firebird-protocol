@@ -17,39 +17,39 @@ var is_processing: bool = false  # Флаг блокировки ввода во
 # Вопросы инструктажа
 var tutorial_questions: Array = [
 	{
-		"question": "Вопрос 1: Какая команда используется для выборки данных из таблицы?",
-		"code_example": "-- Пример:\n??? * FROM employees",
+		"question": "Vopros 1: Kakaya komanda ispolzuetsya dlya vyborki dannykh iz tablicy?",
+		"code_example": "-- Primer:\n??? * FROM employees",
 		"correct_answer": "SELECT",
-		"hint": "Эта команда начинается на букву 'S'",
-		"explanation": "Команда SELECT используется для выборки данных из таблицы."
+		"hint": "Eta komanda nachinaetsya na bukvu 'S'",
+		"explanation": "Komanda SELECT ispolzuetsya dlya vyborki dannykh iz tablicy."
 	},
 	{
-		"question": "Вопрос 2: Какое ключевое слово указывает таблицу для запроса?",
+		"question": "Vopros 2: Kakoe klyuchevoe slovo ukazyvaet tablicu dlya zaprosa?",
 		"code_example": "SELECT * ??? employees",
 		"correct_answer": "FROM",
-		"hint": "Это слово переводится как 'ИЗ'",
-		"explanation": "Ключевое слово FROM указывает источник данных."
+		"hint": "Eto slovo perevoditsya kak 'IZ'",
+		"explanation": "Klyuchevoe slovo FROM ukazyvaet istochnik dannykh."
 	},
 	{
-		"question": "Вопрос 3: Как отфильтровать записи по условию?",
+		"question": "Vopros 3: Kak otfiltrirovat zapisi po usloviyu?",
 		"code_example": "SELECT * FROM employees ??? salary > 50000",
 		"correct_answer": "WHERE",
-		"hint": "Переводится как 'ГДЕ'",
-		"explanation": "WHERE фильтрует результаты по заданному условию."
+		"hint": "Perevoditsya kak 'GDE'",
+		"explanation": "WHERE filtriruet rezultaty po zadannomu usloviyu."
 	},
 	{
-		"question": "Вопрос 4: Практическое задание - получите всех сотрудников",
-		"code_example": "-- Напишите полный запрос:\n-- Таблица: employees\n-- Нужно: все колонки",
+		"question": "Vopros 4: Prakticheskoe zadanie - poluchite vsekh sotrudnikov",
+		"code_example": "-- Napishite polnyj zapros:\n-- Tablica: employees\n-- Nuzhno: vse kolonki",
 		"correct_answer": "SELECT * FROM employees",
-		"hint": "SELECT + * + FROM + имя_таблицы",
-		"explanation": "Отлично! Это базовый запрос для получения всех данных."
+		"hint": "SELECT + * + FROM + imya_tablicy",
+		"explanation": "Otlichno! Eto bazovyj zapros dlya polucheniya vsekh dannykh."
 	},
 	{
-		"question": "Вопрос 5: Практическое задание - найдите сотрудников из IT отдела",
-		"code_example": "-- Таблица: employees\n-- Условие: department = 'IT'",
+		"question": "Vopros 5: Prakticheskoe zadanie - najdite sotrudnikov iz IT otdela",
+		"code_example": "-- Tablica: employees\n-- Uslovie: department = 'IT'",
 		"correct_answer": "SELECT * FROM employees WHERE department = 'IT'",
-		"hint": "Добавьте WHERE после FROM",
-		"explanation": "Превосходно! Вы готовы к работе!"
+		"hint": "Dobavte WHERE posle FROM",
+		"explanation": "Prevoskhodno! Vy gotovy k rabote!"
 	}
 ]
 
