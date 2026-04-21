@@ -1,3 +1,13 @@
+# Compiled and build artifacts
+*.exe
+*.dll
+*.so
+*.a
+*.obj
+*.out
+*.class
+*.pyc
+__pycache__/
 ```
 # Build artifacts
 *.dll
@@ -332,6 +342,7 @@ venv/
 .venv/
 .env
 .env.local
+*.env.*
 .env.*
 .mypy_cache/
 .pytest_cache/
@@ -393,6 +404,11 @@ addons/
 *.swp
 *.swo
 
+# Build directories
+dist/
+build/
+target/
+.gradle/
 # System
 # OS
 # OS generated files
@@ -485,6 +501,14 @@ target/
 .mypy_cache/
 .pytest_cache/
 
+# Python cache
+.mypy_cache/
+.pytest_cache/
+
+# System files
+.DS_Store
+Thumbs.db
+
 # Compressed files
 *.zip
 *.gz
@@ -503,6 +527,7 @@ target/
 *.deb
 *.Z
 *.lz
+*.lzo
 *.lzo
 ```
 *.tar.gz
