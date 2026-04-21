@@ -42,11 +42,7 @@ current_tab = 0
 
 [node name="Входящие" type="Control" parent="EmailTabs" unique_id=1629995097]
 layout_mode = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+metadata/_tab_index = 0
 
 [node name="InboxList" type="ItemList" parent="EmailTabs/Входящие" unique_id=1629995098]
 layout_mode = 1
@@ -58,12 +54,9 @@ grow_vertical = 2
 theme_override_fonts/font = ExtResource("2_2y7k8")
 
 [node name="Архив" type="Control" parent="EmailTabs" unique_id=1629995099]
+visible = false
 layout_mode = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+metadata/_tab_index = 1
 
 [node name="ArchiveList" type="ItemList" parent="EmailTabs/Архив" unique_id=1629995100]
 layout_mode = 1
@@ -109,22 +102,21 @@ theme_override_fonts/font = ExtResource("2_2y7k8")
 
 [node name="ReplyButton" type="Button" parent="EmailHeader" unique_id=455730246]
 layout_mode = 0
-offset_left = 600.0
-offset_top = 35.0
-offset_right = 760.0
-offset_bottom = 65.0
+offset_left = 595.0
+offset_top = -9.0
+offset_right = 755.0
+offset_bottom = 21.0
 theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Ответить"
 
 [node name="FollowInstructionsButton" type="Button" parent="EmailHeader" unique_id=455730247]
 layout_mode = 0
-offset_left = 600.0
-offset_top = 75.0
-offset_right = 760.0
-offset_bottom = 105.0
+offset_left = 35.0
+offset_top = 519.0
+offset_right = 347.0
+offset_bottom = 549.0
 theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Запустить процедуру"
-visible = false
 
 [node name="EmailBody" type="RichTextLabel" parent="." unique_id=810244442]
 layout_mode = 0
