@@ -17,39 +17,39 @@ var is_processing: bool = false  # Флаг блокировки ввода во
 # Вопросы инструктажа
 var tutorial_questions: Array = [
 	{
-		"question": "Vopros 1: Kakaya komanda ispolzuetsya dlya vyborki dannykh iz tablicy?",
-		"code_example": "-- Primer:\n??? * FROM employees",
+		"question": "Вопрос 1: Какая команда используется для выборки данных из таблицы?",
+		"code_example": "-- Пример:\n??? * FROM employees",
 		"correct_answer": "SELECT",
-		"hint": "Eta komanda nachinaetsya na bukvu 'S'",
-		"explanation": "Komanda SELECT ispolzuetsya dlya vyborki dannykh iz tablicy."
+		"hint": "Эта команда начинается на букву 'S'",
+		"explanation": "Команда SELECT используется для выборки данных из таблицы."
 	},
 	{
-		"question": "Vopros 2: Kakoe klyuchevoe slovo ukazyvaet tablicu dlya zaprosa?",
+		"question": "Вопрос 2: Какое ключевое слово указывает таблицу для запроса?",
 		"code_example": "SELECT * ??? employees",
 		"correct_answer": "FROM",
-		"hint": "Eto slovo perevoditsya kak 'IZ'",
-		"explanation": "Klyuchevoe slovo FROM ukazyvaet istochnik dannykh."
+		"hint": "Это слово переводится как 'ИЗ'",
+		"explanation": "Ключевое слово FROM указывает источник данных."
 	},
 	{
-		"question": "Vopros 3: Kak otfiltrirovat zapisi po usloviyu?",
+		"question": "Вопрос 3: Как отфильтровать записи по условию?",
 		"code_example": "SELECT * FROM employees ??? salary > 50000",
 		"correct_answer": "WHERE",
-		"hint": "Perevoditsya kak 'GDE'",
-		"explanation": "WHERE filtriruet rezultaty po zadannomu usloviyu."
+		"hint": "Переводится как 'ГДЕ'",
+		"explanation": "WHERE фильтрует результаты по заданному условию."
 	},
 	{
-		"question": "Vopros 4: Prakticheskoe zadanie - poluchite vsekh sotrudnikov",
-		"code_example": "-- Napishite polnyj zapros:\n-- Tablica: employees\n-- Nuzhno: vse kolonki",
+		"question": "Вопрос 4: Практическое задание - получите всех сотрудников",
+		"code_example": "-- Напишите полный запрос:\n-- Таблица: employees\n-- Нужно: все колонки",
 		"correct_answer": "SELECT * FROM employees",
-		"hint": "SELECT + * + FROM + imya_tablicy",
-		"explanation": "Otlichno! Eto bazovyj zapros dlya polucheniya vsekh dannykh."
+		"hint": "SELECT + * + FROM + имя_таблицы",
+		"explanation": "Отлично! Это базовый запрос для получения всех данных."
 	},
 	{
-		"question": "Vopros 5: Prakticheskoe zadanie - najdite sotrudnikov iz IT otdela",
-		"code_example": "-- Tablica: employees\n-- Uslovie: department = 'IT'",
+		"question": "Вопрос 5: Практическое задание - найдите сотрудников из IT отдела",
+		"code_example": "-- Таблица: employees\n-- Условие: department = 'IT'",
 		"correct_answer": "SELECT * FROM employees WHERE department = 'IT'",
-		"hint": "Dobavte WHERE posle FROM",
-		"explanation": "Prevoskhodno! Vy gotovy k rabote!"
+		"hint": "Добавьте WHERE после FROM",
+		"explanation": "Превосходно! Вы готовы к работе!"
 	}
 ]
 
@@ -87,7 +87,7 @@ func show_question(index: int):
 	# Снимаем блокировку ввода
 	is_processing = false
 	
-	print("📝 Вопрос ", index + 1, "/", tutorial_questions.size())
+	print(f"📝 Вопрос {index + 1}/{tutorial_questions.size()}")
 
 
 func check_answer():
@@ -141,7 +141,7 @@ func complete_tutorial():
 	
 	progress_bar.value = 100
 	
-	print("✅ Инструктаж завершён. Ошибок: ", violations_in_test)
+	print(f"✅ Инструктаж завершён. Ошибок: {violations_in_test}")
 	
 	# Сохраняем результат в QuestManager
 	if QuestManager:
