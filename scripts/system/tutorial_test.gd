@@ -12,7 +12,7 @@ extends Control
 var current_question_index: int = 0
 var test_completed: bool = false
 var violations_in_test: int = 0
-var is_processing: bool = false  # Флаг блокировки ввода во время анимаций/таймеров
+var is_busy: bool = false  # Флаг блокировки ввода во время анимаций/таймеров
 
 # Вопросы инструктажа
 var tutorial_questions: Array = [
@@ -66,6 +66,83 @@ func _ready():
 	show_question(0)
 
 
+func _input(event):
+	# Обработка ввода только английских букв и символов SQL (как в терминале)
+	if event is InputEventKey and event.pressed and answer_input.has_focus():
+		# A-Z — вводим английские буквы (физические клавиши, любая раскладка)
+		if event.keycode >= KEY_A and event.keycode <= KEY_Z:
+			get_viewport().set_input_as_handled()
+			var letter = char(event.keycode) if event.shift_pressed else char(event.keycode + 32)
+			_insert_text(answer_input.caret_column, letter)
+			return
+		
+		# 0-9
+		if event.keycode >= KEY_0 and event.keycode <= KEY_9:
+			get_viewport().set_input_as_handled()
+			var idx = event.keycode - KEY_0
+			var ch = str(idx)
+			_insert_text(answer_input.caret_column, ch)
+			return
+		
+		# Символы SQL: * = < > ' , . ( ) - _ пробел
+		var sql_symbols = {
+			KEY_ASTERISK: "*", KEY_EQUAL: "=", KEY_LESS: "<", KEY_GREATER: ">",
+			KEY_APOSTROPHE: "'", KEY_COMMA: ",", KEY_PERIOD: ".",
+			KEY_PARENLEFT: "(", KEY_PARENRIGHT: ")",
+			KEY_MINUS: "-", KEY_UNDERSCORE: "_", KEY_SPACE: " "
+		}
+		if event.keycode in sql_symbols:
+			get_viewport().set_input_as_handled()
+			var ch = sql_symbols[event.keycode]
+			_insert_text(answer_input.caret_column, ch)
+			return
+		
+		# Backspace
+		if event.keycode == KEY_BACKSPACE:
+			get_viewport().set_input_as_handled()
+			var caret = answer_input.caret_column
+			if caret > 0:
+				var text = answer_input.text
+				answer_input.text = text.erase(caret - 1, 1)
+				answer_input.caret_column = caret - 1
+			return
+		
+		# Delete
+		if event.keycode == KEY_DELETE:
+			get_viewport().set_input_as_handled()
+			var text = answer_input.text
+			var caret = answer_input.caret_column
+			if caret < text.length():
+				answer_input.text = text.erase(caret, 1)
+				answer_input.caret_column = caret
+			return
+		
+		# Стрелки влево/вправо
+		if event.keycode == KEY_LEFT:
+			get_viewport().set_input_as_handled()
+			if answer_input.caret_column > 0:
+				answer_input.caret_column -= 1
+			return
+		if event.keycode == KEY_RIGHT:
+			get_viewport().set_input_as_handled()
+			if answer_input.caret_column < answer_input.text.length():
+				answer_input.caret_column += 1
+			return
+		
+		# Enter (уже обрабатывается через text_submitted, но на всякий случай)
+		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+			get_viewport().set_input_as_handled()
+			check_answer()
+			return
+
+
+func _insert_text(at_position: int, text_to_insert: String):
+	"""Вставка текста в указанную позицию"""
+	var current_text = answer_input.text
+	answer_input.text = current_text.insert(at_position, text_to_insert)
+	answer_input.caret_column = at_position + text_to_insert.length()
+
+
 func show_question(index: int):
 	"""Показ вопроса"""
 	if index >= tutorial_questions.size():
@@ -85,14 +162,14 @@ func show_question(index: int):
 	progress_bar.value = (index * 100.0) / tutorial_questions.size()
 	
 	# Снимаем блокировку ввода
-	is_processing = false
+	is_busy = false
 	
 	print("📝 Вопрос ", index + 1, "/", tutorial_questions.size())
 
 
 func check_answer():
 	"""Проверка ответа"""
-	if is_processing:
+	if is_busy:
 		return  # Игнорируем повторные нажатия во время обработки
 	
 	var q = tutorial_questions[current_question_index]
@@ -105,7 +182,7 @@ func check_answer():
 		feedback_label.add_theme_color_override("font_color", Color.GREEN)
 		
 		# Блокируем ввод на время показа сообщения
-		is_processing = true
+		is_busy = true
 		
 		# Воспроизводим звук успеха (опционально)
 		# $SuccessSound.play()
@@ -169,20 +246,20 @@ func unlock_day_2():
 
 
 func _on_next_pressed():
-	if is_processing:
+	if is_busy:
 		return
 	
 	if current_question_index < tutorial_questions.size():
 		current_question_index += 1
 		show_question(current_question_index)
 	else:
-		# Возвращаемся на рабочий стол
+		# Возвращаемся на рабочий стол (или в почту)
 		get_tree().change_scene_to_file("res://scenes/desktop/desktop.tscn")
 
 
 func _on_skip_pressed():
 	"""Пропуск вопроса (с нарушением!)"""
-	if is_processing:
+	if is_busy:
 		return
 	
 	print("⚠️ Вопрос пропущен")
@@ -191,7 +268,7 @@ func _on_skip_pressed():
 	violations_in_test += 1
 	
 	# Блокируем ввод на время показа сообщения
-	is_processing = true
+	is_busy = true
 	
 	await get_tree().create_timer(1.5).timeout
 	current_question_index += 1
@@ -200,7 +277,7 @@ func _on_skip_pressed():
 
 func _on_hint_pressed():
 	"""Показ подсказки"""
-	if is_processing:
+	if is_busy:
 		return
 	
 	var q = tutorial_questions[current_question_index]
@@ -208,6 +285,6 @@ func _on_hint_pressed():
 	feedback_label.add_theme_color_override("font_color", Color.YELLOW)
 
 
-func _on_answer_submitted(new_text: String):
+func _on_answer_submitted(_new_text: String):
 	"""Enter в поле ответа"""
 	check_answer()
