@@ -930,10 +930,10 @@ public partial class FirebirdDatabase : Node
 	public void AutoSave(int saveSlot, int currentDay, int violations, int trustLevel,
 						 GDictionary flags, GArray completedQuests, int playtimeMinutes)
 	{
-		if (saveSlot < 1)
-		{
+		// Автосохранение использует слот 0, что допустимо
+		if (saveSlot < 0)
 			GD.PrintErr("❌ AutoSave: номер слота должен быть >= 1");
-			return;
+			GD.PrintErr("❌ AutoSave: номер слота должен быть >= 0");
 		}
 
 		try
