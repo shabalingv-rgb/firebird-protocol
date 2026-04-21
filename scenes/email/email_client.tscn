@@ -119,9 +119,9 @@ text = "Ответить"
 [node name="FollowInstructionsButton" type="Button" parent="EmailHeader" unique_id=455730247]
 layout_mode = 0
 offset_left = 600.0
-offset_top = 75.0
+offset_top = 35.0
 offset_right = 760.0
-offset_bottom = 105.0
+offset_bottom = 65.0
 theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Запустить процедуру"
 visible = false
