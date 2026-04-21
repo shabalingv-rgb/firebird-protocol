@@ -1,4 +1,18 @@
 ```
+# Build artifacts
+*.import
+*.cache
+*.tmp
+
+# Dependencies
+.addons/
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/
 # Compiled and build artifacts
 *.exe
 *.dll
@@ -413,6 +427,7 @@ addons/
 *.env
 .envrc
 
+# Coverage
 # Editors
 .vscode/
 .idea/
@@ -524,7 +539,11 @@ target/
 .DS_Store
 Thumbs.db
 
-# Compressed files
+# OS
+.DS_Store
+Thumbs.db
+
+# Compressed
 *.zip
 *.gz
 *.tar
@@ -550,6 +569,7 @@ Thumbs.db
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+```
 ```
 *.tar.zst
 ```
