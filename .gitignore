@@ -44,3 +44,4 @@ pytest_cache/
 .DS_Store
 Thumbs.db
 desktop.ini
+game_content.fdb
