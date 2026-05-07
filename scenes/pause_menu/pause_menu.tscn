@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bpm7k3xn8rq2d" load_steps=3]
 
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="1"]
+[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="1_theme"]
 [ext_resource type="Script" path="res://scenes/pause_menu/pause_menu.gd" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
@@ -59,12 +59,12 @@ Button/font_color = Color(0, 1, 0, 1)
 Button/font_pressed_color = Color(0, 1, 0, 1)
 Button/font_hover_color = Color(0, 1, 0, 1)
 Button/font_size = 12
-default_font = ExtResource("1")
+default_font = ExtResource("1_theme")
 
 [sub_resource type="Theme" id="Theme_title"]
 Label/font_color = Color(0, 1, 0, 1)
 Label/font_size = 20
-default_font = ExtResource("1")
+default_font = ExtResource("1_theme")
 
 [node name="PauseMenu" type="CanvasLayer"]
 script = ExtResource("2")
@@ -109,7 +109,6 @@ add_constant = 18
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_fonts/font = ExtResource("1")
 theme_override_font_sizes/font_size = 20
 text = "⏸ ПАУЗА"
 horizontal_alignment = 1

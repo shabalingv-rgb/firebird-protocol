@@ -1,12 +1,14 @@
 [gd_scene format=3 uid="uid://csj43w6uxlvlm"]
 
 [ext_resource type="Script" uid="uid://rxpuw2atnvcp" path="res://scenes/debug/debug_panel.gd" id="1_0yojn"]
+[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="2_theme"]
 
 [node name="DebugPanel" type="Control" unique_id=414908226]
 layout_mode = 0
 offset_right = 250.0
 offset_bottom = 350.0
 script = ExtResource("1_0yojn")
+theme = ExtResource("2_theme")
 
 [node name="Background" type="ColorRect" parent="." unique_id=405241228]
 layout_mode = 0

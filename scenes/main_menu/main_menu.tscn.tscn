@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bhqq3awl7hoct"]
 
-[ext_resource type="Theme" uid="uid://7vufr44i5vp4" path="res://assets/themes/retro_theme.tres" id="1_3vgqe"]
+[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="1_3vgqe"]
 [ext_resource type="Script" uid="uid://laxgddnedisq" path="res://scenes/main_menu/main_menu.gd" id="2_w77py"]
 
 [node name="MainMenu_tscn" type="Control" unique_id=1231158181]

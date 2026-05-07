@@ -1,142 +1,135 @@
-[gd_scene format=3 uid="uid://bgy0w3vupsx12"]
-
-[ext_resource type="Script" uid="uid://divv0q3vt6eqv" path="res://scenes/sudoku/sudoku.gd" id="1_script"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_font"]
-[ext_resource type="Script" uid="uid://bayelnegoen8k" path="res://scenes/sudoku/thick_lines.gd" id="3_thick_lines_script"]
-
-[node name="Sudoku" type="Control" unique_id=563941145]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_script")
-
-[node name="Background" type="ColorRect" parent="." unique_id=725520901]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.101961, 0.101961, 0.180392, 1)
-
-[node name="MainVBox" type="VBoxContainer" parent="." unique_id=894364038]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = 20.0
-offset_right = -32.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 14
-
-[node name="TopBar" type="HBoxContainer" parent="MainVBox" unique_id=381941563]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="BackButton" type="Button" parent="MainVBox/TopBar" unique_id=1062474537]
-custom_minimum_size = Vector2(280, 40)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
-text = "Назад к рабочему столу"
-
-[node name="HintButton" type="Button" parent="MainVBox/TopBar" unique_id=1094043738]
-custom_minimum_size = Vector2(160, 40)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
-text = "Подсказка"
-
-[node name="TopSpacer" type="Control" parent="MainVBox/TopBar" unique_id=429846844]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="TitleLabel" type="Label" parent="MainVBox" unique_id=913058154]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
-text = "Судоку"
-horizontal_alignment = 1
-
-[node name="DifficultyRow" type="HBoxContainer" parent="MainVBox" unique_id=1125822971]
-layout_mode = 2
-theme_override_constants/separation = 10
-alignment = 1
-
-[node name="EasyButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=378447049]
-custom_minimum_size = Vector2(120, 36)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 9
-toggle_mode = true
-button_pressed = true
-text = "Лёгкий"
-
-[node name="MediumButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=1082597997]
-custom_minimum_size = Vector2(120, 36)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 9
-toggle_mode = true
-text = "Средний"
-
-[node name="HardButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=1568001019]
-custom_minimum_size = Vector2(120, 36)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 9
-toggle_mode = true
-text = "Сложный"
-
-[node name="NewGameButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=707189677]
-custom_minimum_size = Vector2(160, 36)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 9
-text = "Новая партия"
-
-[node name="BoardContainer" type="Control" parent="MainVBox" unique_id=591035711]
-custom_minimum_size = Vector2(400, 400)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-
-[node name="BoardGrid" type="GridContainer" parent="MainVBox/BoardContainer" unique_id=65522148]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/h_separation = 0
-theme_override_constants/v_separation = 0
-columns = 9
-
-[node name="ThickLines" type="Control" parent="MainVBox/BoardContainer" unique_id=1076627083]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("3_thick_lines_script")
-
-[node name="NumberPad" type="HBoxContainer" parent="MainVBox" unique_id=140499262]
-layout_mode = 2
-theme_override_constants/separation = 6
-alignment = 1
-
-[node name="StatusLabel" type="Label" parent="MainVBox" unique_id=314639897]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 9
-text = "Загрузка…"
-horizontal_alignment = 1
-autowrap_mode = 2
+     1|[gd_scene format=3 uid="uid://bgy0w3vupsx12"]
+     2|
+     3|[ext_resource type="Script" uid="uid://divv0q3vt6eqv" path="res://scenes/sudoku/sudoku.gd" id="1_script"]
+     4|[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="2_theme"]
+     5|[ext_resource type="Script" uid="uid://bayelnegoen8k" path="res://scenes/sudoku/thick_lines.gd" id="3_thick_lines_script"]
+     6|
+     7|[node name="Sudoku" type="Control" unique_id=563941145]
+     8|layout_mode = 3
+     9|anchors_preset = 15
+    10|anchor_right = 1.0
+    11|anchor_bottom = 1.0
+    12|grow_horizontal = 2
+    13|grow_vertical = 2
+    14|script = ExtResource("1_script")
+    15|
+    16|[node name="Background" type="ColorRect" parent="." unique_id=725520901]
+    17|layout_mode = 1
+    18|anchors_preset = 15
+    19|anchor_right = 1.0
+    20|anchor_bottom = 1.0
+    21|grow_horizontal = 2
+    22|grow_vertical = 2
+    23|color = Color(0.101961, 0.101961, 0.180392, 1)
+    24|
+    25|[node name="MainVBox" type="VBoxContainer" parent="." unique_id=894364038]
+    26|layout_mode = 1
+    27|anchors_preset = 15
+    28|anchor_right = 1.0
+    29|anchor_bottom = 1.0
+    30|offset_left = 32.0
+    31|offset_top = 20.0
+    32|offset_right = -32.0
+    33|offset_bottom = -20.0
+    34|grow_horizontal = 2
+    35|grow_vertical = 2
+    36|theme_override_constants/separation = 14
+    37|
+    38|[node name="TopBar" type="HBoxContainer" parent="MainVBox" unique_id=381941563]
+    39|layout_mode = 2
+    40|theme_override_constants/separation = 12
+    41|
+    42|[node name="BackButton" type="Button" parent="MainVBox/TopBar" unique_id=1062474537]
+    43|custom_minimum_size = Vector2(280, 40)
+    44|layout_mode = 2
+    46|theme_override_font_sizes/font_size = 11
+    47|text = "Назад к рабочему столу"
+    48|
+    49|[node name="HintButton" type="Button" parent="MainVBox/TopBar" unique_id=1094043738]
+    50|custom_minimum_size = Vector2(160, 40)
+    51|layout_mode = 2
+    53|theme_override_font_sizes/font_size = 11
+    54|text = "Подсказка"
+    55|
+    56|[node name="TopSpacer" type="Control" parent="MainVBox/TopBar" unique_id=429846844]
+    57|layout_mode = 2
+    58|size_flags_horizontal = 3
+    59|
+    60|[node name="TitleLabel" type="Label" parent="MainVBox" unique_id=913058154]
+    61|layout_mode = 2
+    63|theme_override_font_sizes/font_size = 14
+    64|text = "Судоку"
+    65|horizontal_alignment = 1
+    66|
+    67|[node name="DifficultyRow" type="HBoxContainer" parent="MainVBox" unique_id=1125822971]
+    68|layout_mode = 2
+    69|theme_override_constants/separation = 10
+    70|alignment = 1
+    71|
+    72|[node name="EasyButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=378447049]
+    73|custom_minimum_size = Vector2(120, 36)
+    74|layout_mode = 2
+    76|theme_override_font_sizes/font_size = 9
+    77|toggle_mode = true
+    78|button_pressed = true
+    79|text = "Лёгкий"
+    80|
+    81|[node name="MediumButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=1082597997]
+    82|custom_minimum_size = Vector2(120, 36)
+    83|layout_mode = 2
+    85|theme_override_font_sizes/font_size = 9
+    86|toggle_mode = true
+    87|text = "Средний"
+    88|
+    89|[node name="HardButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=1568001019]
+    90|custom_minimum_size = Vector2(120, 36)
+    91|layout_mode = 2
+    93|theme_override_font_sizes/font_size = 9
+    94|toggle_mode = true
+    95|text = "Сложный"
+    96|
+    97|[node name="NewGameButton" type="Button" parent="MainVBox/DifficultyRow" unique_id=707189677]
+    98|custom_minimum_size = Vector2(160, 36)
+    99|layout_mode = 2
+   101|theme_override_font_sizes/font_size = 9
+   102|text = "Новая партия"
+   103|
+   104|[node name="BoardContainer" type="Control" parent="MainVBox" unique_id=591035711]
+   105|custom_minimum_size = Vector2(400, 400)
+   106|layout_mode = 2
+   107|size_flags_horizontal = 4
+   108|size_flags_vertical = 4
+   109|
+   110|[node name="BoardGrid" type="GridContainer" parent="MainVBox/BoardContainer" unique_id=65522148]
+   111|layout_mode = 1
+   112|anchors_preset = 15
+   113|anchor_right = 1.0
+   114|anchor_bottom = 1.0
+   115|grow_horizontal = 2
+   116|grow_vertical = 2
+   117|theme_override_constants/h_separation = 0
+   118|theme_override_constants/v_separation = 0
+   119|columns = 9
+   120|
+   121|[node name="ThickLines" type="Control" parent="MainVBox/BoardContainer" unique_id=1076627083]
+   122|layout_mode = 1
+   123|anchors_preset = 15
+   124|anchor_right = 1.0
+   125|anchor_bottom = 1.0
+   126|grow_horizontal = 2
+   127|grow_vertical = 2
+   128|mouse_filter = 2
+   129|script = ExtResource("3_thick_lines_script")
+   130|
+   131|[node name="NumberPad" type="HBoxContainer" parent="MainVBox" unique_id=140499262]
+   132|layout_mode = 2
+   133|theme_override_constants/separation = 6
+   134|alignment = 1
+   135|
+   136|[node name="StatusLabel" type="Label" parent="MainVBox" unique_id=314639897]
+   137|layout_mode = 2
+   139|theme_override_font_sizes/font_size = 9
+   140|text = "Загрузка…"
+   141|horizontal_alignment = 1
+   142|autowrap_mode = 2
+   143|

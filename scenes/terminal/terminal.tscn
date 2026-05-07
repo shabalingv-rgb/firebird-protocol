@@ -1,77 +1,75 @@
-[gd_scene format=3 uid="uid://utjclwnwe0f"]
-
-[ext_resource type="Script" uid="uid://dxvtr7by6x8m3" path="res://scenes/terminal/terminal.gd" id="1_k5ahw"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_2y7k8"]
-
-[node name="Terminal" type="Control" unique_id=1750193804]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_k5ahw")
-
-[node name="Background" type="ColorRect" parent="." unique_id=802790205]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0.101960786, 0, 1)
-
-[node name="TerminalInput" type="LineEdit" parent="." unique_id=1128146326]
-layout_mode = 0
-offset_left = 103.0
-offset_top = 585.0
-offset_right = 1136.0
-offset_bottom = 616.0
-
-[node name="CommandPrompt" type="Label" parent="." unique_id=1439481237]
-layout_mode = 0
-offset_left = 27.0
-offset_top = 594.0
-offset_right = 107.0
-offset_bottom = 617.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "SQL> "
-
-[node name="HelpButton" type="Button" parent="." unique_id=1594719745]
-layout_mode = 0
-offset_left = 1047.0
-offset_top = -2.0
-offset_right = 1151.0
-offset_bottom = 29.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Помощь"
-
-[node name="BackButton" type="Button" parent="." unique_id=1809079149]
-layout_mode = 0
-offset_left = 12.0
-offset_right = 100.0
-offset_bottom = 31.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Назад"
-
-[node name="TerminalScroll" type="ScrollContainer" parent="." unique_id=1352724077]
-layout_mode = 0
-offset_left = 33.0
-offset_top = 47.0
-offset_right = 1134.0
-offset_bottom = 569.0
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 2
-
-[node name="TerminalOutput" type="RichTextLabel" parent="TerminalScroll" unique_id=311203712]
-clip_contents = false
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_fonts/normal_font = ExtResource("2_2y7k8")
-theme_override_font_sizes/normal_font_size = 12
-bbcode_enabled = true
-scroll_following = true
-autowrap_mode = 0
-autowrap_trim_flags = 0
+     1|[gd_scene format=3 uid="uid://utjclwnwe0f"]
+     2|
+     3|[ext_resource type="Script" uid="uid://dxvtr7by6x8m3" path="res://scenes/terminal/terminal.gd" id="1_k5ahw"]
+     4|[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="2_theme"]
+     5|
+     6|[node name="Terminal" type="Control" unique_id=1750193804]
+     7|layout_mode = 3
+     8|anchors_preset = 15
+     9|anchor_right = 1.0
+    10|anchor_bottom = 1.0
+    11|grow_horizontal = 2
+    12|grow_vertical = 2
+    13|script = ExtResource("1_k5ahw")
+    14|
+    15|[node name="Background" type="ColorRect" parent="." unique_id=802790205]
+    16|layout_mode = 1
+    17|anchors_preset = 15
+    18|anchor_right = 1.0
+    19|anchor_bottom = 1.0
+    20|offset_top = -4.0
+    21|grow_horizontal = 2
+    22|grow_vertical = 2
+    23|color = Color(0, 0.101960786, 0, 1)
+    24|
+    25|[node name="TerminalInput" type="LineEdit" parent="." unique_id=1128146326]
+    26|layout_mode = 0
+    27|offset_left = 103.0
+    28|offset_top = 585.0
+    29|offset_right = 1136.0
+    30|offset_bottom = 616.0
+    31|
+    32|[node name="CommandPrompt" type="Label" parent="." unique_id=1439481237]
+    33|layout_mode = 0
+    34|offset_left = 27.0
+    35|offset_top = 594.0
+    36|offset_right = 107.0
+    37|offset_bottom = 617.0
+    39|text = "SQL> "
+    40|
+    41|[node name="HelpButton" type="Button" parent="." unique_id=1594719745]
+    42|layout_mode = 0
+    43|offset_left = 1047.0
+    44|offset_top = -2.0
+    45|offset_right = 1151.0
+    46|offset_bottom = 29.0
+    48|text = "Помощь"
+    49|
+    50|[node name="BackButton" type="Button" parent="." unique_id=1809079149]
+    51|layout_mode = 0
+    52|offset_left = 12.0
+    53|offset_right = 100.0
+    54|offset_bottom = 31.0
+    56|text = "Назад"
+    57|
+    58|[node name="TerminalScroll" type="ScrollContainer" parent="." unique_id=1352724077]
+    59|layout_mode = 0
+    60|offset_left = 33.0
+    61|offset_top = 47.0
+    62|offset_right = 1134.0
+    63|offset_bottom = 569.0
+    64|horizontal_scroll_mode = 2
+    65|vertical_scroll_mode = 2
+    66|
+    67|[node name="TerminalOutput" type="RichTextLabel" parent="TerminalScroll" unique_id=311203712]
+    68|clip_contents = false
+    69|layout_mode = 2
+    70|size_flags_horizontal = 3
+    71|size_flags_vertical = 3
+    72|theme_override_fonts/normal_font = ExtResource("2_2y7k8")
+    73|theme_override_font_sizes/normal_font_size = 12
+    74|bbcode_enabled = true
+    75|scroll_following = true
+    76|autowrap_mode = 0
+    77|autowrap_trim_flags = 0
+    78|

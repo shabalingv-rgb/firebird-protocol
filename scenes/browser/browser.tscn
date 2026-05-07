@@ -1,104 +1,99 @@
-[gd_scene format=3 uid="uid://ol2gn62mkaa5"]
-
-[ext_resource type="Script" uid="uid://cmjnrcej6260g" path="res://scenes/browser/browser.gd" id="1_script"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_font"]
-[ext_resource type="Texture2D" uid="uid://brdxdbty51r55" path="res://assets/icons/news.png" id="3_news"]
-[ext_resource type="Texture2D" uid="uid://pj8vrl5c2uy0" path="res://assets/icons/wiki.png" id="4_wiki"]
-[ext_resource type="Texture2D" uid="uid://gw4etixoi308" path="res://assets/icons/board.png" id="5_board"]
-[ext_resource type="Texture2D" uid="uid://cawrijog28sn4" path="res://assets/icons/humor.png" id="6_humor"]
-
-[node name="Browser" type="Control" unique_id=1018924403]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_script")
-
-[node name="Background" type="ColorRect" parent="." unique_id=270996671]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0.101960786, 0, 1)
-
-[node name="BackButton" type="Button" parent="." unique_id=1055181982]
-layout_mode = 0
-offset_left = 12.0
-offset_right = 100.0
-offset_bottom = 31.0
-theme_override_fonts/font = ExtResource("2_font")
-text = "Назад"
-
-[node name="SiteButtons" type="HBoxContainer" parent="." unique_id=268300850]
-layout_mode = 0
-offset_left = 33.0
-offset_top = 47.0
-offset_right = 600.0
-offset_bottom = 85.0
-
-[node name="btn_news" type="Button" parent="SiteButtons" unique_id=604976852]
-custom_minimum_size = Vector2(150, 32)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_fonts/font = ExtResource("2_font")
-text = "Новости"
-icon = ExtResource("3_news")
-icon_alignment = 1
-
-[node name="btn_wiki" type="Button" parent="SiteButtons" unique_id=938400842]
-custom_minimum_size = Vector2(150, 32)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_fonts/font = ExtResource("2_font")
-text = "Вики"
-icon = ExtResource("4_wiki")
-icon_alignment = 1
-
-[node name="btn_board" type="Button" parent="SiteButtons" unique_id=1757457031]
-custom_minimum_size = Vector2(150, 32)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_fonts/font = ExtResource("2_font")
-text = "Доска"
-icon = ExtResource("5_board")
-icon_alignment = 1
-
-[node name="btn_humor" type="Button" parent="SiteButtons" unique_id=2135979176]
-custom_minimum_size = Vector2(150, 32)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_fonts/font = ExtResource("2_font")
-text = "Юмор"
-icon = ExtResource("6_humor")
-icon_alignment = 1
-
-[node name="ArticleList" type="ItemList" parent="." unique_id=1382756178]
-layout_mode = 0
-offset_left = 33.0
-offset_top = 95.0
-offset_right = 350.0
-offset_bottom = 569.0
-theme_override_fonts/font = ExtResource("2_font")
-
-[node name="ContentView" type="MarginContainer" parent="." unique_id=1766569794]
-layout_mode = 0
-offset_left = 360.0
-offset_top = 95.0
-offset_right = 1134.0
-offset_bottom = 569.0
-
-[node name="ArticleText" type="RichTextLabel" parent="ContentView" unique_id=1455257205]
-layout_mode = 2
-theme_override_fonts/normal_font = ExtResource("2_font")
-theme_override_fonts/bold_font = ExtResource("2_font")
-theme_override_fonts/italics_font = ExtResource("2_font")
-theme_override_fonts/mono_font = ExtResource("2_font")
-bbcode_enabled = true
-fit_content = true
-autowrap_mode = 2
+     1|[gd_scene format=3 uid="uid://ol2gn62mkaa5"]
+     2|
+     3|[ext_resource type="Script" uid="uid://cmjnrcej6260g" path="res://scenes/browser/browser.gd" id="1_script"]
+     4|[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="2_theme"]
+     5|[ext_resource type="Texture2D" uid="uid://brdxdbty51r55" path="res://assets/icons/news.png" id="3_news"]
+     6|[ext_resource type="Texture2D" uid="uid://pj8vrl5c2uy0" path="res://assets/icons/wiki.png" id="4_wiki"]
+     7|[ext_resource type="Texture2D" uid="uid://gw4etixoi308" path="res://assets/icons/board.png" id="5_board"]
+     8|[ext_resource type="Texture2D" uid="uid://cawrijog28sn4" path="res://assets/icons/humor.png" id="6_humor"]
+     9|
+    10|[node name="Browser" type="Control" unique_id=1018924403]
+    11|layout_mode = 3
+    12|anchors_preset = 15
+    13|anchor_right = 1.0
+    14|anchor_bottom = 1.0
+    15|grow_horizontal = 2
+    16|grow_vertical = 2
+    17|script = ExtResource("1_script")
+    18|
+    19|[node name="Background" type="ColorRect" parent="." unique_id=270996671]
+    20|visible = false
+    21|layout_mode = 1
+    22|anchors_preset = 15
+    23|anchor_right = 1.0
+    24|anchor_bottom = 1.0
+    25|offset_top = -4.0
+    26|grow_horizontal = 2
+    27|grow_vertical = 2
+    28|color = Color(0, 0.101960786, 0, 1)
+    29|
+    30|[node name="BackButton" type="Button" parent="." unique_id=1055181982]
+    31|layout_mode = 0
+    32|offset_left = 12.0
+    33|offset_right = 100.0
+    34|offset_bottom = 31.0
+    36|text = "Назад"
+    37|
+    38|[node name="SiteButtons" type="HBoxContainer" parent="." unique_id=268300850]
+    39|layout_mode = 0
+    40|offset_left = 33.0
+    41|offset_top = 47.0
+    42|offset_right = 600.0
+    43|offset_bottom = 85.0
+    44|
+    45|[node name="btn_news" type="Button" parent="SiteButtons" unique_id=604976852]
+    46|custom_minimum_size = Vector2(150, 32)
+    47|layout_mode = 2
+    48|size_flags_horizontal = 0
+    50|text = "Новости"
+    51|icon = ExtResource("3_news")
+    52|icon_alignment = 1
+    53|
+    54|[node name="btn_wiki" type="Button" parent="SiteButtons" unique_id=938400842]
+    55|custom_minimum_size = Vector2(150, 32)
+    56|layout_mode = 2
+    57|size_flags_horizontal = 0
+    59|text = "Вики"
+    60|icon = ExtResource("4_wiki")
+    61|icon_alignment = 1
+    62|
+    63|[node name="btn_board" type="Button" parent="SiteButtons" unique_id=1757457031]
+    64|custom_minimum_size = Vector2(150, 32)
+    65|layout_mode = 2
+    66|size_flags_horizontal = 0
+    68|text = "Доска"
+    69|icon = ExtResource("5_board")
+    70|icon_alignment = 1
+    71|
+    72|[node name="btn_humor" type="Button" parent="SiteButtons" unique_id=2135979176]
+    73|custom_minimum_size = Vector2(150, 32)
+    74|layout_mode = 2
+    75|size_flags_horizontal = 0
+    77|text = "Юмор"
+    78|icon = ExtResource("6_humor")
+    79|icon_alignment = 1
+    80|
+    81|[node name="ArticleList" type="ItemList" parent="." unique_id=1382756178]
+    82|layout_mode = 0
+    83|offset_left = 33.0
+    84|offset_top = 95.0
+    85|offset_right = 350.0
+    86|offset_bottom = 569.0
+    88|
+    89|[node name="ContentView" type="MarginContainer" parent="." unique_id=1766569794]
+    90|layout_mode = 0
+    91|offset_left = 360.0
+    92|offset_top = 95.0
+    93|offset_right = 1134.0
+    94|offset_bottom = 569.0
+    95|
+    96|[node name="ArticleText" type="RichTextLabel" parent="ContentView" unique_id=1455257205]
+    97|layout_mode = 2
+    98|theme_override_fonts/normal_font = ExtResource("2_font")
+    99|theme_override_fonts/bold_font = ExtResource("2_font")
+   100|theme_override_fonts/italics_font = ExtResource("2_font")
+   101|theme_override_fonts/mono_font = ExtResource("2_font")
+   102|bbcode_enabled = true
+   103|fit_content = true
+   104|autowrap_mode = 2
+   105|

@@ -1,10 +1,10 @@
 [gd_scene load_steps=3 format=3 uid="uid://c8m3k5xn7rq9e"]
 
 [ext_resource type="Script" path="res://scenes/desktop/next_day_transition.gd" id="1"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2"]
+[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="2_theme"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_1"]
-font = ExtResource("2")
+font = ExtResource("2_theme")
 font_color = Color(0, 1, 0, 1)
 font_size = 20
 shadow_color = Color(0, 0.5, 0, 1)

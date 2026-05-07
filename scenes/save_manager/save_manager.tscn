@@ -1,123 +1,122 @@
-[gd_scene format=3 uid="uid://d5k8m2n7xqp3r" load_steps=3]
-
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="1"]
-[ext_resource type="Script" path="res://scenes/save_manager/save_manager.gd" id="2"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_container"]
-bg_color = Color(0, 0.1, 0, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0, 1, 0, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_checkbox"]
-bg_color = Color(0, 0.08, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0, 1, 0, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_checkbox_checked"]
-bg_color = Color(0, 0.3, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0, 1, 0, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="Theme" id="Theme_checkbox"]
-CheckBox/checkbox_icon = SubResource("StyleBoxFlat_checkbox")
-CheckBox/checkbox_icon_checked = SubResource("StyleBoxFlat_checkbox_checked")
-CheckBox/checkbox_icon_disabled = SubResource("StyleBoxFlat_checkbox")
-CheckBox/checkbox_icon_disabled_checked = SubResource("StyleBoxFlat_checkbox_checked")
-CheckBox/font_color = Color(0, 1, 0, 1)
-CheckBox/font_size = 12
-default_font = ExtResource("1")
-
-[node name="SaveManager" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("2")
-
-[node name="Background" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0.101960786, 0, 1)
-
-[node name="TitleLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 600.0
-offset_bottom = 52.0
-theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_fonts/font = ExtResource("1")
-theme_override_font_sizes/font_size = 18
-text = "💾 УПРАВЛЕНИЕ СОХРАНЕНИЯМИ"
-
-[node name="BackButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 1050.0
-offset_top = 12.0
-offset_right = 1140.0
-offset_bottom = 52.0
-theme_override_fonts/font = ExtResource("1")
-theme_override_font_sizes/font_size = 12
-text = "Назад"
-
-[node name="SlotsPanel" type="Panel" parent="."]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 70.0
-offset_right = 1140.0
-offset_bottom = 520.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_container")
-
-[node name="SaveSlotsContainer" type="VBoxContainer" parent="SlotsPanel"]
-layout_mode = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 15.0
-offset_right = -20.0
-offset_bottom = -15.0
-grow_horizontal = 2
-grow_vertical = 2
-add_constant = 15
-
-[node name="AutoSaveContainer" type="HBoxContainer" parent="."]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 540.0
-offset_right = 400.0
-offset_bottom = 580.0
-
-[node name="AutoSaveCheckbox" type="CheckBox" parent="AutoSaveContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme = SubResource("Theme_checkbox")
-button_pressed = false
-text = "Авто-сохранение"
+     1|[gd_scene format=3 uid="uid://d5k8m2n7xqp3r" load_steps=3]
+     2|
+     3|[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="1_theme"]
+     4|[ext_resource type="Script" path="res://scenes/save_manager/save_manager.gd" id="2"]
+     5|
+     6|[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_container"]
+     7|bg_color = Color(0, 0.1, 0, 1)
+     8|border_width_left = 3
+     9|border_width_top = 3
+    10|border_width_right = 3
+    11|border_width_bottom = 3
+    12|border_color = Color(0, 1, 0, 1)
+    13|corner_radius_top_left = 8
+    14|corner_radius_top_right = 8
+    15|corner_radius_bottom_right = 8
+    16|corner_radius_bottom_left = 8
+    17|
+    18|[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_checkbox"]
+    19|bg_color = Color(0, 0.08, 0, 1)
+    20|border_width_left = 2
+    21|border_width_top = 2
+    22|border_width_right = 2
+    23|border_width_bottom = 2
+    24|border_color = Color(0, 1, 0, 1)
+    25|corner_radius_top_left = 3
+    26|corner_radius_top_right = 3
+    27|corner_radius_bottom_right = 3
+    28|corner_radius_bottom_left = 3
+    29|
+    30|[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_checkbox_checked"]
+    31|bg_color = Color(0, 0.3, 0, 1)
+    32|border_width_left = 2
+    33|border_width_top = 2
+    34|border_width_right = 2
+    35|border_width_bottom = 2
+    36|border_color = Color(0, 1, 0, 1)
+    37|corner_radius_top_left = 3
+    38|corner_radius_top_right = 3
+    39|corner_radius_bottom_right = 3
+    40|corner_radius_bottom_left = 3
+    41|
+    42|[sub_resource type="Theme" id="Theme_checkbox"]
+    43|CheckBox/checkbox_icon = SubResource("StyleBoxFlat_checkbox")
+    44|CheckBox/checkbox_icon_checked = SubResource("StyleBoxFlat_checkbox_checked")
+    45|CheckBox/checkbox_icon_disabled = SubResource("StyleBoxFlat_checkbox")
+    46|CheckBox/checkbox_icon_disabled_checked = SubResource("StyleBoxFlat_checkbox_checked")
+    47|CheckBox/font_color = Color(0, 1, 0, 1)
+    48|CheckBox/font_size = 12
+    49|default_font = ExtResource("1_theme")
+    50|
+    51|[node name="SaveManager" type="Control"]
+    52|layout_mode = 3
+    53|anchors_preset = 15
+    54|anchor_right = 1.0
+    55|anchor_bottom = 1.0
+    56|grow_horizontal = 2
+    57|grow_vertical = 2
+    58|script = ExtResource("2")
+    59|
+    60|[node name="Background" type="ColorRect" parent="."]
+    61|layout_mode = 1
+    62|anchors_preset = 15
+    63|anchor_right = 1.0
+    64|anchor_bottom = 1.0
+    65|grow_horizontal = 2
+    66|grow_vertical = 2
+    67|color = Color(0, 0.101960786, 0, 1)
+    68|
+    69|[node name="TitleLabel" type="Label" parent="."]
+    70|layout_mode = 0
+    71|offset_left = 12.0
+    72|offset_top = 12.0
+    73|offset_right = 600.0
+    74|offset_bottom = 52.0
+    75|theme_override_colors/font_color = Color(0, 1, 0, 1)
+    77|theme_override_font_sizes/font_size = 18
+    78|text = "💾 УПРАВЛЕНИЕ СОХРАНЕНИЯМИ"
+    79|
+    80|[node name="BackButton" type="Button" parent="."]
+    81|layout_mode = 0
+    82|offset_left = 1050.0
+    83|offset_top = 12.0
+    84|offset_right = 1140.0
+    85|offset_bottom = 52.0
+    87|theme_override_font_sizes/font_size = 12
+    88|text = "Назад"
+    89|
+    90|[node name="SlotsPanel" type="Panel" parent="."]
+    91|layout_mode = 0
+    92|offset_left = 12.0
+    93|offset_top = 70.0
+    94|offset_right = 1140.0
+    95|offset_bottom = 520.0
+    96|theme_override_styles/panel = SubResource("StyleBoxFlat_container")
+    97|
+    98|[node name="SaveSlotsContainer" type="VBoxContainer" parent="SlotsPanel"]
+    99|layout_mode = 2
+   100|anchors_preset = 15
+   101|anchor_right = 1.0
+   102|anchor_bottom = 1.0
+   103|offset_left = 20.0
+   104|offset_top = 15.0
+   105|offset_right = -20.0
+   106|offset_bottom = -15.0
+   107|grow_horizontal = 2
+   108|grow_vertical = 2
+   109|add_constant = 15
+   110|
+   111|[node name="AutoSaveContainer" type="HBoxContainer" parent="."]
+   112|layout_mode = 0
+   113|offset_left = 12.0
+   114|offset_top = 540.0
+   115|offset_right = 400.0
+   116|offset_bottom = 580.0
+   117|
+   118|[node name="AutoSaveCheckbox" type="CheckBox" parent="AutoSaveContainer"]
+   119|layout_mode = 2
+   120|size_flags_horizontal = 3
+   121|theme = SubResource("Theme_checkbox")
+   122|button_pressed = false
+   123|text = "Авто-сохранение"
+   124|

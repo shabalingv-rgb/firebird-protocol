@@ -1,132 +1,124 @@
-[gd_scene format=3 uid="uid://bbhi23fpg4ux3"]
-
-[ext_resource type="Theme" uid="uid://7vufr44i5vp4" path="res://assets/themes/retro_theme.tres" id="1_7x7co"]
-[ext_resource type="Script" uid="uid://gvf7tm6miwj" path="res://scenes/email/email_client.gd" id="1_ps0rs"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_2y7k8"]
-
-[node name="EmailClient" type="Control" unique_id=644736021]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = ExtResource("1_7x7co")
-script = ExtResource("1_ps0rs")
-
-[node name="Background" type="ColorRect" parent="." unique_id=1293584174]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0.101960786, 0, 1)
-
-[node name="BackButton" type="Button" parent="." unique_id=795884728]
-layout_mode = 0
-offset_left = 12.0
-offset_right = 100.0
-offset_bottom = 31.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Назад"
-
-[node name="EmailTabs" type="TabContainer" parent="." unique_id=1629995096]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 47.0
-offset_right = 350.0
-offset_bottom = 569.0
-current_tab = 0
-
-[node name="Входящие" type="Control" parent="EmailTabs" unique_id=1629995097]
-layout_mode = 2
-metadata/_tab_index = 0
-
-[node name="InboxList" type="ItemList" parent="EmailTabs/Входящие" unique_id=1629995098]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_fonts/font = ExtResource("2_2y7k8")
-
-[node name="Архив" type="Control" parent="EmailTabs" unique_id=1629995099]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 1
-
-[node name="ArchiveList" type="ItemList" parent="EmailTabs/Архив" unique_id=1629995100]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_fonts/font = ExtResource("2_2y7k8")
-
-[node name="EmailHeader" type="Panel" parent="." unique_id=2137021936]
-layout_mode = 0
-offset_left = 360.0
-offset_top = 47.0
-offset_right = 1134.0
-offset_bottom = 117.0
-
-[node name="Subject" type="Label" parent="EmailHeader" unique_id=1089938234]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 500.0
-offset_bottom = 30.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Тема:"
-
-[node name="Sender" type="Label" parent="EmailHeader" unique_id=1735120632]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 35.0
-offset_right = 500.0
-offset_bottom = 55.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Отправитель:"
-
-[node name="DateLabel" type="Label" parent="EmailHeader" unique_id=2092721498]
-layout_mode = 0
-offset_left = 520.0
-offset_top = 10.0
-offset_right = 760.0
-offset_bottom = 30.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-
-[node name="ReplyButton" type="Button" parent="EmailHeader" unique_id=455730246]
-layout_mode = 0
-offset_left = 595.0
-offset_top = -9.0
-offset_right = 755.0
-offset_bottom = 21.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Ответить"
-
-[node name="FollowInstructionsButton" type="Button" parent="EmailHeader" unique_id=455730247]
-layout_mode = 0
-offset_left = 35.0
-offset_top = 519.0
-offset_right = 347.0
-offset_bottom = 549.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
-text = "Запустить процедуру"
-
-[node name="EmailBody" type="RichTextLabel" parent="." unique_id=810244442]
-layout_mode = 0
-offset_left = 360.0
-offset_top = 127.0
-offset_right = 1134.0
-offset_bottom = 569.0
-theme_override_fonts/normal_font = ExtResource("2_2y7k8")
-theme_override_fonts/bold_font = ExtResource("2_2y7k8")
-theme_override_fonts/italics_font = ExtResource("2_2y7k8")
-theme_override_fonts/mono_font = ExtResource("2_2y7k8")
-bbcode_enabled = true
-autowrap_mode = 2
+     1|[gd_scene format=3 uid="uid://bbhi23fpg4ux3"]
+     2|
+     3|[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="1_7x7co"]
+     4|[ext_resource type="Script" uid="uid://gvf7tm6miwj" path="res://scenes/email/email_client.gd" id="1_ps0rs"]
+     5|
+     6|[node name="EmailClient" type="Control" unique_id=644736021]
+     7|layout_mode = 3
+     8|anchors_preset = 15
+     9|anchor_right = 1.0
+    10|anchor_bottom = 1.0
+    11|grow_horizontal = 2
+    12|grow_vertical = 2
+    13|theme = ExtResource("1_7x7co")
+    14|script = ExtResource("1_ps0rs")
+    15|
+    16|[node name="Background" type="ColorRect" parent="." unique_id=1293584174]
+    17|layout_mode = 1
+    18|anchors_preset = 15
+    19|anchor_right = 1.0
+    20|anchor_bottom = 1.0
+    21|offset_top = -4.0
+    22|grow_horizontal = 2
+    23|grow_vertical = 2
+    24|color = Color(0, 0.101960786, 0, 1)
+    25|
+    26|[node name="BackButton" type="Button" parent="." unique_id=795884728]
+    27|layout_mode = 0
+    28|offset_left = 12.0
+    29|offset_right = 100.0
+    30|offset_bottom = 31.0
+    32|text = "Назад"
+    33|
+    34|[node name="EmailTabs" type="TabContainer" parent="." unique_id=1629995096]
+    35|layout_mode = 0
+    36|offset_left = 12.0
+    37|offset_top = 47.0
+    38|offset_right = 350.0
+    39|offset_bottom = 569.0
+    40|current_tab = 0
+    41|
+    42|[node name="Входящие" type="Control" parent="EmailTabs" unique_id=1629995097]
+    43|layout_mode = 2
+    44|metadata/_tab_index = 0
+    45|
+    46|[node name="InboxList" type="ItemList" parent="EmailTabs/Входящие" unique_id=1629995098]
+    47|layout_mode = 1
+    48|anchors_preset = 15
+    49|anchor_right = 1.0
+    50|anchor_bottom = 1.0
+    51|grow_horizontal = 2
+    52|grow_vertical = 2
+    54|
+    55|[node name="Архив" type="Control" parent="EmailTabs" unique_id=1629995099]
+    56|visible = false
+    57|layout_mode = 2
+    58|metadata/_tab_index = 1
+    59|
+    60|[node name="ArchiveList" type="ItemList" parent="EmailTabs/Архив" unique_id=1629995100]
+    61|layout_mode = 1
+    62|anchors_preset = 15
+    63|anchor_right = 1.0
+    64|anchor_bottom = 1.0
+    65|grow_horizontal = 2
+    66|grow_vertical = 2
+    68|
+    69|[node name="EmailHeader" type="Panel" parent="." unique_id=2137021936]
+    70|layout_mode = 0
+    71|offset_left = 360.0
+    72|offset_top = 47.0
+    73|offset_right = 1134.0
+    74|offset_bottom = 117.0
+    75|
+    76|[node name="Subject" type="Label" parent="EmailHeader" unique_id=1089938234]
+    77|layout_mode = 0
+    78|offset_left = 10.0
+    79|offset_top = 10.0
+    80|offset_right = 500.0
+    81|offset_bottom = 30.0
+    83|text = "Тема:"
+    84|
+    85|[node name="Sender" type="Label" parent="EmailHeader" unique_id=1735120632]
+    86|layout_mode = 0
+    87|offset_left = 10.0
+    88|offset_top = 35.0
+    89|offset_right = 500.0
+    90|offset_bottom = 55.0
+    92|text = "Отправитель:"
+    93|
+    94|[node name="DateLabel" type="Label" parent="EmailHeader" unique_id=2092721498]
+    95|layout_mode = 0
+    96|offset_left = 520.0
+    97|offset_top = 10.0
+    98|offset_right = 760.0
+    99|offset_bottom = 30.0
+   101|
+   102|[node name="ReplyButton" type="Button" parent="EmailHeader" unique_id=455730246]
+   103|layout_mode = 0
+   104|offset_left = 595.0
+   105|offset_top = -9.0
+   106|offset_right = 755.0
+   107|offset_bottom = 21.0
+   109|text = "Ответить"
+   110|
+   111|[node name="FollowInstructionsButton" type="Button" parent="EmailHeader" unique_id=455730247]
+   112|layout_mode = 0
+   113|offset_left = 35.0
+   114|offset_top = 519.0
+   115|offset_right = 347.0
+   116|offset_bottom = 549.0
+   118|text = "Запустить процедуру"
+   119|
+   120|[node name="EmailBody" type="RichTextLabel" parent="." unique_id=810244442]
+   121|layout_mode = 0
+   122|offset_left = 360.0
+   123|offset_top = 127.0
+   124|offset_right = 1134.0
+   125|offset_bottom = 569.0
+   126|theme_override_fonts/normal_font = ExtResource("2_2y7k8")
+   127|theme_override_fonts/bold_font = ExtResource("2_2y7k8")
+   128|theme_override_fonts/italics_font = ExtResource("2_2y7k8")
+   129|theme_override_fonts/mono_font = ExtResource("2_2y7k8")
+   130|bbcode_enabled = true
+   131|autowrap_mode = 2
+   132|

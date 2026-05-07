@@ -1,175 +1,165 @@
-[gd_scene format=3 uid="uid://cckuejacqg8c1"]
-
-[ext_resource type="Script" uid="uid://cplkbxydeo0cp" path="res://scenes/desktop/desktop.gd" id="1"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
-bg_color = Color(0, 0.06, 0, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0, 1, 0, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[node name="Desktop" type="Control" unique_id=1994708423]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1")
-
-[node name="Background" type="ColorRect" parent="." unique_id=1210441409]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.101960786, 0.101960786, 0.18039216, 1)
-
-[node name="DesktopIcons" type="Control" parent="." unique_id=1435794416]
-layout_mode = 1
-anchor_right = 0.08
-anchor_bottom = 1.0
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="EmailIcon" type="Button" parent="DesktopIcons" unique_id=2026380193]
-layout_mode = 0
-offset_right = 58.0
-offset_bottom = 50.0
-theme_override_fonts/font = ExtResource("2")
-text = "Почта"
-
-[node name="TerminalIcon" type="Button" parent="DesktopIcons" unique_id=381912034]
-layout_mode = 0
-offset_left = -3.0
-offset_top = 98.0
-offset_right = 87.0
-offset_bottom = 148.0
-theme_override_fonts/font = ExtResource("2")
-text = "Терминал"
-
-[node name="SudokuIcon" type="Button" parent="DesktopIcons" unique_id=1594236972]
-layout_mode = 0
-offset_left = 3.0
-offset_top = 216.0
-offset_right = 68.0
-offset_bottom = 266.0
-theme_override_fonts/font = ExtResource("2")
-text = "Судоку"
-
-[node name="BrowserIcon" type="Button" parent="DesktopIcons" unique_id=185745649]
-layout_mode = 0
-offset_left = 5.0
-offset_top = 329.0
-offset_right = 79.0
-offset_bottom = 379.0
-theme_override_fonts/font = ExtResource("2")
-text = "Браузер"
-
-[node name="GuideIcon" type="Button" parent="DesktopIcons" unique_id=1909677202]
-layout_mode = 0
-offset_left = 5.0
-offset_top = 446.0
-offset_right = 125.0
-offset_bottom = 496.0
-theme_override_fonts/font = ExtResource("2")
-text = "Справка"
-
-[node name="EndDay" type="Button" parent="DesktopIcons" unique_id=1397952786]
-layout_mode = 0
-offset_left = 3.0
-offset_top = 563.0
-offset_right = 219.0
-offset_bottom = 599.0
-theme_override_fonts/font = ExtResource("2")
-text = "Закрыть смену"
-
-[node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
-layout_mode = 0
-offset_left = 810.0
-offset_top = 502.0
-offset_right = 1150.0
-offset_bottom = 582.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_1")
-
-[node name="CloseButton" type="Button" parent="NotificationPopup" unique_id=1869883202]
-layout_mode = 0
-offset_left = 320.0
-offset_top = 5.0
-offset_right = 340.0
-offset_bottom = 25.0
-theme_override_fonts/font = ExtResource("2")
-theme_override_font_sizes/font_size = 10
-text = "✕"
-flat = true
-
-[node name="SenderLabel" type="Label" parent="NotificationPopup" unique_id=2130256742]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 8.0
-offset_right = 310.0
-offset_bottom = 28.0
-theme_override_colors/font_color = Color(0, 0.8, 0, 1)
-theme_override_fonts/font = ExtResource("2")
-theme_override_font_sizes/font_size = 8
-text = ""
-
-[node name="SubjectLabel" type="Label" parent="NotificationPopup" unique_id=2130256741]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 30.0
-offset_right = 330.0
-offset_bottom = 55.0
-theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_fonts/font = ExtResource("2")
-theme_override_font_sizes/font_size = 9
-text = ""
-
-[node name="TimerLabel" type="Label" parent="NotificationPopup" unique_id=2130256743]
-layout_mode = 0
-offset_left = 280.0
-offset_top = 58.0
-offset_right = 330.0
-offset_bottom = 75.0
-theme_override_colors/font_color = Color(0, 0.5, 0, 1)
-theme_override_fonts/font = ExtResource("2")
-theme_override_font_sizes/font_size = 7
-text = ""
-horizontal_alignment = 2
-
-[node name="ScreenOverlay" type="TextureRect" parent="." unique_id=564947875]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-
-[node name="Taskbar" type="Control" parent="." unique_id=667694421]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 1.0
-offset_top = -41.0
-offset_right = 1.0
-offset_bottom = -1.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="ClockLabel" type="Label" parent="Taskbar" unique_id=676773549]
-layout_mode = 0
-offset_left = 987.0
-offset_top = 7.0
-offset_right = 1137.0
-offset_bottom = 30.0
-theme_override_fonts/font = ExtResource("2")
-text = "00:00"
-horizontal_alignment = 2
+     1|[gd_scene format=3 uid="uid://cckuejacqg8c1"]
+     2|
+     3|[ext_resource type="Script" uid="uid://cplkbxydeo0cp" path="res://scenes/desktop/desktop.gd" id="1"]
+     4|[ext_resource type="Theme" uid="uid://game_theme_001" path="res://assets/themes/game_theme.tres" id="2_theme"]
+     5|
+     6|[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+     7|bg_color = Color(0, 0.06, 0, 1)
+     8|border_width_left = 3
+     9|border_width_top = 3
+    10|border_width_right = 3
+    11|border_width_bottom = 3
+    12|border_color = Color(0, 1, 0, 1)
+    13|corner_radius_top_left = 6
+    14|corner_radius_top_right = 6
+    15|corner_radius_bottom_right = 6
+    16|corner_radius_bottom_left = 6
+    17|
+    18|[node name="Desktop" type="Control" unique_id=1994708423]
+    19|layout_mode = 3
+    20|anchors_preset = 15
+    21|anchor_right = 1.0
+    22|anchor_bottom = 1.0
+    23|grow_horizontal = 2
+    24|grow_vertical = 2
+    25|script = ExtResource("1")
+    26|
+    27|[node name="Background" type="ColorRect" parent="." unique_id=1210441409]
+    28|layout_mode = 1
+    29|anchors_preset = 15
+    30|anchor_right = 1.0
+    31|anchor_bottom = 1.0
+    32|grow_horizontal = 2
+    33|grow_vertical = 2
+    34|color = Color(0.101960786, 0.101960786, 0.18039216, 1)
+    35|
+    36|[node name="DesktopIcons" type="Control" parent="." unique_id=1435794416]
+    37|layout_mode = 1
+    38|anchor_right = 0.08
+    39|anchor_bottom = 1.0
+    40|grow_horizontal = 0
+    41|grow_vertical = 2
+    42|
+    43|[node name="EmailIcon" type="Button" parent="DesktopIcons" unique_id=2026380193]
+    44|layout_mode = 0
+    45|offset_right = 58.0
+    46|offset_bottom = 50.0
+    48|text = "Почта"
+    49|
+    50|[node name="TerminalIcon" type="Button" parent="DesktopIcons" unique_id=381912034]
+    51|layout_mode = 0
+    52|offset_left = -3.0
+    53|offset_top = 98.0
+    54|offset_right = 87.0
+    55|offset_bottom = 148.0
+    57|text = "Терминал"
+    58|
+    59|[node name="SudokuIcon" type="Button" parent="DesktopIcons" unique_id=1594236972]
+    60|layout_mode = 0
+    61|offset_left = 3.0
+    62|offset_top = 216.0
+    63|offset_right = 68.0
+    64|offset_bottom = 266.0
+    66|text = "Судоку"
+    67|
+    68|[node name="BrowserIcon" type="Button" parent="DesktopIcons" unique_id=185745649]
+    69|layout_mode = 0
+    70|offset_left = 5.0
+    71|offset_top = 329.0
+    72|offset_right = 79.0
+    73|offset_bottom = 379.0
+    75|text = "Браузер"
+    76|
+    77|[node name="GuideIcon" type="Button" parent="DesktopIcons" unique_id=1909677202]
+    78|layout_mode = 0
+    79|offset_left = 5.0
+    80|offset_top = 446.0
+    81|offset_right = 125.0
+    82|offset_bottom = 496.0
+    84|text = "Справка"
+    85|
+    86|[node name="EndDay" type="Button" parent="DesktopIcons" unique_id=1397952786]
+    87|layout_mode = 0
+    88|offset_left = 3.0
+    89|offset_top = 563.0
+    90|offset_right = 219.0
+    91|offset_bottom = 599.0
+    93|text = "Закрыть смену"
+    94|
+    95|[node name="NotificationPopup" type="Panel" parent="." unique_id=1869883201]
+    96|layout_mode = 0
+    97|offset_left = 810.0
+    98|offset_top = 502.0
+    99|offset_right = 1150.0
+   100|offset_bottom = 582.0
+   101|theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+   102|
+   103|[node name="CloseButton" type="Button" parent="NotificationPopup" unique_id=1869883202]
+   104|layout_mode = 0
+   105|offset_left = 320.0
+   106|offset_top = 5.0
+   107|offset_right = 340.0
+   108|offset_bottom = 25.0
+   110|theme_override_font_sizes/font_size = 10
+   111|text = "✕"
+   112|flat = true
+   113|
+   114|[node name="SenderLabel" type="Label" parent="NotificationPopup" unique_id=2130256742]
+   115|layout_mode = 0
+   116|offset_left = 10.0
+   117|offset_top = 8.0
+   118|offset_right = 310.0
+   119|offset_bottom = 28.0
+   120|theme_override_colors/font_color = Color(0, 0.8, 0, 1)
+   122|theme_override_font_sizes/font_size = 8
+   123|text = ""
+   124|
+   125|[node name="SubjectLabel" type="Label" parent="NotificationPopup" unique_id=2130256741]
+   126|layout_mode = 0
+   127|offset_left = 10.0
+   128|offset_top = 30.0
+   129|offset_right = 330.0
+   130|offset_bottom = 55.0
+   131|theme_override_colors/font_color = Color(0, 1, 0, 1)
+   133|theme_override_font_sizes/font_size = 9
+   134|text = ""
+   135|
+   136|[node name="TimerLabel" type="Label" parent="NotificationPopup" unique_id=2130256743]
+   137|layout_mode = 0
+   138|offset_left = 280.0
+   139|offset_top = 58.0
+   140|offset_right = 330.0
+   141|offset_bottom = 75.0
+   142|theme_override_colors/font_color = Color(0, 0.5, 0, 1)
+   144|theme_override_font_sizes/font_size = 7
+   145|text = ""
+   146|horizontal_alignment = 2
+   147|
+   148|[node name="ScreenOverlay" type="TextureRect" parent="." unique_id=564947875]
+   149|layout_mode = 0
+   150|offset_right = 40.0
+   151|offset_bottom = 40.0
+   152|mouse_filter = 2
+   153|
+   154|[node name="Taskbar" type="Control" parent="." unique_id=667694421]
+   155|layout_mode = 1
+   156|anchors_preset = 12
+   157|anchor_top = 1.0
+   158|anchor_right = 1.0
+   159|anchor_bottom = 1.0
+   160|offset_left = 1.0
+   161|offset_top = -41.0
+   162|offset_right = 1.0
+   163|offset_bottom = -1.0
+   164|grow_horizontal = 2
+   165|grow_vertical = 0
+   166|
+   167|[node name="ClockLabel" type="Label" parent="Taskbar" unique_id=676773549]
+   168|layout_mode = 0
+   169|offset_left = 987.0
+   170|offset_top = 7.0
+   171|offset_right = 1137.0
+   172|offset_bottom = 30.0
+   174|text = "00:00"
+   175|horizontal_alignment = 2
+   176|
