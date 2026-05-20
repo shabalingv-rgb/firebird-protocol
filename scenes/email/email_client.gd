@@ -5,7 +5,6 @@ extends Control
 @onready var sender_label = $EmailHeader/Sender
 @onready var date_label = $EmailHeader/DateLabel
 @onready var reply_button = $EmailHeader/ReplyButton
-@onready var follow_instructions_button = $EmailHeader/FollowInstructionsButton
 @onready var body_label = $EmailBody
 @onready var back_button = $BackButton
 @onready var email_tabs = $EmailTabs
@@ -33,13 +32,11 @@ func _ready():
 		back_button.pressed.connect(_on_back_pressed)
 	if reply_button:
 		reply_button.pressed.connect(_on_reply_button_pressed)
-	if follow_instructions_button:
-		follow_instructions_button.pressed.connect(_on_follow_instructions_pressed)
 	if email_tabs:
 		email_tabs.tab_changed.connect(_on_tab_changed)
 
 	print("📧 Email Client загружен")
-	
+
 	if DatabaseManager and not DatabaseManager.DatabaseReady.is_connected(_on_database_ready):
 		DatabaseManager.DatabaseReady.connect(_on_database_ready)
 
@@ -165,6 +162,22 @@ func refresh_inbox():
 		inbox_list.add_item(icon + subject + " — " + sender)
 		inbox_list.set_item_metadata(inbox_list.item_count - 1, inbox_list.item_count - 1)
 
+	# Показываем заблокированные письма (серые, без доступа)
+	var all_emails = DatabaseManager.GetEmailsForDay(QuestManager.current_day if QuestManager else 1)
+	for email_data in all_emails:
+		var gd_email = {}
+		for key in email_data.keys():
+			gd_email[str(key).to_lower()] = email_data[key]
+
+		var unlock_condition = gd_email.get("unlock_condition", "").strip_edges()
+		if unlock_condition != "" and not _is_condition_met(unlock_condition):
+			var subject = gd_email.get("subject", "[Заблокировано]")
+			var sender = gd_email.get("sender", "???")
+			inbox_list.add_item("🔒 " + subject + " — " + sender)
+			var item_idx = inbox_list.item_count - 1
+			inbox_list.set_item_metadata(item_idx, -1)  # special marker
+			inbox_list.set_item_custom_fg_color(item_idx, Color(0.4, 0.4, 0.4))
+
 	# Авто-выбор первого письма
 	if inbox_list.item_count > 0:
 		inbox_list.select(0)
@@ -226,6 +239,9 @@ func _on_inbox_selected(index: int):
 	if metadata >= 0 and metadata < current_emails.size():
 		# Письмо из текущего дня
 		show_email(current_emails[metadata])
+	elif metadata == -1:
+		# Заблокированное письмо — показываем уведомление
+		show_quest_not_completed_warning("Это письмо заблокировано. Выполните условие для разблокировки.")
 
 func _on_archive_selected(index: int):
 	if index >= 0 and index < archived_emails.size():
@@ -263,16 +279,12 @@ func show_email(email: Dictionary):
 
 	# Кнопка для квестов
 	var email_type = email.get("email_type", email.get("EMAIL_TYPE", "")).to_lower()
-	var quest_email_id = int(email.get("id", email.get("ID", 0)))
-
-	# Показываем кнопку "Запустить процедуру" только для письма от HR (инструктаж)
-	if follow_instructions_button:
-		follow_instructions_button.visible = (quest_email_id == 2)
 
 	if email_type == "quest":
 		if has_node("EmailHeader/ReplyButton"):
 			$EmailHeader/ReplyButton.visible = true
 			$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
+			var quest_email_id = int(email.get("id", email.get("ID", 0)))
 			load_quest_for_email(quest_email_id)
 	else:
 		if has_node("EmailHeader/ReplyButton"):
@@ -321,42 +333,12 @@ func _on_reply_button_pressed():
 		show_quest_not_completed_warning("Нет активного задания для этого письма!")
 		return
 
-	var quest_email_id = int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0)))
-	
-	# Исключение для инструктажа (письмо от HR) - не требует выполнения в терминале
-	if quest_email_id != 2:
-		var quest_id = active_quest.get("ID", active_quest.get("id", -1))
-		if QuestManager and not QuestManager.is_quest_completed(quest_id):
-			show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
-			return
+	var quest_id = active_quest.get("ID", active_quest.get("id", -1))
+	if QuestManager and not QuestManager.is_quest_completed(quest_id):
+		show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
+		return
 
 	show_report_dialog()
-
-
-func _on_follow_instructions_pressed():
-	"""Обработчик кнопки 'Запустить процедуру' - для инструктажа и других специальных заданий"""
-	if active_quest.is_empty():
-		# Если квеста нет в кэше, пробуем загрузить
-		var email_id = 0
-		# Пытаемся получить ID из текущего отображаемого письма
-		for email in current_emails:
-			if email.get("subject", "").contains("Приглашение") or email.get("SUBJECT", "").contains("Приглашение"):
-				email_id = int(email.get("id", email.get("ID", 0)))
-				break
-		
-		if email_id > 0:
-			load_quest_for_email(email_id)
-	
-	# Проверяем, что это письмо от HR (инструктаж)
-	var quest_email_id = int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0)))
-	if quest_email_id == 2:
-		print("📚 Запуск инструктажа через кнопку 'Запустить процедуру'...")
-		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
-	else:
-		# Универсальная логика для других специальных процедур
-		print("🔧 Запуск специальной процедуры для email_id=", quest_email_id)
-		# Здесь можно добавить логику для других типов процедур
-		show_error_message("Процедура еще не реализована для этого письма.")
 
 func show_report_dialog():
 	var dialog = ConfirmationDialog.new()
@@ -418,12 +400,6 @@ func show_report_dialog():
 	dialog.popup_centered(Vector2i(600, 230))
 
 func send_report(report_text: String):
-	# Проверяем: это письмо от HR (инструктаж)?
-	if active_quest and int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0))) == 2:
-		print("📚 Это инструктаж! Переходим к тестированию...")
-		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
-		return
-
 	print("📤 Отчёт отправлен: ", report_text)
 	var qid = int(active_quest.get("ID", active_quest.get("id", 0)))
 	DatabaseManager.SavePlayerChoice(qid, "report_text", report_text, QuestManager.current_day)

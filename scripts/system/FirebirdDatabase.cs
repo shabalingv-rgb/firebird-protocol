@@ -169,15 +169,11 @@ public partial class FirebirdDatabase : Node
 			IsInitialized = true;
 			EmitSignal(SignalName.DatabaseReady);
 			GD.Print("✅ БД готова к работе");
-			
-			// Проверка подключения вынесена в отдельную транзакцию
-			using (var trans = _connection.BeginTransaction())
+			using (var cmd = new FbCommand("SELECT MON$DATABASE_NAME FROM MON$DATABASE", _connection))
+
 			{
-				using (var cmd = new FbCommand("SELECT MON$DATABASE_NAME FROM MON$DATABASE", _connection, trans))
-				{
-					GD.Print("Реальный путь к БД на сервере: " + cmd.ExecuteScalar());
-				}
-				trans.Commit();
+				GD.Print("Реальный путь к БД на сервере: " + cmd.ExecuteScalar());
+
 			}
 
 
@@ -192,14 +188,10 @@ public partial class FirebirdDatabase : Node
 
 		if (_isConnected && _connection != null)
 		{
-			using (var trans = _connection.BeginTransaction())
+			using (var cmd = new FbCommand("SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'", _connection))
 			{
-				using (var cmd = new FbCommand("SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'PLAYER_PROGRESS'", _connection, trans))
-				{
-					var count = cmd.ExecuteScalar();
-					GD.Print($"Найдено таблиц с таким именем: {count}");
-				}
-				trans.Commit();
+				var count = cmd.ExecuteScalar();
+				GD.Print($"Найдено таблиц с таким именем: {count}");
 			}
 		}
 	}
@@ -503,10 +495,8 @@ public partial class FirebirdDatabase : Node
 	{
 		try
 		{
-			using var trans = _connection.BeginTransaction();
-			using var command = new FbCommand(sql, _connection, trans);
+			using var command = new FbCommand(sql, _connection);
 			command.ExecuteNonQuery();
-			trans.Commit();
 		}
 		catch (Exception e)
 		{
@@ -930,11 +920,10 @@ public partial class FirebirdDatabase : Node
 	public void AutoSave(int saveSlot, int currentDay, int violations, int trustLevel,
 						 GDictionary flags, GArray completedQuests, int playtimeMinutes)
 	{
-		// Автосохранение использует слот 0, что допустимо
-		if (saveSlot < 0)
+		if (saveSlot < 1)
 		{
 			GD.PrintErr("❌ AutoSave: номер слота должен быть >= 1");
-			return; 
+			return;
 		}
 
 		try

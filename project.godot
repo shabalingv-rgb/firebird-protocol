@@ -19,12 +19,12 @@ config/icon="res://icon.svg"
 
 GameState="*uid://83ilcgee0xpc"
 QuestManager="*uid://qvhnca2clj38"
-[autoload]
-
+EmailSystem="*uid://cje5bc56xghjs"
+GuideSystem="*uid://bjwcspsofnsfi"
 DatabaseManager="*uid://h85iqknxq553"
 GlobalInput="res://scripts/system/global_input.gd"
 AutoSaveManager="res://scripts/system/auto_save_manager.gd"
-PauseMenu="res://scenes/pause_menu/pause_menu.gd"
+PauseMenu="res://scenes/pause_menu/pause_menu.tscn"
 
 [display]
 

@@ -271,36 +271,13 @@ func _on_sudoku_completed(is_success: bool) -> void:
 	if not is_success:
 		return
 
-	# Проверяем: уведомление показываем только один раз и только в первый день
-	var game_state = get_node_or_null("/root/GameState")
-	if not game_state:
-		return
-
-	# Проверяем, показывали ли уже это уведомление
-	if game_state.story_flags.get("hr_email_notification_shown", false):
-		print("ℹ️ Уведомление о письме HR уже было показано — пропускаем")
-		return
-
-	# Проверяем, первый ли сейчас день
-	var current_day = 1
-	if QuestManager:
-		current_day = QuestManager.current_day
-	elif game_state.has_method("get_current_day"):
-		current_day = game_state.get_current_day()
-	
-	if current_day != 1:
-		print("ℹ️ Сейчас не первый день (день ", current_day, ") — уведомление не показываем")
-		return
-
 	# Устанавливаем условие разблокировки через GameState
-	if game_state.has_method("set_unlock_condition"):
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state and game_state.has_method("set_unlock_condition"):
 		game_state.set_unlock_condition("sudoku_completed", true)
 
-	# Помечаем что уведомление было показано
-	game_state.set_flag("hr_email_notification_shown", true)
-
 	# Сохраняем состояние
-	if game_state.has_method("save_game_state"):
+	if game_state and game_state.has_method("save_game_state"):
 		game_state.save_game_state()
 
 	print("🔓 Условие 'sudoku_completed' установлено — письмо от HR разблокировано!")
@@ -315,12 +292,10 @@ func _show_hr_email_notification() -> void:
 	dialog.title = "📬 НОВОЕ ПИСЬМО!"
 	dialog.dialog_text = "Вам пришло письмо от Отдела кадров НИИ \"Файербёрд\".\n\nПроверьте почту на рабочем столе."
 	
-	# Применяем игровой шрифт через Theme (как в email_client.gd)
-	var quest_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
-	var dialog_theme = Theme.new()
-	dialog_theme.default_font = quest_font
-	dialog_theme.default_font_size = 14
-	dialog.theme = dialog_theme
+	# Применяем системный игровой шрифт
+	var system_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+	dialog.add_theme_font_override("font", system_font)
+	dialog.add_theme_font_size_override("font_size", 16)
 	
 	add_child(dialog)
 	dialog.popup_centered(Vector2i(500, 200))
