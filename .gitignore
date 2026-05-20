@@ -25,6 +25,7 @@ out/
 *.bin
 *.suo
 *.user
+*.fdb
 
 # Editor and IDE files
 .vscode/
