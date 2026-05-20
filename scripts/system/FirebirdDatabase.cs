@@ -219,21 +219,21 @@ public partial class FirebirdDatabase : Node
 		}
 
 	}
-
+	
 	/// <summary>Применяет миграции к существующей БД (добавляет недостающие колонки).</summary>
 	private void ApplyMigrations()
 	{
 		GD.Print("🔄 Применение миграций БД...");
-
+	
 		try
 		{
 			// Проверяем наличие колонки is_read в таблице emails
 			var checkColumn = ExecuteQuery(@"
-				SELECT 1 FROM RDB$RELATION_FIELDS 
-				WHERE RDB$RELATION_NAME = 'EMAILS' 
+				SELECT 1 FROM RDB$RELATION_FIELDS
+				WHERE RDB$RELATION_NAME = 'EMAILS'
 				AND RDB$FIELD_NAME = 'IS_READ'
 			");
-
+	
 			if (checkColumn == null || checkColumn.Count == 0)
 			{
 				GD.Print("📝 Миграция: добавляем колонку is_read в emails...");
@@ -250,7 +250,74 @@ public partial class FirebirdDatabase : Node
 			GD.PrintErr($"⚠️ Ошибка миграции: {e.Message}");
 		}
 	}
-
+	
+	/// <summary>Миграция: добавляем столбец procedure_type, если его нет</summary>
+	private void MigrateQuestsTable()
+	{
+		GD.Print("🔄 Проверка колонки procedure_type в таблице quests...");
+		
+		try
+		{
+			// Проверяем наличие колонки procedure_type в таблице quests
+			var checkColumn = ExecuteQuery(@"
+				SELECT 1 FROM RDB$RELATION_FIELDS
+				WHERE RDB$RELATION_NAME = 'QUESTS'
+				AND RDB$FIELD_NAME = 'PROCEDURE_TYPE'
+			");
+			
+			if (checkColumn == null || checkColumn.Count == 0)
+			{
+				GD.Print("📝 Миграция: добавляем колонку procedure_type в quests...");
+				ExecuteNonQuery("ALTER TABLE quests ADD procedure_type VARCHAR(50)");
+				GD.Print("✅ Колонка procedure_type добавлена");
+			}
+			else
+			{
+				GD.Print("✅ Колонка procedure_type уже существует");
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"⚠️ Ошибка миграции quests таблицы: {e.Message}");
+		}
+	}
+	
+	/// <summary>Миграция: добавляем квест-инструктаж (email_id=2), если его нет</summary>
+	private void EnsureTutorialQuest()
+	{
+		GD.Print("🔄 Проверка квеста-инструктажа (email_id=2)...");
+		
+		try
+		{
+			// Проверяем наличие квеста с email_id = 2
+			var checkQuest = ExecuteQuery(@"
+				SELECT 1 FROM quests
+				WHERE email_id = 2
+			");
+			
+			if (checkQuest == null || checkQuest.Count == 0)
+			{
+				GD.Print("📝 Миграция: добавляем квест-инструктаж (email_id=2)...");
+				using var transaction = _connection.BeginTransaction();
+				using var fbCmd = new FbCommand(@"
+					INSERT INTO quests (email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required, procedure_type)
+					VALUES (2, 'Ознакомительный инструктаж', 'Пройдите вводный инструктаж для нового сотрудника', '', 0, '', 'tutorial', '', 'tutorial')
+				", _connection, transaction);
+				fbCmd.ExecuteNonQuery();
+				transaction.Commit();
+				GD.Print("✅ Квест-инструктаж добавлен");
+			}
+			else
+			{
+				GD.Print("✅ Квест-инструктаж уже существует");
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"⚠️ Ошибка миграции квеста-инструктажа: {e.Message}");
+		}
+	}
+	
 	private void ImportContent()
 	{
 		GD.Print("📥 Начало проверки структуры БД...");
@@ -405,6 +472,16 @@ public partial class FirebirdDatabase : Node
 
 		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
 		GD.Print("   🎯 Заданий: ", CachedQuests?.Count ?? 0);
+
+		// Миграция: добавляем столбец procedure_type, если его нет
+		MigrateQuestsTable();
+
+		// Миграция: добавляем квест-инструктаж (email_id=2), если его нет
+		EnsureTutorialQuest();
+
+		// Перезагружаем кэш после возможных миграций
+		CachedQuests = ExecuteQuery("SELECT * FROM quests ORDER BY id");
+		GD.Print("   🎯 Заданий после миграции: ", CachedQuests?.Count ?? 0);
 
 		// Проверяем, пуста ли guide_topics (новые данные могли не загрузиться)
 		var guideTopicsCount = ExecuteQuery("SELECT COUNT(*) as cnt FROM guide_topics");

@@ -2,7 +2,6 @@
 
 [ext_resource type="Theme" uid="uid://7vufr44i5vp4" path="res://assets/themes/retro_theme.tres" id="1_7x7co"]
 [ext_resource type="Script" uid="uid://gvf7tm6miwj" path="res://scenes/email/email_client.gd" id="1_ps0rs"]
-[ext_resource type="FontFile" uid="uid://v07qs3c54csj" path="res://assets/fonts/PressStart2P-Regular.ttf" id="2_2y7k8"]
 
 [node name="EmailClient" type="Control" unique_id=644736021]
 layout_mode = 3
@@ -29,7 +28,6 @@ layout_mode = 0
 offset_left = 12.0
 offset_right = 100.0
 offset_bottom = 31.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Назад"
 
 [node name="EmailTabs" type="TabContainer" parent="." unique_id=1629995096]
@@ -42,11 +40,7 @@ current_tab = 0
 
 [node name="Входящие" type="Control" parent="EmailTabs" unique_id=1629995097]
 layout_mode = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+metadata/_tab_index = 0
 
 [node name="InboxList" type="ItemList" parent="EmailTabs/Входящие" unique_id=1629995098]
 layout_mode = 1
@@ -55,15 +49,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_fonts/font = ExtResource("2_2y7k8")
 
 [node name="Архив" type="Control" parent="EmailTabs" unique_id=1629995099]
+visible = false
 layout_mode = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+metadata/_tab_index = 1
 
 [node name="ArchiveList" type="ItemList" parent="EmailTabs/Архив" unique_id=1629995100]
 layout_mode = 1
@@ -72,7 +62,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_fonts/font = ExtResource("2_2y7k8")
 
 [node name="EmailHeader" type="Panel" parent="." unique_id=2137021936]
 layout_mode = 0
@@ -87,7 +76,6 @@ offset_left = 10.0
 offset_top = 10.0
 offset_right = 500.0
 offset_bottom = 30.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Тема:"
 
 [node name="Sender" type="Label" parent="EmailHeader" unique_id=1735120632]
@@ -96,7 +84,6 @@ offset_left = 10.0
 offset_top = 35.0
 offset_right = 500.0
 offset_bottom = 55.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
 text = "Отправитель:"
 
 [node name="DateLabel" type="Label" parent="EmailHeader" unique_id=2092721498]
@@ -105,16 +92,22 @@ offset_left = 520.0
 offset_top = 10.0
 offset_right = 760.0
 offset_bottom = 30.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
 
 [node name="ReplyButton" type="Button" parent="EmailHeader" unique_id=455730246]
 layout_mode = 0
-offset_left = 600.0
-offset_top = 35.0
-offset_right = 760.0
-offset_bottom = 65.0
-theme_override_fonts/font = ExtResource("2_2y7k8")
+offset_left = 595.0
+offset_top = -9.0
+offset_right = 755.0
+offset_bottom = 21.0
 text = "Ответить"
+
+[node name="FollowInstructionsButton" type="Button" parent="EmailHeader" unique_id=455730247]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 519.0
+offset_right = 347.0
+offset_bottom = 549.0
+text = "Запустить процедуру"
 
 [node name="EmailBody" type="RichTextLabel" parent="." unique_id=810244442]
 layout_mode = 0
@@ -122,9 +115,5 @@ offset_left = 360.0
 offset_top = 127.0
 offset_right = 1134.0
 offset_bottom = 569.0
-theme_override_fonts/normal_font = ExtResource("2_2y7k8")
-theme_override_fonts/bold_font = ExtResource("2_2y7k8")
-theme_override_fonts/italics_font = ExtResource("2_2y7k8")
-theme_override_fonts/mono_font = ExtResource("2_2y7k8")
 bbcode_enabled = true
 autowrap_mode = 2

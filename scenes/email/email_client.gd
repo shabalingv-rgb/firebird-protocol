@@ -5,6 +5,7 @@ extends Control
 @onready var sender_label = $EmailHeader/Sender
 @onready var date_label = $EmailHeader/DateLabel
 @onready var reply_button = $EmailHeader/ReplyButton
+@onready var follow_instructions_button = $EmailHeader/FollowInstructionsButton
 @onready var body_label = $EmailBody
 @onready var back_button = $BackButton
 @onready var email_tabs = $EmailTabs
@@ -32,23 +33,21 @@ func _ready():
 		back_button.pressed.connect(_on_back_pressed)
 	if reply_button:
 		reply_button.pressed.connect(_on_reply_button_pressed)
+	if follow_instructions_button:
+		follow_instructions_button.pressed.connect(_on_follow_instructions_pressed)
 	if email_tabs:
 		email_tabs.tab_changed.connect(_on_tab_changed)
 
 	print("📧 Email Client загружен")
-
+	
+	# Применяем игровой шрифт ко всем элементам
+	_apply_font_to_all_elements()
+	
 	if DatabaseManager and not DatabaseManager.DatabaseReady.is_connected(_on_database_ready):
 		DatabaseManager.DatabaseReady.connect(_on_database_ready)
 
 	# Восстанавливаем архив из глобального хранилища
 	archived_emails = persistent_archive.duplicate()
-
-	# Применяем игровой шрифт к вкладкам
-	if email_tabs:
-		var tabs_theme = Theme.new()
-		tabs_theme.default_font = quest_font
-		tabs_theme.default_font_size = 12
-		email_tabs.theme = tabs_theme
 
 	var day := 1
 	if QuestManager:
@@ -162,22 +161,6 @@ func refresh_inbox():
 		inbox_list.add_item(icon + subject + " — " + sender)
 		inbox_list.set_item_metadata(inbox_list.item_count - 1, inbox_list.item_count - 1)
 
-	# Показываем заблокированные письма (серые, без доступа)
-	var all_emails = DatabaseManager.GetEmailsForDay(QuestManager.current_day if QuestManager else 1)
-	for email_data in all_emails:
-		var gd_email = {}
-		for key in email_data.keys():
-			gd_email[str(key).to_lower()] = email_data[key]
-
-		var unlock_condition = gd_email.get("unlock_condition", "").strip_edges()
-		if unlock_condition != "" and not _is_condition_met(unlock_condition):
-			var subject = gd_email.get("subject", "[Заблокировано]")
-			var sender = gd_email.get("sender", "???")
-			inbox_list.add_item("🔒 " + subject + " — " + sender)
-			var item_idx = inbox_list.item_count - 1
-			inbox_list.set_item_metadata(item_idx, -1)  # special marker
-			inbox_list.set_item_custom_fg_color(item_idx, Color(0.4, 0.4, 0.4))
-
 	# Авто-выбор первого письма
 	if inbox_list.item_count > 0:
 		inbox_list.select(0)
@@ -239,9 +222,6 @@ func _on_inbox_selected(index: int):
 	if metadata >= 0 and metadata < current_emails.size():
 		# Письмо из текущего дня
 		show_email(current_emails[metadata])
-	elif metadata == -1:
-		# Заблокированное письмо — показываем уведомление
-		show_quest_not_completed_warning("Это письмо заблокировано. Выполните условие для разблокировки.")
 
 func _on_archive_selected(index: int):
 	if index >= 0 and index < archived_emails.size():
@@ -279,12 +259,29 @@ func show_email(email: Dictionary):
 
 	# Кнопка для квестов
 	var email_type = email.get("email_type", email.get("EMAIL_TYPE", "")).to_lower()
+	var quest_email_id = int(email.get("id", email.get("ID", 0)))
+
+	# Загружаем квест для этого письма (если есть)
+	var quest_for_this_email = {}
+	if quest_email_id > 0:
+		quest_for_this_email = DatabaseManager.GetQuestForEmail(quest_email_id)
+		print("  [show_email] quest_email_id=", quest_email_id, " quest_found=", quest_for_this_email != null and not quest_for_this_email.is_empty())
+		if quest_for_this_email and not quest_for_this_email.is_empty():
+			print("  [show_email] quest keys: ", quest_for_this_email.keys())
+
+	# Показываем кнопку "Запустить процедуру" только если квест имеет procedure_type
+	if follow_instructions_button:
+		var has_procedure = false
+		if quest_for_this_email and not quest_for_this_email.is_empty():
+			var proc_type = str(quest_for_this_email.get("PROCEDURE_TYPE", quest_for_this_email.get("procedure_type", ""))).strip_edges()
+			has_procedure = proc_type != ""
+			print("  [show_email] procedure_type='", proc_type, "' has_procedure=", has_procedure)
+		follow_instructions_button.visible = has_procedure
 
 	if email_type == "quest":
 		if has_node("EmailHeader/ReplyButton"):
 			$EmailHeader/ReplyButton.visible = true
 			$EmailHeader/ReplyButton.text = "📤 Отправить отчёт"
-			var quest_email_id = int(email.get("id", email.get("ID", 0)))
 			load_quest_for_email(quest_email_id)
 	else:
 		if has_node("EmailHeader/ReplyButton"):
@@ -333,12 +330,40 @@ func _on_reply_button_pressed():
 		show_quest_not_completed_warning("Нет активного задания для этого письма!")
 		return
 
-	var quest_id = active_quest.get("ID", active_quest.get("id", -1))
-	if QuestManager and not QuestManager.is_quest_completed(quest_id):
-		show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
-		return
+	var quest_email_id = int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0)))
+	
+	# Исключение для инструктажа (письмо от HR) - не требует выполнения в терминале
+	if quest_email_id != 2:
+		var quest_id = active_quest.get("ID", active_quest.get("id", -1))
+		if QuestManager and not QuestManager.is_quest_completed(quest_id):
+			show_quest_not_completed_warning("Сначала выполните SQL-запрос в терминале! Система не подтвердила завершение задания.")
+			return
 
 	show_report_dialog()
+
+
+func _on_follow_instructions_pressed():
+	"""Обработчик кнопки 'Запустить процедуру' - запускает процедуру из procedure_type квеста."""
+	if active_quest.is_empty():
+		show_error_message("Нет активного задания для этого письма.")
+		return
+
+	var procedure_type = str(active_quest.get("PROCEDURE_TYPE", active_quest.get("procedure_type", ""))).strip_edges()
+	var quest_title = active_quest.get("TITLE", active_quest.get("title", ""))
+
+	if procedure_type == "":
+		show_error_message("Для этого задания не назначена процедура.")
+		return
+
+	print("🔧 Запуск процедуры типа '", procedure_type, "' для задания: ", quest_title)
+
+	# Маршрутизация по типу процедуры
+	match procedure_type:
+		"tutorial":
+			print("📚 Запуск инструктажа через кнопку 'Запустить процедуру'...")
+			get_tree().change_scene_to_file("res://scenes/tutorial/day_zero.tscn")
+		_:
+			show_error_message("Процедура типа '" + procedure_type + "' еще не реализована.")
 
 func show_report_dialog():
 	var dialog = ConfirmationDialog.new()
@@ -400,6 +425,12 @@ func show_report_dialog():
 	dialog.popup_centered(Vector2i(600, 230))
 
 func send_report(report_text: String):
+	# Проверяем: это письмо от HR (инструктаж)?
+	if active_quest and int(active_quest.get("EMAIL_ID", active_quest.get("email_id", 0))) == 2:
+		print("📚 Это инструктаж! Переходим к тестированию...")
+		get_tree().change_scene_to_file("res://scenes/tutorial/tutorial_test.tscn")
+		return
+
 	print("📤 Отчёт отправлен: ", report_text)
 	var qid = int(active_quest.get("ID", active_quest.get("id", 0)))
 	DatabaseManager.SavePlayerChoice(qid, "report_text", report_text, QuestManager.current_day)
@@ -481,3 +512,50 @@ func submit_quest_report(quest_id: String):
 			show_quest_not_completed_warning("Активное задание не совпадает. Выполните текущее задание в терминале.")
 	else:
 		show_quest_not_completed_warning("Нет активного задания! Откройте терминал и выполните SQL-запрос.")
+
+func _apply_font_to_all_elements() -> void:
+	"""Применяет игровой шрифт ко всем элементам UI."""
+	var font = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+	var font_size := 14
+	var small_font_size := 12
+
+	# Кнопки
+	if back_button:
+		back_button.add_theme_font_override("font", font)
+		back_button.add_theme_font_size_override("font_size", font_size)
+	if reply_button:
+		reply_button.add_theme_font_override("font", font)
+		reply_button.add_theme_font_size_override("font_size", font_size)
+	if follow_instructions_button:
+		follow_instructions_button.add_theme_font_override("font", font)
+		follow_instructions_button.add_theme_font_size_override("font_size", font_size)
+
+	# Заголовки письма
+	if subject_label:
+		subject_label.add_theme_font_override("font", font)
+		subject_label.add_theme_font_size_override("font_size", font_size)
+	if sender_label:
+		sender_label.add_theme_font_override("font", font)
+		sender_label.add_theme_font_size_override("font_size", font_size)
+	if date_label:
+		date_label.add_theme_font_override("font", font)
+		date_label.add_theme_font_size_override("font_size", font_size)
+
+	# Тело письма
+	if body_label:
+		body_label.add_theme_font_override("normal_font", font)
+		body_label.add_theme_font_size_override("normal_font_size", font_size)
+
+	# Списки писем
+	if inbox_list:
+		inbox_list.add_theme_font_override("font", font)
+		inbox_list.add_theme_font_size_override("font_size", small_font_size)
+	if archive_list:
+		archive_list.add_theme_font_override("font", font)
+		archive_list.add_theme_font_size_override("font_size", small_font_size)
+
+	# Вкладки
+	if email_tabs:
+		var tab_font_size := 12
+		email_tabs.add_theme_font_override("font", font)
+		email_tabs.add_theme_font_size_override("font_size", tab_font_size)

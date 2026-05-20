@@ -9,18 +9,18 @@ script = ExtResource("1_nviv1")
 
 [node name="Background" type="ColorRect" parent="." unique_id=796641703]
 layout_mode = 0
-offset_left = 235.0
-offset_top = 35.0
-offset_right = 935.0
-offset_bottom = 535.0
+offset_left = 80.0
+offset_top = 80.0
+offset_right = 80.0
+offset_bottom = 80.0
 color = Color(0, 0.101960786, 0, 1)
 
 [node name="TutorialPanel" type="Panel" parent="." unique_id=1149815417]
 layout_mode = 0
-offset_left = 254.0
-offset_top = 48.0
-offset_right = 294.0
-offset_bottom = 88.0
+offset_left = 80.0
+offset_top = 80.0
+offset_right = 80.0
+offset_bottom = 80.0
 
 [node name="TitleLabel" type="Label" parent="TutorialPanel" unique_id=1569787323]
 layout_mode = 0

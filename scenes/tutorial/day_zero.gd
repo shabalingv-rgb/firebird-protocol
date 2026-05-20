@@ -56,6 +56,28 @@ func _ready():
 	# Скрываем кнопку "Далее" изначально
 	next_button.visible = false
 	
+	# Загружаем игровой шрифт
+	var game_font: FontFile = preload("res://assets/fonts/PressStart2P-Regular.ttf")
+	
+	# Применяем шрифт ко всем текстовым элементам
+	title_label.add_theme_font_override("font", game_font)
+	title_label.add_theme_font_size_override("font_size", 14)
+	instruction_label.add_theme_font_override("font", game_font)
+	instruction_label.add_theme_font_size_override("font_size", 14)
+	instruction_label.autowrap = true
+	query_input.add_theme_font_override("font", game_font)
+	query_input.add_theme_font_size_override("font_size", 14)
+	feedback_label.add_theme_font_override("font", game_font)
+	feedback_label.add_theme_font_size_override("font_size", 14)
+	check_button.add_theme_font_override("font", game_font)
+	check_button.add_theme_font_size_override("font_size", 14)
+	next_button.add_theme_font_override("font", game_font)
+	next_button.add_theme_font_size_override("font_size", 14)
+	skip_button.add_theme_font_override("font", game_font)
+	skip_button.add_theme_font_size_override("font_size", 14)
+	progress_bar.add_theme_font_override("font", game_font)
+	progress_bar.add_theme_font_size_override("font_size", 14)
+	
 	# Загружаем первый вопрос
 	load_question(current_question_index)
 

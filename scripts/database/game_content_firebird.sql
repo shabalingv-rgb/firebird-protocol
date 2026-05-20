@@ -46,7 +46,8 @@ CREATE TABLE quests (
     story_flags_set VARCHAR(500),
     story_flags_required VARCHAR(500),
     moral_choice SMALLINT DEFAULT 0,
-    consequences VARCHAR(500)
+    consequences VARCHAR(500),
+    procedure_type VARCHAR(50) DEFAULT ''
 );
 
 -- Таблица: sql_commands
@@ -329,11 +330,16 @@ INSERT INTO emails (id, day_id, sender, sender_email, subject, body, email_type,
 -- ============================================
 -- ЗАДАНИЯ
 -- ============================================
-INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES
-(1, 6, 'Ознакомление с базой', 'Выполните запрос для получения списка сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM');
+
+-- Квест-инструктаж (email_id=2): запуск обучающей сцены, не SQL-задание
+INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required, procedure_type) VALUES
+(1, 2, 'Ознакомительный инструктаж', 'Пройдите вводный инструктаж для нового сотрудника', '', 0, '', 'tutorial', '', 'tutorial');
 
 INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES
-(2, 7, 'Средняя зарплата', 'Получите среднюю зарплату по каждому отделу', 'SELECT department, AVG(salary) FROM employees GROUP BY department', 3, 'department,AVG_salary', 'medium', 'SELECT,AVG,GROUP BY');
+(2, 6, 'Ознакомление с базой', 'Выполните запрос для получения списка сотрудников', 'SELECT * FROM employees', 5, 'id,name,department,salary', 'easy', 'SELECT,FROM');
+
+INSERT INTO quests (id, email_id, title, description, sql_template, expected_rows, expected_columns, difficulty, sql_skills_required) VALUES
+(3, 7, 'Средняя зарплата', 'Получите среднюю зарплату по каждому отделу', 'SELECT department, AVG(salary) FROM employees GROUP BY department', 3, 'department,AVG_salary', 'medium', 'SELECT,AVG,GROUP BY');
 
 -- ============================================
 -- СОТРУДНИКИ
